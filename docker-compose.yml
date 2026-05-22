@@ -1,0 +1,17 @@
+services:
+  vendor-dashboard:
+    image: vendor-dashboard
+    container_name: vendor-dashboard
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_BUILD_ID
+    env_file:
+      - .env
+    ports:
+      - "3003:3003"
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+    restart: unless-stopped
