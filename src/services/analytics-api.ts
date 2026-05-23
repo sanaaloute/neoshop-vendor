@@ -31,8 +31,6 @@ export async function fetchVendorAnalyticsReport(
   options?: { signal?: AbortSignal }
 ): Promise<AnalyticsReport> {
   const days = presetToDays(preset);
-  const to = new Date().toISOString().split("T")[0];
-  const from = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   if (options?.signal?.aborted) {
     throw new DOMException("Aborted", "AbortError");

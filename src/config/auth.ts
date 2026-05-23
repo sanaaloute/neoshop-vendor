@@ -19,16 +19,14 @@ export function getApiBaseUrl() {
   return trimTrailingSlash(process.env.NEXT_PUBLIC_API_BASE_URL ?? "");
 }
 
-/** Server-side gateway URL (no trailing slash). Falls back to NEXT_PUBLIC_API_BASE_URL. */
+/** Server-side gateway URL (no trailing slash). Uses NEXT_PUBLIC_API_BASE_URL. */
 export function getGatewayUrl() {
-  return trimTrailingSlash(
-    process.env.API_GATEWAY_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? ""
-  );
+  return trimTrailingSlash(process.env.NEXT_PUBLIC_API_BASE_URL ?? "");
 }
 
 /**
  * Build the upstream refresh URL.
- * Uses `API_GATEWAY_URL` (server) or `NEXT_PUBLIC_API_BASE_URL` (client/direct).
+ * Uses `NEXT_PUBLIC_API_BASE_URL`.
  * The path should NOT include `/api/v1` — it is prepended automatically.
  */
 export function getAuthPaths() {

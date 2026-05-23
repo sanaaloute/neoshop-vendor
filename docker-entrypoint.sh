@@ -34,23 +34,4 @@ resolve_host_ip() {
   return 1
 }
 
-# If API_GATEWAY_INTERNAL_URL uses host.docker.internal and it doesn't resolve,
-# replace it with the detected host IP.
-if [ -n "$API_GATEWAY_INTERNAL_URL" ]; then
-  case "$API_GATEWAY_INTERNAL_URL" in
-    *host.docker.internal*)
-      HOST_IP=$(resolve_host_ip)
-      if [ -n "$HOST_IP" ]; then
-        API_GATEWAY_INTERNAL_URL=$(echo "$API_GATEWAY_INTERNAL_URL" | sed "s/host.docker.internal/$HOST_IP/g")
-        export API_GATEWAY_INTERNAL_URL
-        echo "[ENTRYPOINT] Resolved host IP: $HOST_IP"
-        echo "[ENTRYPOINT] API_GATEWAY_INTERNAL_URL -> $API_GATEWAY_INTERNAL_URL"
-      else
-        echo "[ENTRYPOINT] WARNING: could not resolve host.docker.internal or find gateway IP."
-        echo "[ENTRYPOINT] Gateway may be unreachable. Set API_GATEWAY_INTERNAL_URL manually in .env"
-      fi
-      ;;
-  esac
-fi
-
 exec "$@"

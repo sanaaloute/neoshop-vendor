@@ -2,9 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { getGatewayUrl } from "@/config/auth";
 
-const ALLOWED_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
-
-type AllowedMethod = (typeof ALLOWED_METHODS)[number];
+type AllowedMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 async function proxyToGateway(
   request: NextRequest,

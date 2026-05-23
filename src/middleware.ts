@@ -6,7 +6,6 @@ import {
   decodeAccessToken,
   isOnboardingCompleteClaims,
   isVendorTokenClaims,
-  type VendorJwtPayload,
 } from "@/lib/jwt-claims";
 import {
   getRequiredPermissionForPathname,
