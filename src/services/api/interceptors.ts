@@ -46,6 +46,8 @@ function refreshOnUnauthorized(instance: AxiosInstance) {
       return Promise.reject(error);
     }
 
+    // Re-sync user state after a successful refresh.
+    void useAuthStore.getState().bootstrap();
     original.headers.Authorization = `Bearer ${next}`;
     return instance(original);
   };
