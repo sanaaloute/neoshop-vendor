@@ -17,8 +17,9 @@ export function useCategories() {
       .then((rows) => {
         if (!cancelled) setCategories(Array.isArray(rows) ? rows : []);
       })
-      .catch(() => {
-        /* silent fail — categories remain empty */
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error("Failed to load categories:", err);
       });
     return () => {
       cancelled = true;

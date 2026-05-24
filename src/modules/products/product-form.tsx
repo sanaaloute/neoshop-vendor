@@ -115,6 +115,20 @@ export function ProductForm({
   }, []);
 
   const mediaList = useWatch({ control: form.control, name: "media" }) ?? [];
+  const watchedName = useWatch({ control: form.control, name: "name" });
+
+  useEffect(() => {
+    if (catalogProductId) return;
+    if (!watchedName?.trim()) return;
+    const currentSku = form.getValues("sku");
+    if (currentSku) return;
+    const base = slugify(watchedName).toUpperCase();
+    const shortId = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+    form.setValue("sku", `${base}-${shortId}`, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }, [watchedName, catalogProductId, form]);
 
   const handleAddFiles = useCallback(
     (files: File[]) => {
@@ -557,29 +571,35 @@ function CategorySelector() {
         Select one or more categories.
       </p>
       <div className="flex flex-wrap gap-2">
-        {categories.map((c) => {
-          const on = selected.includes(c.id);
-          return (
-            <Button
-              key={c.id}
-              type="button"
-              size="sm"
-              variant={on ? "default" : "outline"}
-              className="rounded-full"
-              onClick={() => {
-                const next = on
-                  ? selected.filter((id) => id !== c.id)
-                  : [...selected, c.id];
-                setValue("categoryIds", next, {
-                  shouldValidate: true,
-                  shouldDirty: true,
-                });
-              }}
-            >
-              {c.name}
-            </Button>
-          );
-        })}
+        {categories.length === 0 ? (
+          <p className="text-muted-foreground text-xs">
+            No categories available. Categories are loaded from the server.
+          </p>
+        ) : (
+          categories.map((c) => {
+            const on = selected.includes(c.id);
+            return (
+              <Button
+                key={c.id}
+                type="button"
+                size="sm"
+                variant={on ? "default" : "outline"}
+                className="rounded-full"
+                onClick={() => {
+                  const next = on
+                    ? selected.filter((id) => id !== c.id)
+                    : [...selected, c.id];
+                  setValue("categoryIds", next, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  });
+                }}
+              >
+                {c.name}
+              </Button>
+            );
+          })
+        )}
       </div>
       {errors.categoryIds?.message ? (
         <p className="text-destructive text-xs">{errors.categoryIds.message}</p>
