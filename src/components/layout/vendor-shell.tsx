@@ -8,6 +8,7 @@ import { VendorSidebarDesktop } from "@/components/navigation/vendor-sidebar";
 import { VendorSidebarNav } from "@/components/navigation/vendor-sidebar-nav";
 import { VendorTopNav } from "@/components/navigation/vendor-top-nav";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { useRequireVendor } from "@/hooks/use-auth";
 import { useVendorKeyboardShortcuts } from "@/hooks/use-vendor-keyboard";
 import { useUiShellStore } from "@/store/sidebar-store";
 import { useVendorProfileStore } from "@/store/vendor-profile-store";
@@ -16,6 +17,8 @@ export function VendorShell({ children }: { children: ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const loadVendorProfile = useVendorProfileStore((s) => s.load);
+
+  useRequireVendor();
 
   useEffect(() => {
     void loadVendorProfile();

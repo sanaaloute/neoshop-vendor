@@ -36,7 +36,13 @@ function refreshOnUnauthorized(instance: AxiosInstance) {
     original._retry = true;
     const next = await refreshTokensClient();
     if (!next) {
-      await useAuthStore.getState().logout();
+      // Refresh failed — mark unauthenticated so the auth gate can redirect.
+      // Do not wipe cookies here; leave the refresh token intact for retry.
+      useAuthStore.setState({
+        accessToken: null,
+        user: null,
+        status: "unauthenticated",
+      });
       return Promise.reject(error);
     }
 

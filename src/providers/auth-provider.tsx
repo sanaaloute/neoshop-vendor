@@ -45,5 +45,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.clearTimeout(id);
   }, [accessToken]);
 
+  // When the tab becomes visible after being hidden (sleep / background),
+  // re-check the token and refresh if it has expired or is about to expire.
+  useEffect(() => {
+    const handleVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      const token = useAuthStore.getState().accessToken;
+      if (!token) return;
+      const exp = getTokenExpSecondsSafe(token);
+      if (!exp) return;
+      if (exp * 1000 <= Date.now() + 60_000) {
+        void refreshTokensClient().then((t) => {
+          if (t) {
+            void useAuthStore.getState().bootstrap();
+          } else {
+            useAuthStore.setState({
+              accessToken: null,
+              user: null,
+              status: "unauthenticated",
+            });
+          }
+        });
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisible);
+    return () => document.removeEventListener("visibilitychange", handleVisible);
+  }, []);
+
   return children;
 }

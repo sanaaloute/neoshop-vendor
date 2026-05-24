@@ -130,9 +130,23 @@ export const useAuthStore = create<AuthState>()(
 
           set({ accessToken: access });
 
-          const remoteUser = await fetchSessionUser();
+          let remoteUser = await fetchSessionUser();
           if (!remoteUser) {
-            await get().logout();
+            // The token from the cookie may be expired/invalid.
+            // Try one explicit refresh before giving up.
+            const { refreshTokensClient } =
+              await import("@/services/auth-refresh-client");
+            access = await refreshTokensClient();
+            if (!access) {
+              set({ accessToken: null, user: null, status: "unauthenticated" });
+              return;
+            }
+            set({ accessToken: access });
+            remoteUser = await fetchSessionUser();
+          }
+
+          if (!remoteUser) {
+            set({ accessToken: null, user: null, status: "unauthenticated" });
             return;
           }
 

@@ -72,7 +72,7 @@ export function ensureVendorCsrfCookie(jar: {
     jar.set(
       AUTH_COOKIES.csrf,
       token,
-      vendorCsrfCookieOptions(60 * 60 * 24)
+      vendorCsrfCookieOptions(60 * 60 * 24 * 30)
     );
   }
   return token;

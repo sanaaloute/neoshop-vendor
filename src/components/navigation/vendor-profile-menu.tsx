@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 export function VendorProfileMenu({ className }: { className?: string }) {
   const router = useRouter();
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout, isLoading, isAuthenticated } = useAuth();
 
   const initials =
     user?.email?.slice(0, 2).toUpperCase() ??
@@ -50,26 +50,38 @@ export function VendorProfileMenu({ className }: { className?: string }) {
             </VendorMuted>
           ) : null}
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push("/settings")}>
-          <Settings className="size-4" />
-          Account settings
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push("/shop")}>
-          <Store className="size-4" />
-          Shop profile
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          variant="destructive"
-          onClick={async () => {
-            await logout();
-            router.replace("/login");
-          }}
-        >
-          <LogOut className="size-4" />
-          Log out
-        </DropdownMenuItem>
+        {isAuthenticated ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => router.push("/settings")}>
+              <Settings className="size-4" />
+              Account settings
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/shop")}>
+              <Store className="size-4" />
+              Shop profile
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={async () => {
+                await logout();
+                router.replace("/login");
+              }}
+            >
+              <LogOut className="size-4" />
+              Log out
+            </DropdownMenuItem>
+          </>
+        ) : (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => router.replace("/login")}>
+              <LogOut className="size-4" />
+              Log in
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
