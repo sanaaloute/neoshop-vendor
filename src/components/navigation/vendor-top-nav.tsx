@@ -12,7 +12,6 @@ import { VendorRealtimeStatus } from "@/components/navigation/vendor-realtime-st
 import { useRealtimeVendorStatus } from "@/realtime/hooks";
 import { VendorSearch } from "@/components/navigation/vendor-search";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 type VendorTopNavProps = {
@@ -39,22 +38,25 @@ export function VendorTopNav({
       )}
     >
       <div className="flex flex-wrap items-center gap-2 md:gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-sm"
-          className="md:hidden"
-          onClick={onOpenMobileSidebar}
-          aria-label="Open navigation"
-        >
-          <Menu className="size-4" />
-        </Button>
-        <VendorSearch ref={searchRef} className="flex-1" />
-        <Separator
-          orientation="vertical"
-          className="hidden h-7 self-stretch lg:block"
-        />
-        <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+        {/* Left side */}
+        <div className="flex flex-1 items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            className="md:hidden"
+            onClick={onOpenMobileSidebar}
+            aria-label="Open navigation"
+          >
+            <Menu className="size-4" />
+          </Button>
+        </div>
+
+        {/* Center — search */}
+        <VendorSearch ref={searchRef} className="w-full max-w-md" />
+
+        {/* Right side */}
+        <div className="flex flex-1 items-center justify-end gap-1.5 sm:gap-2">
           <VendorRealtimeStatus
             state={realtimeState}
             className="hidden lg:inline-flex"

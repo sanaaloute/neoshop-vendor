@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Analytics } from "@vercel/analytics/react";
 
 import "@/app/globals.css";
 import { GeistSans } from "geist/font/sans";
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AppShellProvider>
           <AuthProvider>{children}</AuthProvider>
         </AppShellProvider>
+        <Analytics />
       </body>
     </html>
   );

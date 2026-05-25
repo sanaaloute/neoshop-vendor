@@ -113,24 +113,40 @@ export function SettingsHome() {
     (async () => {
       setLoading(true);
       setError(null);
+
+      // Load user profile independently
       try {
-        const [p, s, v] = await Promise.all([
-          getUserMe(),
-          getUserSettings(),
-          getVendorMe().catch(() => null),
-        ]);
-        if (!cancelled) {
-          setProfile(p);
-          setSettings(s ?? {});
-          setVendor(v);
-        }
+        const p = await getUserMe();
+        if (!cancelled) setProfile(p);
+      } catch (e) {
+        if (!cancelled) setProfileError(httpErrorMessageForUser(e, "Could not load profile."));
+      }
+
+      // Load user settings independently
+      try {
+        const s = await getUserSettings();
+        if (!cancelled) setSettings(s ?? {});
+      } catch (e) {
+        if (!cancelled) setSettingsError(httpErrorMessageForUser(e, "Could not load preferences."));
+      }
+
+      // Load vendor profile independently (may 403 if not registered yet)
+      try {
+        const v = await getVendorMe();
+        if (!cancelled) setVendor(v);
       } catch (e) {
         if (!cancelled) {
-          setError(httpErrorMessageForUser(e, "Could not load settings."));
+          const msg = httpErrorMessageForUser(e, "Could not load business profile.");
+          // Don't block the page — vendor profile is optional until onboarding
+          if ((e as { response?: { status?: number } })?.response?.status === 403) {
+            setVendorError("Business profile not available yet. Complete onboarding to unlock this section.");
+          } else {
+            setVendorError(msg);
+          }
         }
-      } finally {
-        if (!cancelled) setLoading(false);
       }
+
+      if (!cancelled) setLoading(false);
     })();
     return () => {
       cancelled = true;
@@ -628,9 +644,15 @@ export function SettingsHome() {
             </DashboardCard>
           </>
         ) : (
-          <p className="text-muted-foreground py-10 text-sm">
-            No vendor profile found. Complete onboarding first.
-          </p>
+          <div className="py-10 text-sm">
+            {vendorError ? (
+              <p className="text-destructive">{vendorError}</p>
+            ) : (
+              <p className="text-muted-foreground">
+                No vendor profile found. Complete onboarding first.
+              </p>
+            )}
+          </div>
         )}
       </TabsContent>
 
@@ -773,9 +795,15 @@ export function SettingsHome() {
             </DashboardCard>
           </>
         ) : (
-          <p className="text-muted-foreground py-10 text-sm">
-            No vendor profile found. Complete onboarding first.
-          </p>
+          <div className="py-10 text-sm">
+            {vendorError ? (
+              <p className="text-destructive">{vendorError}</p>
+            ) : (
+              <p className="text-muted-foreground">
+                No vendor profile found. Complete onboarding first.
+              </p>
+            )}
+          </div>
         )}
       </TabsContent>
 
