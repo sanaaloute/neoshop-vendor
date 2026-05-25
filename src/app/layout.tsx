@@ -3,11 +3,17 @@ import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
 import "@/app/globals.css";
-import { GeistSans } from "geist/font/sans";
+import { Plus_Jakarta_Sans } from "next/font/google";
 
 import { AppShellProvider } from "@/components/providers/app-shell-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { cn } from "@/lib/utils";
+
+const fontSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  weight: ["400", "500", "600", "700", "800"],
+});
 
 export const metadata: Metadata = {
   title: "NeoShop Vendor",
@@ -19,7 +25,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("dark", GeistSans.variable)}
+      className={cn("dark", fontSans.variable)}
     >
       <body
         className={cn(
