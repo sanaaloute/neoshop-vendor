@@ -16,7 +16,7 @@ export function cartesianValues<T>(axes: T[][]): T[][] {
 }
 
 function genVariantId() {
-  return `var_${crypto.randomUUID().replace(/-/g, "").slice(0, 14)}`;
+  return crypto.randomUUID();
 }
 
 export function buildSku(
@@ -47,12 +47,18 @@ export function buildVariantMatrix(
 
   return tuples.map((vals, idx) => {
     const combo: Record<string, string> = {};
+    const selectionIds: string[] = [];
     definitions.forEach((d, i) => {
-      combo[d.id] = vals[i] ?? "";
+      const val = vals[i] ?? "";
+      combo[d.id] = val;
+      const valueId = d.valueIdMap?.[val];
+      if (valueId) selectionIds.push(valueId);
     });
     return {
       id: genVariantId(),
       combo,
+      selectionIds,
+      isLocalOnly: true,
       sku: buildSku(skuPrefix, vals as string[], idx),
       moq: defaults.moq,
       stock: defaults.stock,

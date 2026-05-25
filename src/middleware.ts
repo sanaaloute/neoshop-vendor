@@ -89,11 +89,16 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!session.ok) {
+    // If the access token is expired but we have a refresh token,
+    // let the request through — the client-side AuthProvider will
+    // refresh the token. Redirecting here causes a jarring logout
+    // flash on every SSR navigation after token expiry.
+    if (session.reason === "expired" && session.hasRefresh) {
+      return NextResponse.next();
+    }
+
     const login = new URL("/login", request.url);
     login.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
-    if (session.reason === "expired" && session.hasRefresh) {
-      login.searchParams.set("resume", "1");
-    }
     return NextResponse.redirect(login);
   }
 

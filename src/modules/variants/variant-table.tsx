@@ -119,13 +119,9 @@ export function VariantTable({
                   <ComboBadges row={row} defs={attributes} />
                 </TableCell>
                 <TableCell>
-                  <Input
-                    className="h-8 min-w-[120px] font-mono text-xs"
-                    value={row.sku}
-                    onChange={(e) =>
-                      updateVariant(row.id, { sku: e.target.value })
-                    }
-                  />
+                  <span className="bg-muted/50 block min-w-[120px] rounded-md px-2 py-1 font-mono text-xs tabular-nums">
+                    {row.sku}
+                  </span>
                 </TableCell>
                 <TableCell>
                   <Input

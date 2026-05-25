@@ -11,7 +11,10 @@ import { useGatewayCatalogBootstrap } from "@/hooks/use-gateway-catalog-bootstra
 import { useGatewayVariantsBootstrap } from "@/hooks/use-gateway-variants-bootstrap";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
 import { setVariantQuantity } from "@/services/vendor/inventory-api";
-import { updateVariant as updateVariantApi } from "@/services/vendor/variants-api";
+import {
+  createVariant,
+  updateVariant as updateVariantApi,
+} from "@/services/vendor/variants-api";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
 import { useVariantWorkbenchStore } from "@/store/variant-workbench-store";
 
@@ -78,11 +81,29 @@ export function VariantsHome() {
     setSaveMessage(null);
     try {
       for (const row of rows) {
-        await updateVariantApi(selectedProductId, row.id, {
-          wholesalePrice: row.price,
-          moq: row.moq,
-        });
-        await setVariantQuantity(row.id, { quantity: row.stock });
+        if (row.isLocalOnly) {
+          const created = await createVariant(selectedProductId, {
+            sku: row.sku,
+            wholesalePrice: row.price,
+            moq: row.moq,
+            selectionIds: row.selectionIds ?? [],
+            isActive: true,
+          });
+          const createdId = String(
+            (created as Record<string, unknown>).id
+          );
+          await setVariantQuantity(createdId, { quantity: row.stock });
+          useVariantWorkbenchStore
+            .getState()
+            .updateVariant(row.id, { id: createdId, isLocalOnly: false });
+        } else {
+          await updateVariantApi(selectedProductId, row.id, {
+            sku: row.sku,
+            wholesalePrice: row.price,
+            moq: row.moq,
+          });
+          await setVariantQuantity(row.id, { quantity: row.stock });
+        }
       }
       setSelected(new Set());
       setSaveMessage(

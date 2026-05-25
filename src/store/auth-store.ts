@@ -110,7 +110,7 @@ export const useAuthStore = create<AuthState>()(
         status: "idle",
 
         applyRefreshedAccess: (accessToken) => {
-          set({ accessToken });
+          set({ accessToken, status: "authenticated" });
         },
 
         bootstrap: async () => {

@@ -58,13 +58,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         void refreshTokensClient().then((t) => {
           if (t) {
             void useAuthStore.getState().bootstrap();
-          } else {
-            useAuthStore.setState({
-              accessToken: null,
-              user: null,
-              status: "unauthenticated",
-            });
           }
+          // If refresh fails, do NOT wipe auth here.
+          // The next API call will hit the 401 interceptor and retry
+          // refresh once. Only if that also fails will the user be
+          // properly redirected to login. This avoids logging out on
+          // transient network hiccups when the tab wakes up.
         });
       }
     };

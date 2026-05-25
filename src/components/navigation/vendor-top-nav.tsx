@@ -11,7 +11,6 @@ import { VendorQuickActions } from "@/components/navigation/vendor-quick-actions
 import { VendorRealtimeStatus } from "@/components/navigation/vendor-realtime-status";
 import { useRealtimeVendorStatus } from "@/realtime/hooks";
 import { VendorSearch } from "@/components/navigation/vendor-search";
-import { VendorShopSelector } from "@/components/navigation/vendor-shop-selector";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -50,11 +49,6 @@ export function VendorTopNav({
         >
           <Menu className="size-4" />
         </Button>
-        <VendorShopSelector className="hidden sm:inline-flex" />
-        <Separator
-          orientation="vertical"
-          className="hidden h-7 self-stretch sm:block"
-        />
         <VendorSearch ref={searchRef} className="flex-1" />
         <Separator
           orientation="vertical"

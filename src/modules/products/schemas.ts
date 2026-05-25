@@ -20,7 +20,7 @@ const mediaRowSchema = z.object({
 
 export const productFormSchema = z
   .object({
-    sku: z.string().min(1, "SKU is required"),
+    sku: z.string(),
     name: z.string().min(2, "Name is required"),
     description: z.string().min(10, "Add a short description (min 10 chars)"),
     price: z.number().positive("Price must be greater than zero"),

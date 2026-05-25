@@ -118,17 +118,18 @@ export function ProductForm({
   const watchedName = useWatch({ control: form.control, name: "name" });
 
   useEffect(() => {
-    if (catalogProductId) return;
     if (!watchedName?.trim()) return;
     const currentSku = form.getValues("sku");
-    if (currentSku) return;
     const base = slugify(watchedName).toUpperCase();
     const shortId = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
-    form.setValue("sku", `${base}-${shortId}`, {
-      shouldValidate: true,
-      shouldDirty: true,
-    });
-  }, [watchedName, catalogProductId, form]);
+    const generated = `${base}-${shortId}`;
+    if (!currentSku || currentSku.startsWith(slugify(watchedName.slice(0, -1) || watchedName).toUpperCase())) {
+      form.setValue("sku", generated, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+  }, [watchedName, form]);
 
   const handleAddFiles = useCallback(
     (files: File[]) => {
@@ -312,12 +313,18 @@ export function ProductForm({
                 placeholder="Wholesale ceramic mugs"
                 className="md:col-span-2"
               />
-              <VendorTextField
-                control={form.control}
-                name="sku"
-                label="SKU"
-                placeholder="MUG-12-WHT"
-              />
+              <div className="grid gap-1.5">
+                <Label className="text-sm font-medium">SKU</Label>
+                <Input
+                  readOnly
+                  disabled
+                  value={form.watch("sku")}
+                  className="bg-muted/50 h-9 font-mono text-xs tabular-nums"
+                />
+                <p className="text-muted-foreground text-[10px]">
+                  Auto-generated from product name
+                </p>
+              </div>
               <Controller
                 control={form.control}
                 name="price"

@@ -38,13 +38,19 @@ function attrFromApi(
     str(row.name, str(row.code, `Attribute ${index + 1}`))
   );
   const rawValues = Array.isArray(row.values) ? row.values : [];
+  const valueIdMap: Record<string, string> = {};
   const values = rawValues
     .map((v) => {
       const item = v as Record<string, unknown>;
-      return str(item.value, str(item.label, ""));
+      const label = str(item.value, str(item.label, ""));
+      const valueId = str(item.id, "");
+      if (label && valueId) {
+        valueIdMap[label] = valueId;
+      }
+      return label;
     })
     .filter(Boolean);
-  return { id, name, kind: attrKind(name), values: [...new Set(values)] };
+  return { id, name, kind: attrKind(name), values: [...new Set(values)], valueIdMap, code: str(row.code, "") };
 }
 
 function readSelections(row: Record<string, unknown>) {
@@ -70,11 +76,21 @@ export function mapApiProductDetailToVariantWorkbench(
     }
   }
 
+  // Fallback lookup for flattened selection shapes: "attributeCode:value" → valueId
+  const valueIdByCode = new Map<string, string>();
+  for (const attr of attributes) {
+    const code = attr.code || attr.id;
+    for (const [value, valueId] of Object.entries(attr.valueIdMap ?? {})) {
+      valueIdByCode.set(`${code}:${value}`, valueId);
+    }
+  }
+
   const rawVariants = Array.isArray(product.variants) ? product.variants : [];
   const variants = rawVariants.map((v, index) => {
     const row = v as Record<string, unknown>;
     const inventory = (row.inventory ?? {}) as Record<string, unknown>;
     const combo: Record<string, string> = {};
+    const selectionIds: string[] = [];
     for (const selection of readSelections(row)) {
       const valueRow = (selection.attributeValue ??
         selection.value ??
@@ -89,11 +105,29 @@ export function mapApiProductDetailToVariantWorkbench(
         attrByRawValueId.get(`${str(valueRow.attributeId, "")}:${value}`) ||
         "";
       if (attrId && value) combo[attrId] = value;
+
+      // Primary: nested attributeValue.id
+      const valueId = str(valueRow.id, "");
+      if (valueId) {
+        selectionIds.push(valueId);
+      } else {
+        // Fallback: flattened { attributeCode, value }
+        const attrCode = str(selection.attributeCode, "");
+        const selValue = str(selection.value, "");
+        if (attrCode && selValue) {
+          const fallbackId = valueIdByCode.get(`${attrCode}:${selValue}`);
+          if (fallbackId) selectionIds.push(fallbackId);
+        }
+      }
     }
 
+    const hasRealId = typeof row.id === "string" && row.id.trim().length > 0;
+
     return {
-      id: str(row.id, `var_${index}`),
+      id: hasRealId ? String(row.id) : crypto.randomUUID(),
       combo,
+      selectionIds,
+      isLocalOnly: !hasRealId,
       sku: str(row.sku, `SKU-${index + 1}`),
       moq: Math.max(1, Math.round(num(row.moq, num(product.moq, 1)))),
       stock: Math.max(0, Math.round(num(inventory.quantity, 0))),
@@ -116,9 +150,11 @@ export function mapApiVariantToVariantRow(
   productMoq = 1
 ): VariantRow {
   const inventory = (row.inventory ?? {}) as Record<string, unknown>;
+  const hasRealId = typeof row.id === "string" && row.id.trim().length > 0;
   return {
-    id: str(row.id, crypto.randomUUID()),
+    id: hasRealId ? String(row.id) : crypto.randomUUID(),
     combo: {},
+    isLocalOnly: !hasRealId,
     sku: str(row.sku, "SKU"),
     moq: Math.max(1, Math.round(num(row.moq, productMoq))),
     stock: Math.max(0, Math.round(num(inventory.quantity, 0))),

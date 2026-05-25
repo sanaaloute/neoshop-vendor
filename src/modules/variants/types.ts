@@ -7,6 +7,10 @@ export type VariantAttributeDefinition = {
   kind: VariantAttributeKind;
   /** Distinct option values for this axis (e.g. Red, Blue or S, M, L). */
   values: string[];
+  /** Maps display value → backend attribute-value id (selection id). */
+  valueIdMap?: Record<string, string>;
+  /** Original attribute code from the API (used to resolve selections). */
+  code?: string;
 };
 
 export type VariantRow = {
@@ -22,6 +26,10 @@ export type VariantRow = {
   widthCm: number;
   heightCm: number;
   barcode: string;
+  /** Backend selection ids required when creating this variant on the server. */
+  selectionIds?: string[];
+  /** True when this row was created locally and does not yet exist on the backend. */
+  isLocalOnly?: boolean;
 };
 
 export type VariantGenerationDefaults = {
