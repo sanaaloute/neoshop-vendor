@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import "@/app/globals.css";
 import { Plus_Jakarta_Sans } from "next/font/google";
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <AuthProvider>{children}</AuthProvider>
         </AppShellProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
