@@ -32,8 +32,8 @@ import {
 } from "@/components/ui/tabs";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
 import { vendorIsApprovedForOperations } from "@/lib/vendor-lifecycle";
+import { getAuthMe } from "@/services/vendor/auth-gateway-api";
 import {
-  getUserMe,
   patchUserMe,
   getUserSettings,
   patchUserSettings,
@@ -46,7 +46,7 @@ import {
   submitVendorVerification,
 } from "@/services/vendor/vendors-api";
 import type {
-  UserMeResponse,
+  AuthMeResponse,
   VendorDocumentType,
   VendorLifecycleStatus,
   VendorMeResponse,
@@ -79,7 +79,7 @@ export function SettingsHome() {
   const [error, setError] = useState<string | null>(null);
 
   // ── User profile ──
-  const [profile, setProfile] = useState<UserMeResponse | null>(null);
+  const [profile, setProfile] = useState<AuthMeResponse | null>(null);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState(false);
@@ -114,9 +114,9 @@ export function SettingsHome() {
       setLoading(true);
       setError(null);
 
-      // Load user profile independently
+      // Load user profile via /auth/me (works for all authenticated users)
       try {
-        const p = await getUserMe();
+        const p = await getAuthMe();
         if (!cancelled) setProfile(p);
       } catch (e) {
         if (!cancelled) setProfileError(httpErrorMessageForUser(e, "Could not load profile."));
@@ -166,7 +166,7 @@ export function SettingsHome() {
         surname: profile.surname ?? undefined,
         avatarUrl: profile.avatarUrl ?? undefined,
       });
-      setProfile(updated);
+      setProfile(updated as AuthMeResponse);
       setProfileSuccess(true);
       setTimeout(() => setProfileSuccess(false), 2000);
     } catch (e) {
