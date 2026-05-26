@@ -29,17 +29,18 @@ import { useDashboardMetrics } from "@/modules/dashboard/use-dashboard-metrics";
 
 function LivePulse() {
   return (
-    <span className="border-border/60 bg-card/50 text-muted-foreground inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[11px] font-medium">
+    <span className="border-border/50 bg-card/50 text-muted-foreground inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold backdrop-blur-sm">
       <span className="relative flex size-2">
         <motion.span
-          className="absolute inline-flex size-full rounded-full bg-emerald-400/90"
-          animate={{ scale: [1, 1.35, 1], opacity: [0.9, 0.45, 0.9] }}
+          className="absolute inline-flex size-full rounded-full bg-success/90"
+          animate={{ scale: [1, 1.5, 1], opacity: [0.9, 0.3, 0.9] }}
           transition={{
             duration: 2.2,
             repeat: Number.POSITIVE_INFINITY,
             ease: "easeInOut",
           }}
         />
+        <span className="relative inline-flex size-2 rounded-full bg-success/70" />
       </span>
       <Radio className="size-3.5 opacity-70" aria-hidden />
       Live metrics
@@ -88,7 +89,7 @@ export function DashboardHome() {
     >
       <GatewaySyncBanner loading={syncLoading} error={syncError} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <VendorSubheading className="text-lg">Overview</VendorSubheading>
+        <VendorSubheading className="text-lg font-bold">Overview</VendorSubheading>
         <LivePulse />
       </div>
 
@@ -97,32 +98,36 @@ export function DashboardHome() {
           index={0}
           label="Total revenue"
           value={formatCurrency(metrics.revenueTotal)}
+          accent="success"
         />
         <MetricCard
           index={1}
           label="Monthly sales"
           value={formatCurrency(metrics.monthlySales)}
+          accent="primary"
         />
         <MetricCard
           index={2}
           label="Pending orders"
           value={metrics.pendingOrders}
+          accent="warning"
         />
         <MetricCard
           index={3}
           label="Conversion rate"
           value={formatPercent(metrics.conversionRate, 2)}
+          accent="info"
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <DashboardCard className="h-full gap-0 py-0">
-            <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
-              <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+            <DashboardCardHeader className="border-border/40 border-b px-4 py-3.5">
+              <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
                 Performance
               </DashboardCardDescription>
-              <DashboardCardTitle className="text-base">
+              <DashboardCardTitle className="text-base font-semibold">
                 Revenue trend
               </DashboardCardTitle>
             </DashboardCardHeader>
@@ -139,7 +144,7 @@ export function DashboardHome() {
                   />
                 ) : (
                   <div
-                    className="bg-muted/40 h-[260px] w-full animate-pulse rounded-lg"
+                    className="bg-muted/30 h-[260px] w-full animate-pulse rounded-xl"
                     aria-hidden
                   />
                 )}
@@ -150,11 +155,11 @@ export function DashboardHome() {
 
         <div className="flex flex-col gap-4">
           <DashboardCard className="gap-0 py-0">
-            <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
-              <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+            <DashboardCardHeader className="border-border/40 border-b px-4 py-3.5">
+              <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
                 Sales rhythm
               </DashboardCardDescription>
-              <DashboardCardTitle className="text-base">
+              <DashboardCardTitle className="text-base font-semibold">
                 This week
               </DashboardCardTitle>
             </DashboardCardHeader>
@@ -172,7 +177,7 @@ export function DashboardHome() {
                   />
                 ) : (
                   <div
-                    className="bg-muted/40 h-[180px] w-full animate-pulse rounded-lg"
+                    className="bg-muted/30 h-[180px] w-full animate-pulse rounded-xl"
                     aria-hidden
                   />
                 )}
@@ -190,12 +195,12 @@ export function DashboardHome() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <DashboardCard className="h-full gap-0 py-0">
-          <DashboardCardHeader className="border-border/50 flex flex-row items-center justify-between border-b px-4 py-3">
+          <DashboardCardHeader className="border-border/40 flex flex-row items-center justify-between border-b px-4 py-3.5">
             <div>
-              <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+              <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
                 Catalog
               </DashboardCardDescription>
-              <DashboardCardTitle className="text-base">
+              <DashboardCardTitle className="text-base font-semibold">
                 Best products
               </DashboardCardTitle>
             </div>
@@ -203,7 +208,7 @@ export function DashboardHome() {
               href="/products"
               className={cn(
                 buttonVariants({ variant: "ghost", size: "sm" }),
-                "gap-1"
+                "gap-1 rounded-lg text-muted-foreground hover:text-foreground"
               )}
             >
               View
@@ -216,12 +221,12 @@ export function DashboardHome() {
         </DashboardCard>
 
         <DashboardCard className="h-full gap-0 py-0">
-          <DashboardCardHeader className="border-border/50 flex flex-row items-center justify-between border-b px-4 py-3">
+          <DashboardCardHeader className="border-border/40 flex flex-row items-center justify-between border-b px-4 py-3.5">
             <div>
-              <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+              <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
                 Variants
               </DashboardCardDescription>
-              <DashboardCardTitle className="text-base">
+              <DashboardCardTitle className="text-base font-semibold">
                 Top movers
               </DashboardCardTitle>
             </div>
@@ -229,7 +234,7 @@ export function DashboardHome() {
               href="/variants"
               className={cn(
                 buttonVariants({ variant: "ghost", size: "sm" }),
-                "gap-1"
+                "gap-1 rounded-lg text-muted-foreground hover:text-foreground"
               )}
             >
               View
@@ -244,11 +249,11 @@ export function DashboardHome() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <DashboardCard className="h-full gap-0 py-0">
-          <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
-            <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+          <DashboardCardHeader className="border-border/40 border-b px-4 py-3.5">
+            <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
               Stock
             </DashboardCardDescription>
-            <DashboardCardTitle className="text-base">
+            <DashboardCardTitle className="text-base font-semibold">
               Inventory alerts
             </DashboardCardTitle>
           </DashboardCardHeader>
@@ -256,10 +261,10 @@ export function DashboardHome() {
             {metrics.inventoryAlerts.map((row) => (
               <div
                 key={row.sku}
-                className="border-border/50 bg-muted/20 flex items-start justify-between gap-3 rounded-lg border px-3 py-2.5"
+                className="border-border/40 bg-muted/15 hover:bg-muted/25 flex items-start justify-between gap-3 rounded-xl border px-3 py-2.5 transition-colors"
               >
                 <div className="min-w-0">
-                  <p className="text-foreground truncate text-sm font-medium">
+                  <p className="text-foreground truncate text-sm font-semibold">
                     {row.name}
                   </p>
                   <VendorMuted className="text-xs">{row.sku}</VendorMuted>
@@ -276,7 +281,7 @@ export function DashboardHome() {
                   >
                     {row.severity}
                   </StatusBadge>
-                  <span className="text-muted-foreground text-xs tabular-nums">
+                  <span className="text-muted-foreground text-xs tabular-nums font-medium">
                     {row.qty} left
                   </span>
                 </div>
@@ -286,7 +291,7 @@ export function DashboardHome() {
               href="/inventory"
               className={cn(
                 buttonVariants({ variant: "outline", size: "sm" }),
-                "w-full"
+                "w-full rounded-xl border-border/50 hover:border-primary/30 hover:bg-primary/5"
               )}
             >
               Open inventory
@@ -295,12 +300,12 @@ export function DashboardHome() {
         </DashboardCard>
 
         <DashboardCard className="h-full gap-0 py-0">
-          <DashboardCardHeader className="border-border/50 flex flex-row items-center justify-between border-b px-4 py-3">
+          <DashboardCardHeader className="border-border/40 flex flex-row items-center justify-between border-b px-4 py-3.5">
             <div>
-              <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+              <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
                 Inbox
               </DashboardCardDescription>
-              <DashboardCardTitle className="text-base">
+              <DashboardCardTitle className="text-base font-semibold">
                 Customer messages
               </DashboardCardTitle>
             </div>
@@ -308,27 +313,27 @@ export function DashboardHome() {
               href="/chat"
               className={cn(
                 buttonVariants({ variant: "ghost", size: "sm" }),
-                "gap-1"
+                "gap-1 rounded-lg text-muted-foreground hover:text-foreground"
               )}
             >
               Open
               <MessageSquare className="size-4" />
             </Link>
           </DashboardCardHeader>
-          <DashboardCardContent className="divide-border/50 divide-y px-0 py-0">
+          <DashboardCardContent className="divide-border/40 divide-y px-0 py-0">
             {metrics.messages.map((m) => (
               <Link
                 key={m.id}
                 href="/chat"
                 className={cn(
-                  "hover:bg-muted/40 block px-4 py-3 transition-colors",
-                  m.unread && "bg-primary/5"
+                  "hover:bg-muted/30 block px-4 py-3 transition-colors",
+                  m.unread && "bg-primary/[0.04]"
                 )}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium">{m.from}</span>
+                  <span className="text-sm font-semibold">{m.from}</span>
                   {m.unread ? (
-                    <span className="bg-primary size-2 rounded-full" />
+                    <span className="bg-primary size-2 rounded-full shadow-[0_0_6px_rgba(99,102,241,0.5)]" />
                   ) : null}
                 </div>
                 <VendorMuted className="mt-0.5 line-clamp-2 text-xs">
@@ -340,12 +345,12 @@ export function DashboardHome() {
         </DashboardCard>
 
         <DashboardCard className="h-full gap-0 py-0 md:col-span-2 xl:col-span-1">
-          <DashboardCardHeader className="border-border/50 flex flex-row items-center justify-between border-b px-4 py-3">
+          <DashboardCardHeader className="border-border/40 flex flex-row items-center justify-between border-b px-4 py-3.5">
             <div>
-              <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+              <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
                 Risk
               </DashboardCardDescription>
-              <DashboardCardTitle className="text-base">
+              <DashboardCardTitle className="text-base font-semibold">
                 Dispute alerts
               </DashboardCardTitle>
             </div>
@@ -357,10 +362,10 @@ export function DashboardHome() {
             {metrics.disputeAlerts.map((d) => (
               <div
                 key={d.id}
-                className="border-border/50 flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5"
+                className="border-border/40 hover:bg-muted/20 flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 transition-colors"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{d.title}</p>
+                  <p className="truncate text-sm font-semibold">{d.title}</p>
                   <VendorMuted className="text-xs">
                     {d.amount} exposure
                   </VendorMuted>
@@ -368,7 +373,8 @@ export function DashboardHome() {
                 <Link
                   href="/disputes"
                   className={cn(
-                    buttonVariants({ variant: "outline", size: "xs" })
+                    buttonVariants({ variant: "outline", size: "xs" }),
+                    "rounded-lg border-border/50 hover:border-primary/30 hover:bg-primary/5"
                   )}
                 >
                   Review
@@ -381,14 +387,16 @@ export function DashboardHome() {
 
       <div className="grid gap-4 lg:grid-cols-12">
         <DashboardCard className="gap-0 py-0 lg:col-span-4">
-          <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Wallet className="text-muted-foreground size-4" />
+          <DashboardCardHeader className="border-border/40 border-b px-4 py-3.5">
+            <div className="flex items-center gap-2.5">
+              <div className="bg-primary/10 flex size-8 items-center justify-center rounded-lg">
+                <Wallet className="text-primary size-4" />
+              </div>
               <div>
-                <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
                   Treasury
                 </DashboardCardDescription>
-                <DashboardCardTitle className="text-base">
+                <DashboardCardTitle className="text-base font-semibold">
                   Payout summary
                 </DashboardCardTitle>
               </div>
@@ -396,19 +404,22 @@ export function DashboardHome() {
           </DashboardCardHeader>
           <DashboardCardContent className="space-y-3 px-4 py-4">
             <div>
-              <VendorMuted className="text-xs">Available now</VendorMuted>
-              <p className="text-2xl font-semibold tabular-nums">
+              <VendorMuted className="text-xs font-medium">Available now</VendorMuted>
+              <p className="text-[26px] font-bold tabular-nums tracking-tight mt-1">
                 {formatCurrency(metrics.payoutReady)}
               </p>
             </div>
-            <Separator />
+            <Separator className="bg-border/40" />
             <div className="flex items-center justify-between text-sm">
-              <VendorMuted>Next transfer</VendorMuted>
-              <span className="font-medium">{metrics.payoutNextDate}</span>
+              <VendorMuted className="font-medium">Next transfer</VendorMuted>
+              <span className="font-semibold">{metrics.payoutNextDate}</span>
             </div>
             <Link
               href="/payouts"
-              className={cn(buttonVariants({ size: "sm" }), "w-full")}
+              className={cn(
+                buttonVariants({ size: "sm" }),
+                "w-full rounded-xl font-semibold"
+              )}
             >
               Payouts
             </Link>
@@ -416,28 +427,28 @@ export function DashboardHome() {
         </DashboardCard>
 
         <DashboardCard className="gap-0 py-0 lg:col-span-8">
-          <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
-            <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+          <DashboardCardHeader className="border-border/40 border-b px-4 py-3.5">
+            <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
               Activity
             </DashboardCardDescription>
-            <DashboardCardTitle className="text-base">
+            <DashboardCardTitle className="text-base font-semibold">
               Recent activity
             </DashboardCardTitle>
           </DashboardCardHeader>
           <DashboardCardContent className="max-h-[min(420px,55vh)] space-y-0 overflow-y-auto px-0 py-0">
-            <ul className="divide-border/50 divide-y">
+            <ul className="divide-border/40 divide-y">
               {metrics.activity.map((a) => (
                 <li
                   key={a.id}
                   className={cn(
-                    "flex gap-3 px-4 py-3",
-                    a.tone === "warn" && "border-l-2 border-l-amber-500/80",
-                    a.tone === "ok" && "border-l-2 border-l-emerald-500/70",
-                    a.tone === "info" && "border-l-2 border-l-sky-500/70"
+                    "flex gap-3 px-4 py-3 transition-colors hover:bg-muted/20",
+                    a.tone === "warn" && "border-l-[3px] border-l-warning/80",
+                    a.tone === "ok" && "border-l-[3px] border-l-success/70",
+                    a.tone === "info" && "border-l-[3px] border-l-info/70"
                   )}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm leading-snug font-medium">
+                    <p className="text-sm leading-snug font-semibold">
                       {a.label}
                     </p>
                     <VendorMuted className="text-xs">{a.time}</VendorMuted>

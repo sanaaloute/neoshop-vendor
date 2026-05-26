@@ -8,16 +8,16 @@ const statusVariants = cva("", {
   variants: {
     status: {
       success:
-        "border-emerald-500/25 bg-emerald-500/10 text-emerald-300 dark:text-emerald-200",
+        "border-success/30 bg-success/10 text-success dark:text-success/90",
       warning:
-        "border-amber-500/25 bg-amber-500/10 text-amber-200 dark:text-amber-100",
+        "border-warning/30 bg-warning/10 text-warning dark:text-warning/90",
       danger:
-        "border-destructive/30 bg-destructive/15 text-destructive dark:text-red-200",
-      info: "border-sky-500/25 bg-sky-500/10 text-sky-200 dark:text-sky-100",
+        "border-danger/30 bg-danger/10 text-danger dark:text-danger/90",
+      info: "border-info/30 bg-info/10 text-info dark:text-info/90",
       neutral:
         "border-border/80 bg-muted/60 text-muted-foreground dark:text-muted-foreground",
       pending:
-        "border-primary/25 bg-primary/10 text-primary dark:text-primary-foreground/90",
+        "border-primary/30 bg-primary/10 text-primary dark:text-primary-foreground/90",
     },
   },
   defaultVariants: {

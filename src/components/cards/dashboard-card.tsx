@@ -11,7 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const shell =
-  "relative overflow-hidden rounded-xl border border-border/60 bg-card/80 shadow-vendor-card ring-1 ring-white/5 backdrop-blur-md dark:bg-card/60 dark:ring-white/10";
+  "relative overflow-hidden rounded-2xl border border-border/50 bg-card/70 shadow-vendor-card ring-1 ring-white/[0.07] backdrop-blur-xl transition-all duration-300 hover:border-primary/20 dark:bg-card/50 dark:ring-white/[0.08]";
 
 export function DashboardCard({
   className,
@@ -24,7 +24,7 @@ export function DashboardCardHeader({
   className,
   ...props
 }: ComponentProps<typeof CardHeader>) {
-  return <CardHeader className={cn("gap-1", className)} {...props} />;
+  return <CardHeader className={cn("gap-1.5", className)} {...props} />;
 }
 
 export function DashboardCardTitle({
@@ -59,7 +59,10 @@ export function DashboardCardFooter({
 }: ComponentProps<typeof CardFooter>) {
   return (
     <CardFooter
-      className={cn("border-border/60 bg-muted/30", className)}
+      className={cn(
+        "border-border/50 bg-muted/20 backdrop-blur-sm",
+        className
+      )}
       {...props}
     />
   );

@@ -1,9 +1,4 @@
-import bundleAnalyzer from "@next/bundle-analyzer";
 import type { NextConfig } from "next";
-
-const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env.ANALYZE === "true",
-});
 
 function getApiOrigin(): string | null {
   try {
@@ -82,4 +77,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withBundleAnalyzer(nextConfig);
+export default nextConfig;

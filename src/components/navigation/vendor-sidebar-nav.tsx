@@ -35,7 +35,9 @@ export function VendorSidebarNav({
   );
 
   return (
-    <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-3">
+    <nav className="relative flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-3">
+      <div className="pointer-events-none absolute top-4 bottom-4 left-0 w-px bg-gradient-to-b from-transparent via-border/60 to-transparent" />
+
       {navItems.map((item) => {
         const active =
           pathname === item.href ||
@@ -48,19 +50,23 @@ export function VendorSidebarNav({
             title={collapsed ? item.label : undefined}
             onClick={onNavigate}
             className={cn(
-              "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
+              "group relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition-all duration-200",
               active
-                ? "bg-primary/15 text-primary"
-                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                ? "bg-primary/[0.12] text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
               collapsed && "justify-center px-0"
             )}
           >
+            {active && (
+              <span className="absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+            )}
+
             <Icon
               className={cn(
-                "size-4 shrink-0",
+                "size-[18px] shrink-0 transition-colors",
                 active
                   ? "text-primary"
-                  : "text-muted-foreground group-hover:text-foreground"
+                  : "text-muted-foreground/70 group-hover:text-foreground/80"
               )}
             />
             {!collapsed ? (
@@ -69,7 +75,7 @@ export function VendorSidebarNav({
                 {item.href === "/notifications" && notifUnread > 0 ? (
                   <Badge
                     variant="secondary"
-                    className="h-5 shrink-0 justify-center px-1.5 text-[10px] tabular-nums"
+                    className="h-5 shrink-0 justify-center px-1.5 text-[10px] tabular-nums bg-primary/15 text-primary border-primary/20"
                   >
                     {notifUnread > 99 ? "99+" : notifUnread}
                   </Badge>
@@ -89,7 +95,7 @@ export function VendorSidebarNav({
 
         return (
           <Tooltip key={item.href}>
-            <TooltipTrigger className="flex w-full justify-center rounded-lg">
+            <TooltipTrigger className="flex w-full justify-center rounded-xl">
               {link}
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={8}>

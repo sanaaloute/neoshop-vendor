@@ -33,18 +33,20 @@ export function VendorTopNav({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
-        "border-border/60 bg-background/75 shadow-vendor-card sticky top-0 z-30 flex flex-col gap-3 border-b px-3 py-3 backdrop-blur-xl md:px-4",
+        "border-border/40 bg-background/60 sticky top-0 z-30 flex flex-col gap-3 border-b px-3 py-3 backdrop-blur-2xl md:px-4",
+        "dark:border-white/[0.05]",
         className
       )}
     >
+      <div className="pointer-events-none absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+
       <div className="flex flex-wrap items-center gap-2 md:gap-3">
-        {/* Left side */}
         <div className="flex flex-1 items-center gap-2">
           <Button
             type="button"
             variant="outline"
             size="icon-sm"
-            className="md:hidden"
+            className="border-border/50 rounded-lg md:hidden"
             onClick={onOpenMobileSidebar}
             aria-label="Open navigation"
           >
@@ -52,10 +54,8 @@ export function VendorTopNav({
           </Button>
         </div>
 
-        {/* Center — search */}
         <VendorSearch ref={searchRef} className="w-full max-w-md" />
 
-        {/* Right side */}
         <div className="flex flex-1 items-center justify-end gap-1.5 sm:gap-2">
           <VendorRealtimeStatus
             state={realtimeState}

@@ -19,6 +19,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { refreshTokensClient } from "@/services/auth-refresh-client";
 import { useAuthStore } from "@/store/auth-store";
+import { cn } from "@/lib/utils";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -102,16 +103,25 @@ export function LoginForm() {
   const isSignup = mode === "signup";
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="text-center">
-        <CardTitle>{isSignup ? "Create vendor account" : "Vendor sign in"}</CardTitle>
-        <CardDescription>
+    <Card className={cn(
+      "w-full max-w-md glass-surface relative overflow-hidden rounded-2xl border border-border/50 shadow-vendor-card"
+    )}>
+      <div className="pointer-events-none absolute top-0 right-0 h-32 w-32 rounded-full bg-radial from-primary/20 to-transparent opacity-60 blur-2xl" />
+
+      <CardHeader className="relative text-center pb-4">
+        <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
+          <span className="text-primary text-sm font-extrabold tracking-tight">NS</span>
+        </div>
+        <CardTitle className="text-xl font-bold tracking-tight">
+          {isSignup ? "Create vendor account" : "Vendor sign in"}
+        </CardTitle>
+        <CardDescription className="text-muted-foreground/80">
           {isSignup
             ? "Register to access the vendor dashboard."
             : "Sign in with your vendor account."}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="relative space-y-4">
         {isSignup ? (
           <VendorForm<SignupValues>
             key="signup"
@@ -156,11 +166,11 @@ export function LoginForm() {
                   autoComplete="new-password"
                 />
                 {error ? (
-                  <VendorMuted className="text-destructive">{error}</VendorMuted>
+                  <VendorMuted className="text-destructive text-sm">{error}</VendorMuted>
                 ) : null}
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full rounded-xl font-semibold"
                   disabled={form.formState.isSubmitting}
                 >
                   {form.formState.isSubmitting
@@ -204,11 +214,11 @@ export function LoginForm() {
                   autoComplete="current-password"
                 />
                 {error ? (
-                  <VendorMuted className="text-destructive">{error}</VendorMuted>
+                  <VendorMuted className="text-destructive text-sm">{error}</VendorMuted>
                 ) : null}
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full rounded-xl font-semibold"
                   disabled={form.formState.isSubmitting}
                 >
                   {form.formState.isSubmitting ? "Signing in…" : "Sign in"}
@@ -224,7 +234,7 @@ export function LoginForm() {
               Already have an account?{" "}
               <button
                 type="button"
-                className="text-primary font-medium underline-offset-4 hover:underline"
+                className="text-primary font-semibold underline-offset-4 hover:underline transition-colors"
                 onClick={() => setMode("login")}
               >
                 Sign in
@@ -235,7 +245,7 @@ export function LoginForm() {
               New vendor?{" "}
               <button
                 type="button"
-                className="text-primary font-medium underline-offset-4 hover:underline"
+                className="text-primary font-semibold underline-offset-4 hover:underline transition-colors"
                 onClick={() => setMode("signup")}
               >
                 Create an account
@@ -244,7 +254,7 @@ export function LoginForm() {
           )}
         </div>
 
-        <VendorMuted className="text-center text-xs">
+        <VendorMuted className="text-center text-xs leading-relaxed">
           After sign-up, complete vendor onboarding (business details and verification) from your dashboard when prompted.
         </VendorMuted>
       </CardContent>

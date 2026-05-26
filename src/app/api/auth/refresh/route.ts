@@ -20,6 +20,8 @@ function cookieBase() {
 export async function POST(request: Request) {
   const gateway = getGatewayUrl();
   if (!gateway) {
+    // If no gateway URL is configured, we can't refresh against an external
+    // service. Return 503 but DO NOT delete cookies — the client may retry.
     return NextResponse.json({ error: "gateway_not_configured" }, { status: 503 });
   }
 
@@ -54,11 +56,18 @@ export async function POST(request: Request) {
   }
 
   if (!upstream.ok) {
-    jar.delete(AUTH_COOKIES.access);
-    jar.delete(AUTH_COOKIES.refresh);
-    jar.delete(AUTH_COOKIES.sessionId);
-    clearVendorCsrfCookie(jar);
-    return NextResponse.json({ error: "refresh_failed" }, { status: 401 });
+    const status = upstream.status;
+    // Only permanently clear cookies on definitive auth failures.
+    // Transient errors (5xx, network issues) should preserve cookies
+    // so the client can retry refresh later.
+    const isAuthError = status === 401 || status === 403;
+    if (isAuthError) {
+      jar.delete(AUTH_COOKIES.access);
+      jar.delete(AUTH_COOKIES.refresh);
+      jar.delete(AUTH_COOKIES.sessionId);
+      clearVendorCsrfCookie(jar);
+    }
+    return NextResponse.json({ error: "refresh_failed" }, { status: isAuthError ? 401 : 502 });
   }
 
   const payload = (await upstream.json()) as {
@@ -68,10 +77,8 @@ export async function POST(request: Request) {
   };
 
   if (!payload.accessToken) {
-    jar.delete(AUTH_COOKIES.access);
-    jar.delete(AUTH_COOKIES.refresh);
-    jar.delete(AUTH_COOKIES.sessionId);
-    clearVendorCsrfCookie(jar);
+    // Upstream returned OK but no access token — this is a broken response.
+    // Don't delete cookies; let the client retry.
     return NextResponse.json({ error: "invalid_upstream" }, { status: 502 });
   }
 

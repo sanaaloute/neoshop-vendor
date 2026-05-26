@@ -89,11 +89,11 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!session.ok) {
-    // If the access token is expired but we have a refresh token,
+    // If the access token is expired or missing but we have a refresh token,
     // let the request through — the client-side AuthProvider will
     // refresh the token. Redirecting here causes a jarring logout
     // flash on every SSR navigation after token expiry.
-    if (session.reason === "expired" && session.hasRefresh) {
+    if (session.hasRefresh && (session.reason === "expired" || session.reason === "no_access")) {
       return NextResponse.next();
     }
 
