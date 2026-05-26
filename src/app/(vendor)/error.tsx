@@ -20,10 +20,12 @@ export default function VendorErrorBoundary({
   return (
     <FeaturePageShell
       title="Something went wrong"
-      description="We encountered an unexpected issue loading this page."
       className="items-center justify-center text-center"
     >
       <div className="flex flex-col items-center gap-4">
+        <p className="text-muted-foreground text-sm">
+          We encountered an unexpected issue loading this page.
+        </p>
         <p className="text-muted-foreground text-sm">
           {error.message || "Please try again or contact support if the problem persists."}
         </p>

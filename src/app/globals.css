@@ -99,45 +99,45 @@
 }
 
 .dark {
-  /* Cool neutral + indigo-accent B2B vendor shell */
-  --background: oklch(0.14 0.02 264);
-  --foreground: oklch(0.97 0.01 264);
-  --card: oklch(0.18 0.025 264);
-  --card-foreground: oklch(0.97 0.01 264);
-  --popover: oklch(0.17 0.028 264);
-  --popover-foreground: oklch(0.97 0.01 264);
-  --primary: oklch(0.72 0.14 264);
-  --primary-foreground: oklch(0.14 0.04 264);
-  --secondary: oklch(0.24 0.03 264);
-  --secondary-foreground: oklch(0.95 0.01 264);
-  --muted: oklch(0.23 0.03 264);
-  --muted-foreground: oklch(0.72 0.02 264);
-  --accent: oklch(0.26 0.04 264);
-  --accent-foreground: oklch(0.97 0.01 264);
-  --destructive: oklch(0.62 0.2 25);
-  --border: oklch(0.3 0.03 264);
-  --input: oklch(0.3 0.03 264);
-  --ring: oklch(0.72 0.14 264);
-  --chart-1: oklch(0.72 0.14 264);
-  --chart-2: oklch(0.66 0.12 210);
-  --chart-3: oklch(0.72 0.11 150);
-  --chart-4: oklch(0.78 0.12 55);
-  --chart-5: oklch(0.68 0.14 310);
-  --sidebar: oklch(0.12 0.028 264);
-  --sidebar-foreground: oklch(0.95 0.01 264);
-  --sidebar-primary: oklch(0.72 0.14 264);
-  --sidebar-primary-foreground: oklch(0.14 0.04 264);
-  --sidebar-accent: oklch(0.2 0.03 264);
-  --sidebar-accent-foreground: oklch(0.97 0.01 264);
-  --sidebar-border: oklch(0.26 0.03 264);
-  --sidebar-ring: oklch(0.72 0.14 264);
-  --success: oklch(0.6 0.14 150);
-  --success-foreground: oklch(0.1 0.03 150);
-  --warning: oklch(0.7 0.14 85);
-  --warning-foreground: oklch(0.12 0.03 85);
-  --info: oklch(0.6 0.14 210);
-  --info-foreground: oklch(0.1 0.03 210);
-  --danger: oklch(0.62 0.2 25);
+  /* Deep space command center */
+  --background: oklch(0.08 0.02 264);
+  --foreground: oklch(0.97 0.005 264);
+  --card: oklch(0.105 0.03 264);
+  --card-foreground: oklch(0.97 0.005 264);
+  --popover: oklch(0.11 0.035 264);
+  --popover-foreground: oklch(0.97 0.005 264);
+  --primary: oklch(0.62 0.22 280);
+  --primary-foreground: oklch(0.08 0.04 280);
+  --secondary: oklch(0.15 0.04 264);
+  --secondary-foreground: oklch(0.92 0.015 264);
+  --muted: oklch(0.14 0.03 264);
+  --muted-foreground: oklch(0.58 0.02 264);
+  --accent: oklch(0.18 0.05 264);
+  --accent-foreground: oklch(0.97 0.005 264);
+  --destructive: oklch(0.58 0.22 25);
+  --border: oklch(0.22 0.03 264);
+  --input: oklch(0.2 0.03 264);
+  --ring: oklch(0.62 0.22 280);
+  --chart-1: oklch(0.62 0.22 280);
+  --chart-2: oklch(0.65 0.18 195);
+  --chart-3: oklch(0.6 0.16 150);
+  --chart-4: oklch(0.7 0.16 85);
+  --chart-5: oklch(0.6 0.2 320);
+  --sidebar: oklch(0.07 0.025 264);
+  --sidebar-foreground: oklch(0.92 0.015 264);
+  --sidebar-primary: oklch(0.62 0.22 280);
+  --sidebar-primary-foreground: oklch(0.08 0.04 280);
+  --sidebar-accent: oklch(0.13 0.04 264);
+  --sidebar-accent-foreground: oklch(0.97 0.005 264);
+  --sidebar-border: oklch(0.18 0.03 264);
+  --sidebar-ring: oklch(0.62 0.22 280);
+  --success: oklch(0.6 0.16 150);
+  --success-foreground: oklch(0.08 0.03 150);
+  --warning: oklch(0.7 0.16 85);
+  --warning-foreground: oklch(0.1 0.03 85);
+  --info: oklch(0.6 0.16 195);
+  --info-foreground: oklch(0.08 0.03 195);
+  --danger: oklch(0.58 0.22 25);
   --danger-foreground: oklch(0.98 0.005 25);
 }
 
@@ -156,64 +156,92 @@
   }
 }
 
-/* Premium shell: subtle page wash */
+/* ── Deep space nebula background ── */
 .vendor-app-bg {
   background-color: var(--background);
   background-image:
     radial-gradient(
-      120% 80% at 10% -10%,
+      140% 100% at 0% 0%,
       color-mix(in oklch, var(--primary) 18%, transparent) 0%,
       transparent 55%
     ),
     radial-gradient(
-      90% 60% at 100% 0%,
-      color-mix(in oklch, var(--chart-2) 12%, transparent) 0%,
-      transparent 50%
+      100% 80% at 100% 0%,
+      color-mix(in oklch, var(--chart-2) 14%, transparent) 0%,
+      transparent 45%
     ),
     radial-gradient(
       80% 60% at 50% 100%,
-      color-mix(in oklch, var(--chart-5) 8%, transparent) 0%,
+      color-mix(in oklch, var(--chart-5) 10%, transparent) 0%,
       transparent 50%
     );
 }
 
+/* ── Shadow system ── */
 @utility shadow-vendor-card {
   box-shadow:
-    0 1px 1px color-mix(in oklch, var(--foreground) 8%, transparent),
-    0 22px 52px color-mix(in oklch, black 42%, transparent);
-}
-
-.dark .shadow-vendor-card {
-  box-shadow:
-    0 1px 0 color-mix(in oklch, white 8%, transparent),
-    0 0 0 1px color-mix(in oklch, white 5%, transparent),
-    0 28px 70px color-mix(in oklch, black 55%, transparent);
+    0 1px 0 color-mix(in oklch, white 5%, transparent),
+    0 0 0 1px color-mix(in oklch, white 3%, transparent),
+    0 32px 80px color-mix(in oklch, black 60%, transparent);
 }
 
 @utility shadow-glow-primary {
   box-shadow:
-    0 0 20px color-mix(in oklch, var(--primary) 20%, transparent),
-    0 0 60px color-mix(in oklch, var(--primary) 8%, transparent);
+    0 0 24px color-mix(in oklch, var(--primary) 22%, transparent),
+    0 0 80px color-mix(in oklch, var(--primary) 8%, transparent);
 }
 
 @utility shadow-glow-success {
   box-shadow:
-    0 0 20px color-mix(in oklch, var(--success) 20%, transparent),
-    0 0 60px color-mix(in oklch, var(--success) 8%, transparent);
+    0 0 24px color-mix(in oklch, var(--success) 22%, transparent),
+    0 0 80px color-mix(in oklch, var(--success) 8%, transparent);
 }
 
+@utility shadow-glow-danger {
+  box-shadow:
+    0 0 24px color-mix(in oklch, var(--danger) 22%, transparent),
+    0 0 80px color-mix(in oklch, var(--danger) 8%, transparent);
+}
+
+/* ── Radial gradient utility ── */
 @utility bg-radial {
   background-image: radial-gradient(circle at center, var(--tw-gradient-stops));
 }
 
+/* ── Glass surface ── */
 @utility glass-surface {
-  background: color-mix(in oklch, var(--card) 65%, transparent);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
+  background: color-mix(in oklch, var(--card) 55%, transparent);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid color-mix(in oklch, var(--border) 45%, transparent);
 }
 
 .dark .glass-surface {
-  background: color-mix(in oklch, var(--card) 50%, transparent);
-  border: 1px solid color-mix(in oklch, white 6%, transparent);
+  background: color-mix(in oklch, var(--card) 45%, transparent);
+  border: 1px solid color-mix(in oklch, white 5%, transparent);
+}
+
+/* ── Neon text glow ── */
+@utility text-glow-primary {
+  text-shadow: 0 0 20px color-mix(in oklch, var(--primary) 40%, transparent);
+}
+
+@utility text-glow-success {
+  text-shadow: 0 0 20px color-mix(in oklch, var(--success) 40%, transparent);
+}
+
+@utility text-glow-danger {
+  text-shadow: 0 0 20px color-mix(in oklch, var(--danger) 40%, transparent);
+}
+
+@utility text-glow-warning {
+  text-shadow: 0 0 20px color-mix(in oklch, var(--warning) 40%, transparent);
+}
+
+/* ── Neon border glow ── */
+@utility border-glow-primary {
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklch, white 6%, transparent),
+    0 0 0 1px color-mix(in oklch, var(--primary) 20%, transparent),
+    0 0 30px color-mix(in oklch, var(--primary) 10%, transparent);
 }

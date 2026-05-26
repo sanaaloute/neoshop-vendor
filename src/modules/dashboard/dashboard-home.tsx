@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, MessageSquare, Radio, Wallet } from "lucide-react";
+import { ArrowRight, MessageSquare, Radio, Wallet, AlertTriangle, Package, TrendingUp } from "lucide-react";
 
 import { GatewaySyncBanner } from "@/components/feedback/gateway-sync-banner";
 import { AnalyticsWidget } from "@/components/charts/analytics-widget";
@@ -16,11 +16,10 @@ import { StatusBadge } from "@/components/cards/status-badge";
 import {
   DashboardCard,
   DashboardCardContent,
-  DashboardCardDescription,
   DashboardCardHeader,
   DashboardCardTitle,
 } from "@/components/cards/dashboard-card";
-import { VendorMuted, VendorSubheading } from "@/components/layout/typography";
+import { VendorMuted, VendorOverline } from "@/components/layout/typography";
 import { buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatPercent } from "@/lib/format";
@@ -29,21 +28,16 @@ import { useDashboardMetrics } from "@/modules/dashboard/use-dashboard-metrics";
 
 function LivePulse() {
   return (
-    <span className="border-border/50 bg-card/50 text-muted-foreground inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold backdrop-blur-sm">
+    <span className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/5 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-success backdrop-blur-sm">
       <span className="relative flex size-2">
         <motion.span
-          className="absolute inline-flex size-full rounded-full bg-success/90"
-          animate={{ scale: [1, 1.5, 1], opacity: [0.9, 0.3, 0.9] }}
-          transition={{
-            duration: 2.2,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "easeInOut",
-          }}
+          className="absolute inline-flex size-full rounded-full bg-success/80"
+          animate={{ scale: [1, 1.6, 1], opacity: [0.8, 0.2, 0.8] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         />
-        <span className="relative inline-flex size-2 rounded-full bg-success/70" />
+        <span className="relative inline-flex size-2 rounded-full bg-success" />
       </span>
-      <Radio className="size-3.5 opacity-70" aria-hidden />
-      Live metrics
+      Live
     </span>
   );
 }
@@ -82,69 +76,71 @@ export function DashboardHome() {
 
   return (
     <motion.div
-      className="space-y-5 md:space-y-6"
+      className="space-y-6 md:space-y-8"
       initial={false}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
     >
       <GatewaySyncBanner loading={syncLoading} error={syncError} />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <VendorSubheading className="text-lg font-bold">Overview</VendorSubheading>
+
+      <div className="flex items-center justify-between">
+        <VendorOverline>Command Center</VendorOverline>
         <LivePulse />
       </div>
 
+      {/* Hero Metrics */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           index={0}
-          label="Total revenue"
+          label="Revenue"
           value={formatCurrency(metrics.revenueTotal)}
-          accent="success"
-        />
-        <MetricCard
-          index={1}
-          label="Monthly sales"
-          value={formatCurrency(metrics.monthlySales)}
           accent="primary"
         />
         <MetricCard
+          index={1}
+          label="Monthly"
+          value={formatCurrency(metrics.monthlySales)}
+          accent="success"
+        />
+        <MetricCard
           index={2}
-          label="Pending orders"
+          label="Pending"
           value={metrics.pendingOrders}
           accent="warning"
         />
         <MetricCard
           index={3}
-          label="Conversion rate"
+          label="Conversion"
           value={formatPercent(metrics.conversionRate, 2)}
           accent="info"
         />
       </div>
 
+      {/* Main Chart + Side */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <DashboardCard className="h-full gap-0 py-0">
-            <DashboardCardHeader className="border-border/40 border-b px-4 py-3.5">
-              <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
-                Performance
-              </DashboardCardDescription>
-              <DashboardCardTitle className="text-base font-semibold">
-                Revenue trend
-              </DashboardCardTitle>
+            <DashboardCardHeader className="flex flex-row items-center justify-between border-b border-border/40 px-5 py-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="text-primary size-4" />
+                <DashboardCardTitle className="text-sm font-semibold">Revenue</DashboardCardTitle>
+              </div>
+              <VendorOverline>30 days</VendorOverline>
             </DashboardCardHeader>
-            <DashboardCardContent className="px-2 pt-4 pb-2 sm:px-4">
+            <DashboardCardContent className="px-3 pt-5 pb-3 sm:px-5">
               <div
                 key={chartKey}
-                className="min-h-[220px] w-full min-w-0 sm:min-h-[260px]"
+                className="min-h-[220px] w-full min-w-0 sm:min-h-[280px]"
               >
                 {chartsReady ? (
                   <DashboardAreaChart
                     data={metrics.revenueSeries}
                     gradientId="rev-grad"
-                    height={260}
+                    height={280}
                   />
                 ) : (
                   <div
-                    className="bg-muted/30 h-[260px] w-full animate-pulse rounded-xl"
+                    className="bg-muted/20 h-[280px] w-full animate-pulse rounded-lg"
                     aria-hidden
                   />
                 )}
@@ -155,15 +151,10 @@ export function DashboardHome() {
 
         <div className="flex flex-col gap-4">
           <DashboardCard className="gap-0 py-0">
-            <DashboardCardHeader className="border-border/40 border-b px-4 py-3.5">
-              <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
-                Sales rhythm
-              </DashboardCardDescription>
-              <DashboardCardTitle className="text-base font-semibold">
-                This week
-              </DashboardCardTitle>
+            <DashboardCardHeader className="border-b border-border/40 px-5 py-4">
+              <VendorOverline>Weekly</VendorOverline>
             </DashboardCardHeader>
-            <DashboardCardContent className="px-2 pt-4 pb-2 sm:px-4">
+            <DashboardCardContent className="px-3 pt-5 pb-3 sm:px-5">
               <div
                 key={`${chartKey}-wk`}
                 className="min-h-[160px] w-full min-w-0"
@@ -177,7 +168,7 @@ export function DashboardHome() {
                   />
                 ) : (
                   <div
-                    className="bg-muted/30 h-[180px] w-full animate-pulse rounded-xl"
+                    className="bg-muted/20 h-[180px] w-full animate-pulse rounded-lg"
                     aria-hidden
                   />
                 )}
@@ -193,81 +184,49 @@ export function DashboardHome() {
         </div>
       </div>
 
+      {/* Products + Variants */}
       <div className="grid gap-4 lg:grid-cols-2">
         <DashboardCard className="h-full gap-0 py-0">
-          <DashboardCardHeader className="border-border/40 flex flex-row items-center justify-between border-b px-4 py-3.5">
-            <div>
-              <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
-                Catalog
-              </DashboardCardDescription>
-              <DashboardCardTitle className="text-base font-semibold">
-                Best products
-              </DashboardCardTitle>
+          <DashboardCardHeader className="flex flex-row items-center justify-between border-b border-border/40 px-5 py-4">
+            <div className="flex items-center gap-2">
+              <Package className="text-chart-3 size-4" />
+              <DashboardCardTitle className="text-sm font-semibold">Top Products</DashboardCardTitle>
             </div>
-            <Link
-              href="/products"
-              className={cn(
-                buttonVariants({ variant: "ghost", size: "sm" }),
-                "gap-1 rounded-lg text-muted-foreground hover:text-foreground"
-              )}
-            >
-              View
-              <ArrowRight className="size-4" />
-            </Link>
           </DashboardCardHeader>
-          <DashboardCardContent className="px-4 py-4">
+          <DashboardCardContent className="px-5 py-5">
             <DashboardMiniBars data={bestBarData} valuePrefix="$" />
           </DashboardCardContent>
         </DashboardCard>
 
         <DashboardCard className="h-full gap-0 py-0">
-          <DashboardCardHeader className="border-border/40 flex flex-row items-center justify-between border-b px-4 py-3.5">
-            <div>
-              <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
-                Variants
-              </DashboardCardDescription>
-              <DashboardCardTitle className="text-base font-semibold">
-                Top movers
-              </DashboardCardTitle>
+          <DashboardCardHeader className="flex flex-row items-center justify-between border-b border-border/40 px-5 py-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="text-chart-4 size-4" />
+              <DashboardCardTitle className="text-sm font-semibold">Top Variants</DashboardCardTitle>
             </div>
-            <Link
-              href="/variants"
-              className={cn(
-                buttonVariants({ variant: "ghost", size: "sm" }),
-                "gap-1 rounded-lg text-muted-foreground hover:text-foreground"
-              )}
-            >
-              View
-              <ArrowRight className="size-4" />
-            </Link>
           </DashboardCardHeader>
-          <DashboardCardContent className="px-4 py-4">
+          <DashboardCardContent className="px-5 py-5">
             <DashboardMiniBars data={variantBarData} />
           </DashboardCardContent>
         </DashboardCard>
       </div>
 
+      {/* Alerts + Messages + Disputes */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <DashboardCard className="h-full gap-0 py-0">
-          <DashboardCardHeader className="border-border/40 border-b px-4 py-3.5">
-            <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
-              Stock
-            </DashboardCardDescription>
-            <DashboardCardTitle className="text-base font-semibold">
-              Inventory alerts
-            </DashboardCardTitle>
+          <DashboardCardHeader className="flex items-center gap-2 border-b border-border/40 px-5 py-4">
+            <AlertTriangle className="text-danger size-4" />
+            <DashboardCardTitle className="text-sm font-semibold">Alerts</DashboardCardTitle>
           </DashboardCardHeader>
-          <DashboardCardContent className="space-y-3 px-4 py-4">
+          <DashboardCardContent className="space-y-2 px-5 py-4">
             {metrics.inventoryAlerts.map((row) => (
               <div
                 key={row.sku}
-                className="border-border/40 bg-muted/15 hover:bg-muted/25 flex items-start justify-between gap-3 rounded-xl border px-3 py-2.5 transition-colors"
+                className="flex items-start justify-between gap-3 rounded-lg border border-border/30 bg-muted/10 px-3 py-2.5 transition-colors hover:bg-muted/20"
               >
                 <div className="min-w-0">
-                  <p className="text-foreground truncate text-sm font-semibold">
-                    {row.name}
-                  </p>
-                  <VendorMuted className="text-xs">{row.sku}</VendorMuted>
+                  <p className="truncate text-sm font-semibold">{row.name}</p>
+                  <VendorMuted className="text-[11px]">{row.sku}</VendorMuted>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   <StatusBadge
@@ -281,62 +240,37 @@ export function DashboardHome() {
                   >
                     {row.severity}
                   </StatusBadge>
-                  <span className="text-muted-foreground text-xs tabular-nums font-medium">
-                    {row.qty} left
+                  <span className="text-muted-foreground text-[11px] tabular-nums font-medium">
+                    {row.qty}
                   </span>
                 </div>
               </div>
             ))}
-            <Link
-              href="/inventory"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "w-full rounded-xl border-border/50 hover:border-primary/30 hover:bg-primary/5"
-              )}
-            >
-              Open inventory
-            </Link>
           </DashboardCardContent>
         </DashboardCard>
 
         <DashboardCard className="h-full gap-0 py-0">
-          <DashboardCardHeader className="border-border/40 flex flex-row items-center justify-between border-b px-4 py-3.5">
-            <div>
-              <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
-                Inbox
-              </DashboardCardDescription>
-              <DashboardCardTitle className="text-base font-semibold">
-                Customer messages
-              </DashboardCardTitle>
-            </div>
-            <Link
-              href="/chat"
-              className={cn(
-                buttonVariants({ variant: "ghost", size: "sm" }),
-                "gap-1 rounded-lg text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Open
-              <MessageSquare className="size-4" />
-            </Link>
+          <DashboardCardHeader className="flex items-center gap-2 border-b border-border/40 px-5 py-4">
+            <MessageSquare className="text-chart-2 size-4" />
+            <DashboardCardTitle className="text-sm font-semibold">Inbox</DashboardCardTitle>
           </DashboardCardHeader>
-          <DashboardCardContent className="divide-border/40 divide-y px-0 py-0">
+          <DashboardCardContent className="divide-y divide-border/30 px-0 py-0">
             {metrics.messages.map((m) => (
               <Link
                 key={m.id}
                 href="/chat"
                 className={cn(
-                  "hover:bg-muted/30 block px-4 py-3 transition-colors",
-                  m.unread && "bg-primary/[0.04]"
+                  "block px-5 py-3 transition-colors hover:bg-muted/20",
+                  m.unread && "bg-primary/[0.03]"
                 )}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-semibold">{m.from}</span>
                   {m.unread ? (
-                    <span className="bg-primary size-2 rounded-full shadow-[0_0_6px_rgba(99,102,241,0.5)]" />
+                    <span className="bg-primary size-2 rounded-full shadow-[0_0_8px_rgba(139,92,246,0.6)]" />
                   ) : null}
                 </div>
-                <VendorMuted className="mt-0.5 line-clamp-2 text-xs">
+                <VendorMuted className="mt-0.5 line-clamp-2 text-[11px]">
                   {m.preview}
                 </VendorMuted>
               </Link>
@@ -345,36 +279,28 @@ export function DashboardHome() {
         </DashboardCard>
 
         <DashboardCard className="h-full gap-0 py-0 md:col-span-2 xl:col-span-1">
-          <DashboardCardHeader className="border-border/40 flex flex-row items-center justify-between border-b px-4 py-3.5">
-            <div>
-              <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
-                Risk
-              </DashboardCardDescription>
-              <DashboardCardTitle className="text-base font-semibold">
-                Dispute alerts
-              </DashboardCardTitle>
+          <DashboardCardHeader className="flex items-center justify-between border-b border-border/40 px-5 py-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="text-warning size-4" />
+              <DashboardCardTitle className="text-sm font-semibold">Risk</DashboardCardTitle>
             </div>
-            <StatusBadge status="warning">
-              {metrics.disputesOpen} open
-            </StatusBadge>
+            <StatusBadge status="warning">{metrics.disputesOpen} open</StatusBadge>
           </DashboardCardHeader>
-          <DashboardCardContent className="space-y-3 px-4 py-4">
+          <DashboardCardContent className="space-y-2 px-5 py-4">
             {metrics.disputeAlerts.map((d) => (
               <div
                 key={d.id}
-                className="border-border/40 hover:bg-muted/20 flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 transition-colors"
+                className="flex items-center justify-between gap-3 rounded-lg border border-border/30 px-3 py-2.5 transition-colors hover:bg-muted/20"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold">{d.title}</p>
-                  <VendorMuted className="text-xs">
-                    {d.amount} exposure
-                  </VendorMuted>
+                  <VendorMuted className="text-[11px]">{d.amount}</VendorMuted>
                 </div>
                 <Link
                   href="/disputes"
                   className={cn(
                     buttonVariants({ variant: "outline", size: "xs" }),
-                    "rounded-lg border-border/50 hover:border-primary/30 hover:bg-primary/5"
+                    "rounded-md border-border/40 text-[11px]"
                   )}
                 >
                   Review
@@ -385,41 +311,30 @@ export function DashboardHome() {
         </DashboardCard>
       </div>
 
+      {/* Treasury + Activity */}
       <div className="grid gap-4 lg:grid-cols-12">
         <DashboardCard className="gap-0 py-0 lg:col-span-4">
-          <DashboardCardHeader className="border-border/40 border-b px-4 py-3.5">
-            <div className="flex items-center gap-2.5">
-              <div className="bg-primary/10 flex size-8 items-center justify-center rounded-lg">
-                <Wallet className="text-primary size-4" />
-              </div>
-              <div>
-                <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
-                  Treasury
-                </DashboardCardDescription>
-                <DashboardCardTitle className="text-base font-semibold">
-                  Payout summary
-                </DashboardCardTitle>
-              </div>
+          <DashboardCardHeader className="flex items-center gap-2.5 border-b border-border/40 px-5 py-4">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+              <Wallet className="text-primary size-4" />
             </div>
+            <DashboardCardTitle className="text-sm font-semibold">Treasury</DashboardCardTitle>
           </DashboardCardHeader>
-          <DashboardCardContent className="space-y-3 px-4 py-4">
+          <DashboardCardContent className="space-y-4 px-5 py-5">
             <div>
-              <VendorMuted className="text-xs font-medium">Available now</VendorMuted>
-              <p className="text-[26px] font-bold tabular-nums tracking-tight mt-1">
+              <VendorMuted className="text-[11px] font-medium uppercase tracking-wider">Available</VendorMuted>
+              <p className="mt-1 text-[28px] font-bold tabular-nums tracking-tighter">
                 {formatCurrency(metrics.payoutReady)}
               </p>
             </div>
-            <Separator className="bg-border/40" />
+            <Separator className="bg-border/30" />
             <div className="flex items-center justify-between text-sm">
-              <VendorMuted className="font-medium">Next transfer</VendorMuted>
+              <VendorMuted className="text-[11px]">Next</VendorMuted>
               <span className="font-semibold">{metrics.payoutNextDate}</span>
             </div>
             <Link
               href="/payouts"
-              className={cn(
-                buttonVariants({ size: "sm" }),
-                "w-full rounded-xl font-semibold"
-              )}
+              className={cn(buttonVariants({ size: "sm" }), "w-full rounded-lg font-semibold")}
             >
               Payouts
             </Link>
@@ -427,31 +342,24 @@ export function DashboardHome() {
         </DashboardCard>
 
         <DashboardCard className="gap-0 py-0 lg:col-span-8">
-          <DashboardCardHeader className="border-border/40 border-b px-4 py-3.5">
-            <DashboardCardDescription className="text-muted-foreground/80 text-[11px] font-semibold tracking-widest uppercase">
-              Activity
-            </DashboardCardDescription>
-            <DashboardCardTitle className="text-base font-semibold">
-              Recent activity
-            </DashboardCardTitle>
+          <DashboardCardHeader className="border-b border-border/40 px-5 py-4">
+            <DashboardCardTitle className="text-sm font-semibold">Activity</DashboardCardTitle>
           </DashboardCardHeader>
           <DashboardCardContent className="max-h-[min(420px,55vh)] space-y-0 overflow-y-auto px-0 py-0">
-            <ul className="divide-border/40 divide-y">
+            <ul className="divide-y divide-border/30">
               {metrics.activity.map((a) => (
                 <li
                   key={a.id}
                   className={cn(
-                    "flex gap-3 px-4 py-3 transition-colors hover:bg-muted/20",
-                    a.tone === "warn" && "border-l-[3px] border-l-warning/80",
-                    a.tone === "ok" && "border-l-[3px] border-l-success/70",
-                    a.tone === "info" && "border-l-[3px] border-l-info/70"
+                    "flex gap-3 px-5 py-3 transition-colors hover:bg-muted/20",
+                    a.tone === "warn" && "border-l-[3px] border-l-warning/70",
+                    a.tone === "ok" && "border-l-[3px] border-l-success/60",
+                    a.tone === "info" && "border-l-[3px] border-l-info/60"
                   )}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm leading-snug font-semibold">
-                      {a.label}
-                    </p>
-                    <VendorMuted className="text-xs">{a.time}</VendorMuted>
+                    <p className="text-sm font-semibold leading-snug">{a.label}</p>
+                    <VendorMuted className="text-[11px]">{a.time}</VendorMuted>
                   </div>
                 </li>
               ))}

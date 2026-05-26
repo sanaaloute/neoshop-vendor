@@ -19,7 +19,6 @@ type DashboardAreaChartProps = {
   className?: string;
   height?: number;
   gradientId: string;
-  /** CSS color for stroke / gradient stops, e.g. `var(--color-chart-2)` */
   accentColor?: string;
 };
 
@@ -44,32 +43,41 @@ export function DashboardAreaChart({
         >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={accentColor} stopOpacity={0.45} />
+              <stop offset="0%" stopColor={accentColor} stopOpacity={0.55} />
+              <stop offset="60%" stopColor={accentColor} stopOpacity={0.15} />
               <stop offset="100%" stopColor={accentColor} stopOpacity={0} />
             </linearGradient>
+            <filter id={`glow-${gradientId}`}>
+              <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
           </defs>
           <CartesianGrid
             strokeDasharray="3 6"
-            className="stroke-border/60"
+            stroke="color-mix(in oklch, var(--color-border) 25%, transparent)"
             vertical={false}
           />
           <XAxis
             dataKey="label"
             tickLine={false}
             axisLine={false}
-            tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }}
+            tick={{ fill: "var(--color-muted-foreground)", fontSize: 10, opacity: 0.5 }}
             dy={6}
           />
           <YAxis hide domain={["auto", "auto"]} />
           <Tooltip
             cursor={{ stroke: "var(--color-border)", strokeDasharray: "4 4" }}
             contentStyle={{
-              background: "var(--color-popover)",
-              border:
-                "1px solid color-mix(in oklch, var(--color-border) 80%, transparent)",
-              borderRadius: "10px",
+              background: "color-mix(in oklch, var(--color-popover) 80%, transparent)",
+              border: "1px solid color-mix(in oklch, var(--color-primary) 30%, transparent)",
+              borderRadius: "8px",
               fontSize: "12px",
               color: "var(--color-popover-foreground)",
+              backdropFilter: "blur(12px)",
+              boxShadow: "0 0 20px color-mix(in oklch, var(--color-primary) 15%, transparent)",
             }}
             formatter={(value) => [
               typeof value === "number"
@@ -83,10 +91,11 @@ export function DashboardAreaChart({
             type="monotone"
             dataKey="value"
             stroke={accentColor}
-            strokeWidth={2}
+            strokeWidth={2.5}
             fill={`url(#${gradientId})`}
+            filter={`url(#glow-${gradientId})`}
             isAnimationActive
-            animationDuration={900}
+            animationDuration={1200}
             animationEasing="ease-out"
           />
         </AreaChart>

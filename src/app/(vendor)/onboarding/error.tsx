@@ -19,9 +19,11 @@ export default function OnboardingErrorBoundary({
   return (
     <FeaturePageShell
       title="Onboarding interrupted"
-      description="We ran into a problem while setting up your vendor account."
     >
       <div className="flex flex-col items-start gap-4">
+        <p className="text-muted-foreground text-sm">
+          We ran into a problem while setting up your vendor account.
+        </p>
         <p className="text-muted-foreground text-sm">
           {error.message || "Please try again or contact support."}
         </p>

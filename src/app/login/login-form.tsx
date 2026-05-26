@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -40,7 +39,6 @@ const signupSchema = z
 type LoginValues = z.infer<typeof loginSchema>;
 type SignupValues = z.infer<typeof signupSchema>;
 
-/** Reject absolute and protocol-relative URLs from `?next=` (open-redirect hardening). */
 function safePostLoginPath(next: string | null): string {
   if (!next) return "/dashboard";
   if (!next.startsWith("/") || next.startsWith("//")) return "/dashboard";
@@ -52,14 +50,14 @@ function mapAuthError(e: unknown, mode: "login" | "signup"): string {
   switch (e.message) {
     case "not_vendor":
       return mode === "signup"
-        ? "Account was created, but this portal requires an active vendor role. Contact marketplace support if you believe this is a mistake."
+        ? "Account was created, but this portal requires an active vendor role."
         : "This portal is restricted to vendor accounts.";
     case "signup_confirm_email":
       return "Check your email to confirm your address, then sign in.";
     case "sign_in_no_session":
-      return "Sign-in did not return a session. Try again or confirm your email.";
+      return "Sign-in did not return a session. Try again.";
     case "signup_no_tokens":
-      return "Sign-up succeeded but no session was returned. Check your email to verify your account, then sign in.";
+      return "Sign-up succeeded but no session was returned. Check your email.";
     default: {
       const m = e.message;
       if (
@@ -104,24 +102,19 @@ export function LoginForm() {
 
   return (
     <Card className={cn(
-      "w-full max-w-md glass-surface relative overflow-hidden rounded-2xl border border-border/50 shadow-vendor-card"
+      "w-full max-w-sm glass-surface relative overflow-hidden rounded-xl border border-border/40 shadow-vendor-card"
     )}>
-      <div className="pointer-events-none absolute top-0 right-0 h-32 w-32 rounded-full bg-radial from-primary/20 to-transparent opacity-60 blur-2xl" />
+      <div className="pointer-events-none absolute top-0 right-0 h-32 w-32 rounded-full bg-radial from-primary/25 to-transparent opacity-50 blur-2xl" />
 
-      <CardHeader className="relative text-center pb-4">
-        <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
-          <span className="text-primary text-sm font-extrabold tracking-tight">NS</span>
+      <CardHeader className="relative text-center pb-2 pt-6">
+        <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-chart-2/20 ring-1 ring-primary/20">
+          <span className="text-primary text-lg font-black tracking-tight text-glow-primary">N</span>
         </div>
         <CardTitle className="text-xl font-bold tracking-tight">
-          {isSignup ? "Create vendor account" : "Vendor sign in"}
+          {isSignup ? "Create account" : "Sign in"}
         </CardTitle>
-        <CardDescription className="text-muted-foreground/80">
-          {isSignup
-            ? "Register to access the vendor dashboard."
-            : "Sign in with your vendor account."}
-        </CardDescription>
       </CardHeader>
-      <CardContent className="relative space-y-4">
+      <CardContent className="relative space-y-4 px-6 pb-6">
         {isSignup ? (
           <VendorForm<SignupValues>
             key="signup"
@@ -146,7 +139,7 @@ export function LoginForm() {
                 <VendorTextField
                   control={form.control}
                   name="email"
-                  label="Work email"
+                  label="Email"
                   placeholder="you@company.com"
                   type="email"
                   autoComplete="email"
@@ -161,21 +154,21 @@ export function LoginForm() {
                 <VendorPasswordField
                   control={form.control}
                   name="confirmPassword"
-                  label="Confirm password"
+                  label="Confirm"
                   placeholder="••••••••"
                   autoComplete="new-password"
                 />
                 {error ? (
-                  <VendorMuted className="text-destructive text-sm">{error}</VendorMuted>
+                  <VendorMuted className="text-destructive text-xs">{error}</VendorMuted>
                 ) : null}
                 <Button
                   type="submit"
-                  className="w-full rounded-xl font-semibold"
+                  className="w-full rounded-lg font-semibold"
                   disabled={form.formState.isSubmitting}
                 >
                   {form.formState.isSubmitting
-                    ? "Creating account…"
-                    : "Create vendor account"}
+                    ? "Creating…"
+                    : "Create account"}
                 </Button>
               </>
             )}
@@ -201,7 +194,7 @@ export function LoginForm() {
                 <VendorTextField
                   control={form.control}
                   name="email"
-                  label="Work email"
+                  label="Email"
                   placeholder="you@company.com"
                   type="email"
                   autoComplete="email"
@@ -214,11 +207,11 @@ export function LoginForm() {
                   autoComplete="current-password"
                 />
                 {error ? (
-                  <VendorMuted className="text-destructive text-sm">{error}</VendorMuted>
+                  <VendorMuted className="text-destructive text-xs">{error}</VendorMuted>
                 ) : null}
                 <Button
                   type="submit"
-                  className="w-full rounded-xl font-semibold"
+                  className="w-full rounded-lg font-semibold"
                   disabled={form.formState.isSubmitting}
                 >
                   {form.formState.isSubmitting ? "Signing in…" : "Sign in"}
@@ -230,8 +223,8 @@ export function LoginForm() {
 
         <div className="text-center text-sm">
           {isSignup ? (
-            <p className="text-muted-foreground">
-              Already have an account?{" "}
+            <p className="text-muted-foreground text-xs">
+              Have an account?{" "}
               <button
                 type="button"
                 className="text-primary font-semibold underline-offset-4 hover:underline transition-colors"
@@ -241,22 +234,18 @@ export function LoginForm() {
               </button>
             </p>
           ) : (
-            <p className="text-muted-foreground">
-              New vendor?{" "}
+            <p className="text-muted-foreground text-xs">
+              New?{" "}
               <button
                 type="button"
                 className="text-primary font-semibold underline-offset-4 hover:underline transition-colors"
                 onClick={() => setMode("signup")}
               >
-                Create an account
+                Create account
               </button>
             </p>
           )}
         </div>
-
-        <VendorMuted className="text-center text-xs leading-relaxed">
-          After sign-up, complete vendor onboarding (business details and verification) from your dashboard when prompted.
-        </VendorMuted>
       </CardContent>
     </Card>
   );

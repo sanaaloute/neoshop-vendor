@@ -11,7 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const shell =
-  "relative overflow-hidden rounded-2xl border border-border/50 bg-card/70 shadow-vendor-card ring-1 ring-white/[0.07] backdrop-blur-xl transition-all duration-300 hover:border-primary/20 dark:bg-card/50 dark:ring-white/[0.08]";
+  "relative overflow-hidden rounded-xl border border-border/40 bg-card/60 shadow-vendor-card backdrop-blur-xl transition-all duration-300 hover:border-primary/25 dark:bg-card/40";
 
 export function DashboardCard({
   className,
@@ -60,7 +60,7 @@ export function DashboardCardFooter({
   return (
     <CardFooter
       className={cn(
-        "border-border/50 bg-muted/20 backdrop-blur-sm",
+        "border-border/40 bg-muted/15 backdrop-blur-sm",
         className
       )}
       {...props}
