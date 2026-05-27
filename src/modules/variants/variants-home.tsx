@@ -74,7 +74,6 @@ export function VariantsHome() {
     const row = variants.find((v) => v.id === variantId);
     if (!row) return;
 
-    // Always remove from local store immediately for a responsive UI
     useVariantWorkbenchStore.getState().removeVariant(variantId);
     setSelected((prev) => {
       const next = new Set(prev);
@@ -193,7 +192,7 @@ export function VariantsHome() {
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           {saveMessage ? (
-            <span className="text-black text-xs">{saveMessage}</span>
+            <span className="text-muted-foreground text-xs">{saveMessage}</span>
           ) : null}
           <Button
             type="button"

@@ -19,12 +19,10 @@ export default function LoginErrorBoundary({
   return (
     <FeaturePageShell
       title="Sign-in unavailable"
+      description="We could not load the sign-in page."
       className="min-h-dvh max-w-full items-center justify-center text-center"
     >
       <div className="flex flex-col items-center gap-4">
-        <p className="text-muted-foreground text-sm">
-          We could not load the sign-in page.
-        </p>
         <p className="text-muted-foreground text-sm">
           {error.message || "Please try again in a moment."}
         </p>

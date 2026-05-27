@@ -33,21 +33,29 @@ export function InventoryAnalytics({
       <MetricCard
         label="On hand (filtered)"
         value={formatCompact(stats.totalOnHand)}
+        hint="Units physically in selected scope."
         index={0}
       />
       <MetricCard
         label="Available to promise"
         value={formatCompact(stats.available)}
+        hint="On hand minus reservations."
         index={1}
       />
       <MetricCard
         label="Reserved"
         value={formatCompact(stats.totalReserved)}
+        hint="Allocated to open orders / holds."
         index={2}
       />
       <MetricCard
         label="Low-stock SKUs"
         value={stats.low}
+        hint={
+          stats.critical > 0
+            ? `${stats.critical} critical vs buffer`
+            : "Within buffer"
+        }
         delta={
           stats.low > 0
             ? { label: "Review cards below", positive: false }

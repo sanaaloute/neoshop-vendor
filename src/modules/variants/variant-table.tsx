@@ -72,7 +72,7 @@ export function VariantTable({
 
   if (!variants.length) {
     return (
-      <Card className="border-gray-300 bg-white text-black border-dashed p-8 text-center text-sm shadow-inner">
+      <Card className="border-border/80 bg-muted/15 text-muted-foreground border-dashed p-8 text-center text-sm shadow-inner">
         No variants yet. Add attributes above, then click{" "}
         <strong>Generate matrix</strong>.
       </Card>
@@ -80,7 +80,7 @@ export function VariantTable({
   }
 
   return (
-    <Card className="border-gray-300 shadow-sm overflow-hidden">
+    <Card className="border-border/80 shadow-vendor-card overflow-hidden">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -124,7 +124,7 @@ export function VariantTable({
                   <ComboBadges row={row} defs={attributes} />
                 </TableCell>
                 <TableCell>
-                  <span className="bg-gray-100 block min-w-[120px] rounded-md px-2 py-1 font-mono text-xs tabular-nums">
+                  <span className="bg-muted/50 block min-w-[120px] rounded-md px-2 py-1 font-mono text-xs tabular-nums">
                     {row.sku}
                   </span>
                 </TableCell>
@@ -255,7 +255,6 @@ export function VariantTable({
                       variant="ghost"
                       size="icon-sm"
                       title="Delete variant"
-                      className="text-red-600 hover:text-red-700"
                       onClick={() => onDelete(row.id)}
                     >
                       <Trash2 className="size-4" aria-hidden />
@@ -267,7 +266,7 @@ export function VariantTable({
           </TableBody>
         </Table>
       </div>
-      <div className="border-gray-300 bg-gray-100 text-black border-t px-3 py-2 text-xs">
+      <div className="border-border bg-muted/20 text-muted-foreground border-t px-3 py-2 text-xs">
         {variants.length} row{variants.length === 1 ? "" : "s"} · quick price
         check:{" "}
         {formatCurrency(

@@ -24,22 +24,19 @@ export function DashboardMiniBars({
       {data.map((row, i) => {
         const pct = Math.round((row.value / max) * 100);
         return (
-          <li key={`${row.label}-${i}`} className="group space-y-1">
+          <li key={`${row.label}-${i}`} className="space-y-1.5">
             <div className="flex items-center justify-between gap-2 text-xs">
-              <span className="text-muted-foreground/60 truncate text-[11px] font-medium transition-colors group-hover:text-muted-foreground">
+              <span className="text-muted-foreground truncate">
                 {row.label}
               </span>
-              <span className="text-foreground/80 shrink-0 tabular-nums text-[11px] font-semibold">
+              <span className="text-foreground shrink-0 tabular-nums">
                 {valuePrefix}
                 {row.value.toLocaleString()}
               </span>
             </div>
-            <div className="bg-muted/30 h-1.5 overflow-hidden rounded-full">
+            <div className="bg-muted h-2 overflow-hidden rounded-full">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-chart-2 via-chart-1 to-chart-3"
-                style={{
-                  filter: "drop-shadow(0 0 4px color-mix(in oklch, var(--color-chart-1) 50%, transparent))",
-                }}
+                className="from-chart-2 via-chart-3 to-chart-1 h-full rounded-full bg-gradient-to-r"
                 initial={false}
                 animate={{ width: `${pct}%` }}
                 transition={{

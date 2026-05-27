@@ -40,14 +40,6 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-  --color-info: var(--info);
-  --color-info-foreground: var(--info-foreground);
-  --color-danger: var(--danger);
-  --color-danger-foreground: var(--danger-foreground);
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
   --radius-2xl: calc(var(--radius) * 1.8);
@@ -86,58 +78,43 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --success: oklch(0.55 0.14 150);
-  --success-foreground: oklch(0.98 0.005 150);
-  --warning: oklch(0.55 0.22 25);
-  --warning-foreground: oklch(0.98 0 0);
-  --info: oklch(0.55 0.18 145);
-  --info-foreground: oklch(0.08 0 0);
-  --danger: oklch(0.577 0.245 27.325);
-  --danger-foreground: oklch(0.98 0.005 27.325);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
 }
 
 .dark {
-  --background: oklch(0.08 0 0);
-  --foreground: oklch(0.97 0 0);
-  --card: oklch(0.12 0 0);
-  --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.14 0 0);
-  --popover-foreground: oklch(0.97 0 0);
-  --primary: oklch(0.55 0.18 145);
-  --primary-foreground: oklch(0.08 0 0);
-  --secondary: oklch(0.18 0 0);
-  --secondary-foreground: oklch(0.97 0 0);
-  --muted: oklch(0.18 0 0);
-  --muted-foreground: oklch(0.65 0 0);
-  --accent: oklch(0.22 0 0);
-  --accent-foreground: oklch(0.97 0 0);
-  --destructive: oklch(0.55 0.22 25);
-  --border: oklch(0.25 0 0);
-  --input: oklch(0.22 0 0);
-  --ring: oklch(0.55 0.18 145);
-  --chart-1: oklch(0.6 0.18 145);
-  --chart-2: oklch(0.6 0.22 25);
-  --chart-3: oklch(0.97 0 0);
-  --chart-4: oklch(0.5 0 0);
-  --chart-5: oklch(0.2 0 0);
-  --sidebar: oklch(0.06 0 0);
-  --sidebar-foreground: oklch(0.92 0 0);
-  --sidebar-primary: oklch(0.55 0.18 145);
-  --sidebar-primary-foreground: oklch(0.08 0 0);
-  --sidebar-accent: oklch(0.14 0 0);
-  --sidebar-accent-foreground: oklch(0.97 0 0);
-  --sidebar-border: oklch(0.2 0 0);
-  --sidebar-ring: oklch(0.55 0.18 145);
-  --success: oklch(0.55 0.18 145);
-  --success-foreground: oklch(0.08 0 0);
-  --warning: oklch(0.6 0.2 25);
-  --warning-foreground: oklch(0.98 0 0);
-  --info: oklch(0.55 0.18 145);
-  --info-foreground: oklch(0.08 0 0);
-  --danger: oklch(0.55 0.22 25);
-  --danger-foreground: oklch(0.98 0 0);
+  /* Cool neutral + indigo-accent B2B vendor shell */
+  --background: oklch(0.14 0.02 264);
+  --foreground: oklch(0.97 0.01 264);
+  --card: oklch(0.18 0.025 264);
+  --card-foreground: oklch(0.97 0.01 264);
+  --popover: oklch(0.17 0.028 264);
+  --popover-foreground: oklch(0.97 0.01 264);
+  --primary: oklch(0.72 0.14 264);
+  --primary-foreground: oklch(0.14 0.04 264);
+  --secondary: oklch(0.24 0.03 264);
+  --secondary-foreground: oklch(0.95 0.01 264);
+  --muted: oklch(0.23 0.03 264);
+  --muted-foreground: oklch(0.72 0.02 264);
+  --accent: oklch(0.26 0.04 264);
+  --accent-foreground: oklch(0.97 0.01 264);
+  --destructive: oklch(0.62 0.2 25);
+  --border: oklch(0.3 0.03 264);
+  --input: oklch(0.3 0.03 264);
+  --ring: oklch(0.72 0.14 264);
+  --chart-1: oklch(0.72 0.14 264);
+  --chart-2: oklch(0.66 0.12 210);
+  --chart-3: oklch(0.72 0.11 150);
+  --chart-4: oklch(0.78 0.12 55);
+  --chart-5: oklch(0.68 0.14 310);
+  --sidebar: oklch(0.12 0.028 264);
+  --sidebar-foreground: oklch(0.95 0.01 264);
+  --sidebar-primary: oklch(0.72 0.14 264);
+  --sidebar-primary-foreground: oklch(0.14 0.04 264);
+  --sidebar-accent: oklch(0.2 0.03 264);
+  --sidebar-accent-foreground: oklch(0.97 0.01 264);
+  --sidebar-border: oklch(0.26 0.03 264);
+  --sidebar-ring: oklch(0.72 0.14 264);
 }
 
 @layer base {
@@ -155,82 +132,30 @@
   }
 }
 
-/* ── App background ── */
+/* Premium shell: subtle page wash */
 .vendor-app-bg {
   background-color: var(--background);
   background-image:
     radial-gradient(
-      140% 100% at 0% 0%,
-      color-mix(in oklch, var(--primary) 10%, transparent) 0%,
+      120% 80% at 10% -10%,
+      color-mix(in oklch, var(--primary) 18%, transparent) 0%,
       transparent 55%
+    ),
+    radial-gradient(
+      90% 60% at 100% 0%,
+      color-mix(in oklch, var(--chart-2) 12%, transparent) 0%,
+      transparent 50%
     );
 }
 
-/* ── Shadow system ── */
 @utility shadow-vendor-card {
   box-shadow:
-    0 1px 0 color-mix(in oklch, white 5%, transparent),
-    0 0 0 1px color-mix(in oklch, white 3%, transparent),
-    0 32px 80px color-mix(in oklch, black 60%, transparent);
+    0 1px 1px color-mix(in oklch, var(--foreground) 8%, transparent),
+    0 22px 52px color-mix(in oklch, black 42%, transparent);
 }
 
-@utility shadow-glow-primary {
+.dark .shadow-vendor-card {
   box-shadow:
-    0 0 24px color-mix(in oklch, var(--primary) 22%, transparent),
-    0 0 80px color-mix(in oklch, var(--primary) 8%, transparent);
-}
-
-@utility shadow-glow-success {
-  box-shadow:
-    0 0 24px color-mix(in oklch, var(--success) 22%, transparent),
-    0 0 80px color-mix(in oklch, var(--success) 8%, transparent);
-}
-
-@utility shadow-glow-danger {
-  box-shadow:
-    0 0 24px color-mix(in oklch, var(--danger) 22%, transparent),
-    0 0 80px color-mix(in oklch, var(--danger) 8%, transparent);
-}
-
-/* ── Radial gradient utility ── */
-@utility bg-radial {
-  background-image: radial-gradient(circle at center, var(--tw-gradient-stops));
-}
-
-/* ── Glass surface ── */
-@utility glass-surface {
-  background: color-mix(in oklch, var(--card) 55%, transparent);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid color-mix(in oklch, var(--border) 45%, transparent);
-}
-
-.dark .glass-surface {
-  background: color-mix(in oklch, var(--card) 45%, transparent);
-  border: 1px solid color-mix(in oklch, white 5%, transparent);
-}
-
-/* ── Neon text glow ── */
-@utility text-glow-primary {
-  text-shadow: 0 0 20px color-mix(in oklch, var(--primary) 40%, transparent);
-}
-
-@utility text-glow-success {
-  text-shadow: 0 0 20px color-mix(in oklch, var(--success) 40%, transparent);
-}
-
-@utility text-glow-danger {
-  text-shadow: 0 0 20px color-mix(in oklch, var(--danger) 40%, transparent);
-}
-
-@utility text-glow-warning {
-  text-shadow: 0 0 20px color-mix(in oklch, var(--warning) 40%, transparent);
-}
-
-/* ── Neon border glow ── */
-@utility border-glow-primary {
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklch, white 6%, transparent),
-    0 0 0 1px color-mix(in oklch, var(--primary) 20%, transparent),
-    0 0 30px color-mix(in oklch, var(--primary) 10%, transparent);
+    0 1px 0 color-mix(in oklch, white 8%, transparent),
+    0 28px 70px color-mix(in oklch, black 55%, transparent);
 }

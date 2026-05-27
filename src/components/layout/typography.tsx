@@ -2,14 +2,11 @@ import type { ComponentProps } from "react";
 
 import { cn } from "@/lib/utils";
 
-export function VendorDisplay({
-  className,
-  ...props
-}: ComponentProps<"h1">) {
+export function VendorDisplay({ className, ...props }: ComponentProps<"h1">) {
   return (
     <h1
       className={cn(
-        "font-heading text-2xl font-bold tracking-tight md:text-3xl",
+        "font-heading text-foreground text-3xl font-semibold tracking-tight md:text-4xl",
         className
       )}
       {...props}
@@ -17,14 +14,11 @@ export function VendorDisplay({
   );
 }
 
-export function VendorHeading({
-  className,
-  ...props
-}: ComponentProps<"h2">) {
+export function VendorHeading({ className, ...props }: ComponentProps<"h2">) {
   return (
     <h2
       className={cn(
-        "font-heading text-xl font-semibold tracking-tight",
+        "font-heading text-foreground text-xl font-semibold tracking-tight",
         className
       )}
       {...props}
@@ -39,7 +33,7 @@ export function VendorSubheading({
   return (
     <h3
       className={cn(
-        "font-heading text-base font-medium leading-snug tracking-tight",
+        "font-heading text-foreground text-base leading-snug font-medium",
         className
       )}
       {...props}
@@ -47,53 +41,26 @@ export function VendorSubheading({
   );
 }
 
-export function VendorBody({
-  className,
-  ...props
-}: ComponentProps<"p">) {
+export function VendorBody({ className, ...props }: ComponentProps<"p">) {
   return (
     <p
-      className={cn("text-sm leading-relaxed text-black", className)}
+      className={cn("text-foreground/90 text-sm leading-relaxed", className)}
       {...props}
     />
   );
 }
 
-export function VendorMuted({
-  className,
-  ...props
-}: ComponentProps<"p">) {
+export function VendorMuted({ className, ...props }: ComponentProps<"p">) {
   return (
-    <p
-      className={cn("text-sm text-black", className)}
-      {...props}
-    />
+    <p className={cn("text-muted-foreground text-sm", className)} {...props} />
   );
 }
 
-export function VendorOverline({
-  className,
-  ...props
-}: ComponentProps<"p">) {
+export function VendorOverline({ className, ...props }: ComponentProps<"p">) {
   return (
     <p
       className={cn(
-        "text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500",
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-export function VendorMono({
-  className,
-  ...props
-}: ComponentProps<"span">) {
-  return (
-    <span
-      className={cn(
-        "font-mono text-sm tabular-nums tracking-tighter",
+        "text-muted-foreground text-xs font-medium tracking-wider uppercase",
         className
       )}
       {...props}

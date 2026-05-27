@@ -35,12 +35,12 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "border-gray-300 bg-white flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-6 py-12 text-center shadow-inner",
+        "border-border/70 bg-muted/20 flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-6 py-12 text-center shadow-inner",
         className
       )}
     >
       {icon ? (
-        <div className="border-gray-300 bg-white text-black shadow-sm flex size-12 items-center justify-center rounded-2xl border">
+        <div className="border-border/60 bg-card/60 text-muted-foreground shadow-vendor-card flex size-12 items-center justify-center rounded-2xl border">
           {icon}
         </div>
       ) : null}

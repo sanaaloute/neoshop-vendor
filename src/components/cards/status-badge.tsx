@@ -8,16 +8,16 @@ const statusVariants = cva("", {
   variants: {
     status: {
       success:
-        "border-success/40 bg-success/10 text-success shadow-[0_0_12px_rgba(34,197,94,0.15)]",
+        "border-emerald-500/25 bg-emerald-500/10 text-emerald-300 dark:text-emerald-200",
       warning:
-        "border-warning/40 bg-warning/10 text-warning shadow-[0_0_12px_rgba(239,68,68,0.15)]",
+        "border-amber-500/25 bg-amber-500/10 text-amber-200 dark:text-amber-100",
       danger:
-        "border-danger/40 bg-danger/10 text-danger shadow-[0_0_12px_rgba(239,68,68,0.15)]",
-      info: "border-info/40 bg-info/10 text-info shadow-[0_0_12px_rgba(34,197,94,0.15)]",
+        "border-destructive/30 bg-destructive/15 text-destructive dark:text-red-200",
+      info: "border-sky-500/25 bg-sky-500/10 text-sky-200 dark:text-sky-100",
       neutral:
-        "border-border/60 bg-muted/40 text-muted-foreground",
+        "border-border/80 bg-muted/60 text-muted-foreground dark:text-muted-foreground",
       pending:
-        "border-primary/40 bg-primary/10 text-primary shadow-[0_0_12px_rgba(34,197,94,0.15)]",
+        "border-primary/25 bg-primary/10 text-primary dark:text-primary-foreground/90",
     },
   },
   defaultVariants: {
@@ -39,7 +39,7 @@ export function StatusBadge({
     <Badge
       variant="outline"
       className={cn(
-        "rounded-md border px-2 py-0.5 text-[10px] font-semibold tracking-widest uppercase",
+        "rounded-full border px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase",
         statusVariants({ status }),
         className
       )}

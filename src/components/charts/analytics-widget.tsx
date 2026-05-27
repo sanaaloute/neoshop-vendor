@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import {
   DashboardCard,
   DashboardCardContent,
+  DashboardCardDescription,
   DashboardCardHeader,
   DashboardCardTitle,
 } from "@/components/cards/dashboard-card";
@@ -22,6 +23,7 @@ type AnalyticsWidgetProps = {
   title: string;
   subtitle?: string;
   action?: ReactNode;
+  /** 0–100 for primary progress */
   primaryProgress?: number;
   series?: AnalyticsSeriesPoint[];
   className?: string;
@@ -49,14 +51,12 @@ export function AnalyticsWidget({
       transition={{ delay: index * 0.05 }}
     >
       <DashboardCard className={cn("gap-0 py-0", className)}>
-        <DashboardCardHeader className="border-border/40 flex flex-row items-start justify-between gap-3 border-b px-4 py-3">
-          <div className="space-y-0.5">
-            {subtitle ? (
-              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/50">
-                {subtitle}
-              </span>
-            ) : null}
-            <DashboardCardTitle className="text-sm font-semibold">
+        <DashboardCardHeader className="border-border/50 flex flex-row items-start justify-between gap-3 border-b px-4 py-3">
+          <div className="space-y-1">
+            <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+              {subtitle ?? "Insight"}
+            </DashboardCardDescription>
+            <DashboardCardTitle className="text-base">
               {title}
             </DashboardCardTitle>
           </div>
@@ -65,9 +65,9 @@ export function AnalyticsWidget({
         <DashboardCardContent className="space-y-4 px-4 py-4">
           {typeof primaryProgress === "number" ? (
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground/50 text-[10px] uppercase tracking-wider">Rate</span>
-                <span className="text-foreground tabular-nums text-sm font-bold">
+              <div className="text-muted-foreground flex items-center justify-between text-xs">
+                <span>Progress</span>
+                <span className="text-foreground tabular-nums">
                   {Math.round(primaryProgress)}%
                 </span>
               </div>
@@ -79,14 +79,14 @@ export function AnalyticsWidget({
               {series.map((row) => {
                 const pct = max ? Math.round((row.value / max) * 100) : 0;
                 return (
-                  <li key={row.label} className="space-y-1">
+                  <li key={row.label} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground/60 text-[11px]">{row.label}</span>
-                      <span className="text-foreground tabular-nums text-[11px] font-semibold">
+                      <span className="text-muted-foreground">{row.label}</span>
+                      <span className="text-foreground tabular-nums">
                         {row.value}
                       </span>
                     </div>
-                    <div className="bg-muted/30 h-1 overflow-hidden rounded-full">
+                    <div className="bg-muted h-1.5 overflow-hidden rounded-full">
                       <div
                         className="from-chart-1 via-chart-3 to-chart-5 h-full rounded-full bg-gradient-to-r"
                         style={{ width: `${pct}%` }}

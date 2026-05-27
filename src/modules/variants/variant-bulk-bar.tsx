@@ -52,7 +52,7 @@ export function VariantBulkBar({
   };
 
   return (
-    <Card className="border-gray-300 bg-gray-50 shadow-sm p-4">
+    <Card className="border-primary/30 bg-primary/5 shadow-vendor-card p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <p className="text-sm font-medium">
           Bulk update ({selected.size} selected)

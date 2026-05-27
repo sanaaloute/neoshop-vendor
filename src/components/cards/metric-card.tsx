@@ -8,40 +8,28 @@ import { cn } from "@/lib/utils";
 
 import {
   DashboardCard,
+  DashboardCardContent,
+  DashboardCardDescription,
   DashboardCardHeader,
+  DashboardCardTitle,
 } from "@/components/cards/dashboard-card";
+import { VendorMuted } from "@/components/layout/typography";
 
 type MetricCardProps = Omit<ComponentProps<typeof DashboardCard>, "title"> & {
   label: string;
   value: ReactNode;
+  hint?: string;
   delta?: { label: string; positive?: boolean };
   index?: number;
-  accent?: "primary" | "success" | "warning" | "info" | "danger";
-};
-
-const accentGlowMap = {
-  primary: "shadow-glow-primary",
-  success: "shadow-glow-success",
-  warning: "shadow-glow-warning",
-  info: "shadow-glow-info",
-  danger: "shadow-glow-danger",
-};
-
-const accentTextMap = {
-  primary: "text-primary text-glow-primary",
-  success: "text-success text-glow-success",
-  warning: "text-warning text-glow-warning",
-  info: "text-info text-glow-info",
-  danger: "text-danger text-glow-danger",
 };
 
 export function MetricCard({
   label,
   value,
+  hint,
   delta,
   className,
   index = 0,
-  accent = "primary",
   ...props
 }: MetricCardProps) {
   return (
@@ -49,35 +37,33 @@ export function MetricCard({
       variants={fadeUp}
       initial={false}
       animate="show"
-      transition={{ delay: index * 0.08 }}
+      transition={{ delay: index * 0.05 }}
     >
-      <DashboardCard
-        className={cn(
-          "group gap-0 py-0 overflow-hidden border-glow-primary",
-          className
-        )}
-        {...props}
-      >
-        <DashboardCardHeader className="px-5 py-5 relative">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/50 transition-colors group-hover:text-muted-foreground/70">
+      <DashboardCard className={cn("gap-0 py-0", className)} {...props}>
+        <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
+          <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
             {label}
-          </span>
-          <div className="mt-2 text-[32px] font-bold tabular-nums tracking-tighter leading-none">
+          </DashboardCardDescription>
+          <DashboardCardTitle className="mt-1 text-2xl font-semibold tabular-nums">
             {value}
-          </div>
+          </DashboardCardTitle>
           {delta ? (
-            <span
+            <VendorMuted
               className={cn(
-                "mt-2 inline-block text-xs font-semibold",
-                delta.positive === false && "text-danger",
-                delta.positive === true && "text-success",
-                delta.positive === undefined && "text-muted-foreground"
+                "mt-1 text-xs font-medium",
+                delta.positive === false && "text-destructive",
+                delta.positive === true && "text-emerald-400"
               )}
             >
               {delta.label}
-            </span>
+            </VendorMuted>
           ) : null}
         </DashboardCardHeader>
+        {hint ? (
+          <DashboardCardContent className="px-4 py-3">
+            <VendorMuted className="text-xs">{hint}</VendorMuted>
+          </DashboardCardContent>
+        ) : null}
       </DashboardCard>
     </motion.div>
   );

@@ -1,16 +1,18 @@
 import type { ReactNode } from "react";
 
-import { VendorDisplay } from "@/components/layout/typography";
+import { VendorDisplay, VendorMuted } from "@/components/layout/typography";
 import { cn } from "@/lib/utils";
 
 type FeaturePageShellProps = {
   title: string;
+  description?: string;
   children?: ReactNode;
   className?: string;
 };
 
 export function FeaturePageShell({
   title,
+  description,
   children,
   className,
 }: FeaturePageShellProps) {
@@ -21,10 +23,13 @@ export function FeaturePageShell({
         className
       )}
     >
-      <header>
-        <VendorDisplay className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-          {title}
-        </VendorDisplay>
+      <header className="space-y-2">
+        <VendorDisplay>{title}</VendorDisplay>
+        {description ? (
+          <VendorMuted className="max-w-2xl text-base">
+            {description}
+          </VendorMuted>
+        ) : null}
       </header>
       {children}
     </main>
