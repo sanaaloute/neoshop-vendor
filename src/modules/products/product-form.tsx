@@ -190,6 +190,7 @@ export function ProductForm({
   );
 
   const [tagDraft, setTagDraft] = useState("");
+  const [activeTab, setActiveTab] = useState("general");
 
   const initSnapshot = useRef(false);
   useEffect(() => {
@@ -308,7 +309,7 @@ export function ProductForm({
     <FormProvider {...form}>
       <div className="grid gap-6">
         <VendorWriteGuardBanner area="catalog" status={vendorStatus} />
-        <Tabs defaultValue="general" className="gap-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
           <TabsList variant="line" className="w-full max-w-2xl flex-wrap">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="media">Media</TabsTrigger>
@@ -395,6 +396,15 @@ export function ProductForm({
 
             <CategorySelector />
             <TagSelector tagDraft={tagDraft} setTagDraft={setTagDraft} />
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setActiveTab("media")}
+              >
+                Next →
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="media">
@@ -411,6 +421,23 @@ export function ProductForm({
               onAddFiles={handleAddFiles}
               onRemove={handleRemoveMedia}
             />
+            <div className="flex justify-between">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setActiveTab("general")}
+              >
+                ← Previous
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setActiveTab("seo")}
+              >
+                Next →
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="seo" className="grid max-w-2xl gap-4">
@@ -470,6 +497,23 @@ export function ProductForm({
                 </div>
               )}
             />
+            <div className="flex justify-between">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setActiveTab("media")}
+              >
+                ← Previous
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setActiveTab("publishing")}
+              >
+                Next →
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="publishing" className="grid max-w-xl gap-4">
@@ -544,6 +588,16 @@ export function ProductForm({
               to your marketplace rules. Use Scheduled to set a future publish
               time.
             </p>
+            <div className="flex justify-start">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setActiveTab("seo")}
+              >
+                ← Previous
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
 
@@ -560,13 +614,15 @@ export function ProductForm({
             >
               {catalogProductId ? "Save to catalog" : "Create in catalog"}
             </Button>
-            <Button
-              type="button"
-              disabled={saving || !canWriteCatalog}
-              onClick={() => void publishNow()}
-            >
-              Publish now
-            </Button>
+            {activeTab === "publishing" ? (
+              <Button
+                type="button"
+                disabled={saving || !canWriteCatalog}
+                onClick={() => void publishNow()}
+              >
+                Publish now
+              </Button>
+            ) : null}
           </div>
         </div>
       </div>
