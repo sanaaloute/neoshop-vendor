@@ -56,7 +56,7 @@ export function VendorSidebarNav({
             )}
           >
             {active && (
-              <span className="absolute top-1/2 left-0 h-6 w-[2px] -translate-y-1/2 rounded-r-full bg-primary shadow-[0_0_10px_rgba(139,92,246,0.6)]" />
+              <span className="absolute top-1/2 left-0 h-6 w-[2px] -translate-y-1/2 rounded-r-full bg-primary shadow-[0_0_10px_rgba(34,197,94,0.6)]" />
             )}
 
             <Icon

@@ -115,7 +115,7 @@ function InventoryLineCard({
       className={cn(
         "shadow-vendor-card overflow-hidden transition-colors",
         critical && "ring-destructive/40 ring-2",
-        low && !critical && "ring-1 ring-amber-500/45"
+        low && !critical && "ring-1 ring-red-500/45"
       )}
     >
       <CardHeader className="border-border/60 border-b pb-3">
@@ -133,7 +133,7 @@ function InventoryLineCard({
           </Badge>
         </div>
         {low ? (
-          <div className="mt-2 flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-1 text-xs text-amber-700 dark:text-amber-400">
+          <div className="mt-2 flex items-center gap-1.5 rounded-md bg-red-500/10 px-2 py-1 text-xs text-red-700 dark:text-red-400">
             <AlertTriangle className="size-3.5 shrink-0" aria-hidden />
             <span>
               At or below reorder ({line.onHand} ≤ {line.reorderPoint})
@@ -154,7 +154,7 @@ function InventoryLineCard({
                 critical
                   ? "bg-destructive"
                   : low
-                    ? "bg-amber-500"
+                    ? "bg-red-500"
                     : "bg-primary"
               )}
               style={{ width: `${fillPct}%` }}

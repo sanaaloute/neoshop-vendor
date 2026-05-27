@@ -116,7 +116,7 @@ export function InventoryHistory({
                 <TableCell
                   className={cn(
                     "text-right font-mono text-xs tabular-nums",
-                    m.delta > 0 && "text-emerald-600 dark:text-emerald-400",
+                    m.delta > 0 && "text-green-600 dark:text-green-400",
                     m.delta < 0 && "text-destructive"
                   )}
                 >

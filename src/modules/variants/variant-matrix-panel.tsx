@@ -51,8 +51,8 @@ export function VariantMatrixPanel() {
       : 0;
 
   return (
-    <Card className="border-border/80 shadow-vendor-card p-4 md:p-6">
-      <div className="border-border flex flex-col gap-2 border-b pb-4 md:flex-row md:items-start md:justify-between">
+    <Card className="border-gray-300 shadow-sm p-4 md:p-6">
+      <div className="border-gray-300 flex flex-col gap-2 border-b pb-4 md:flex-row md:items-start md:justify-between">
         <div>
           <h2 className="text-base font-semibold tracking-tight">
             Matrix generator
@@ -89,7 +89,7 @@ export function VariantMatrixPanel() {
           />
         </div>
 
-        <div className="border-border/80 bg-muted/20 rounded-lg border border-dashed p-3">
+        <div className="border-gray-300 bg-gray-50 rounded-lg border border-dashed p-3">
           <p className="text-foreground text-xs font-medium">
             Defaults for generated rows
           </p>
@@ -116,7 +116,7 @@ export function VariantMatrixPanel() {
               step={0.01}
             />
             <DefaultNum
-              label="Weight (g)"
+              label="Weight (g) (optional)"
               value={defaults.weightGrams}
               onChange={(weightGrams) =>
                 setDefaults((d) => ({ ...d, weightGrams }))
@@ -125,21 +125,21 @@ export function VariantMatrixPanel() {
               step={1}
             />
             <DefaultNum
-              label="L (cm)"
+              label="L (cm) (optional)"
               value={defaults.lengthCm}
               onChange={(lengthCm) => setDefaults((d) => ({ ...d, lengthCm }))}
               min={0}
               step={0.1}
             />
             <DefaultNum
-              label="W (cm)"
+              label="W (cm) (optional)"
               value={defaults.widthCm}
               onChange={(widthCm) => setDefaults((d) => ({ ...d, widthCm }))}
               min={0}
               step={0.1}
             />
             <DefaultNum
-              label="H (cm)"
+              label="H (cm) (optional)"
               value={defaults.heightCm}
               onChange={(heightCm) => setDefaults((d) => ({ ...d, heightCm }))}
               min={0}
@@ -209,12 +209,12 @@ export function VariantMatrixPanel() {
                 <button
                   key={v}
                   type="button"
-                  className="border-border bg-muted/60 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
+                  className="border-gray-300 bg-gray-100 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
                   onClick={() => removeValueFromAttribute(attr.id, v)}
                   title="Click to remove"
                 >
                   {v}
-                  <span className="text-muted-foreground">×</span>
+                  <span className="text-black">×</span>
                 </button>
               ))}
             </div>
@@ -251,7 +251,7 @@ export function VariantMatrixPanel() {
         ))}
       </div>
 
-      <div className="border-border mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:flex-wrap sm:items-end">
+      <div className="border-gray-300 mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:flex-wrap sm:items-end">
         <div className="flex flex-1 flex-wrap gap-2">
           <Input
             className="h-9 max-w-xs"
@@ -274,7 +274,7 @@ export function VariantMatrixPanel() {
           </Button>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-muted-foreground text-xs">
+          <span className="text-black text-xs">
             {canGenerate
               ? `${expectedCount} combination${expectedCount === 1 ? "" : "s"}`
               : "Each attribute needs at least one value."}
@@ -292,7 +292,7 @@ export function VariantMatrixPanel() {
       </div>
 
       {variants.length > 0 ? (
-        <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+        <p className="mt-3 text-xs text-red-600 dark:text-red-400">
           Generating replaces all {variants.length} existing variant rows with a
           fresh matrix from the current axes.
         </p>
@@ -316,7 +316,7 @@ function DefaultNum({
 }) {
   return (
     <div className="grid gap-0.5">
-      <Label className="text-muted-foreground text-[10px] tracking-wide uppercase">
+      <Label className="text-black text-[10px] tracking-wide uppercase">
         {label}
       </Label>
       <Input

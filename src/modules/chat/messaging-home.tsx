@@ -232,7 +232,7 @@ export function MessagingHome() {
           <Radio
             className={cn(
               "size-3.5",
-              liveConnected ? "text-emerald-500" : "text-muted-foreground"
+              liveConnected ? "text-green-500" : "text-muted-foreground"
             )}
             aria-hidden
           />

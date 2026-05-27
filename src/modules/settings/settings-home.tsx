@@ -391,7 +391,7 @@ export function SettingsHome() {
               <p className="text-destructive text-sm">{profileError}</p>
             ) : null}
             {profileSuccess ? (
-              <p className="text-emerald-600 text-sm">Profile saved.</p>
+              <p className="text-green-600 text-sm">Profile saved.</p>
             ) : null}
             <div className="flex justify-end">
               <Button
@@ -542,7 +542,7 @@ export function SettingsHome() {
                   <p className="text-destructive text-sm">{vendorError}</p>
                 ) : null}
                 {vendorSuccess ? (
-                  <p className="text-emerald-600 text-sm">
+                  <p className="text-green-600 text-sm">
                     Business profile saved.
                   </p>
                 ) : null}
@@ -630,13 +630,13 @@ export function SettingsHome() {
                       <p className="text-destructive text-sm">{submitError}</p>
                     ) : null}
                     {submitSuccess ? (
-                      <p className="text-emerald-600 text-sm">
+                      <p className="text-green-600 text-sm">
                         Submitted for verification successfully.
                       </p>
                     ) : null}
                   </div>
                 ) : vendorIsApprovedForOperations(vendor.status) ? (
-                  <p className="text-emerald-600 text-sm">
+                  <p className="text-green-600 text-sm">
                     Your vendor account is approved and active.
                   </p>
                 ) : null}
@@ -848,7 +848,7 @@ export function SettingsHome() {
               <p className="text-destructive text-sm">{settingsError}</p>
             ) : null}
             {settingsSuccess ? (
-              <p className="text-emerald-600 text-sm">Preferences saved.</p>
+              <p className="text-green-600 text-sm">Preferences saved.</p>
             ) : null}
             <div className="flex justify-end">
               <Button

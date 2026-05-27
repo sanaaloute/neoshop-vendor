@@ -136,7 +136,7 @@ export function OrdersHome() {
             variant="secondary"
             className="gap-1.5 font-normal tabular-nums"
           >
-            <Radio className="size-3.5 text-emerald-500" aria-hidden />
+            <Radio className="size-3.5 text-green-500" aria-hidden />
             Orders
           </Badge>
         </div>

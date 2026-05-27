@@ -86,7 +86,7 @@ function statusBadge(status: DisputeStatus) {
       return (
         <Badge
           variant="secondary"
-          className="border-emerald-500/40 bg-emerald-500/15 font-normal text-emerald-800 dark:text-emerald-200"
+          className="border-green-500/40 bg-green-500/15 font-normal text-green-800 dark:text-green-200"
         >
           Resolved
         </Badge>

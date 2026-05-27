@@ -31,7 +31,7 @@ export function DisputeWorkflow({ status, className }: DisputeWorkflowProps) {
               className={cn(
                 "flex min-w-0 flex-1 items-center gap-2 rounded-lg border px-3 py-2 text-xs sm:text-sm",
                 complete &&
-                  "border-emerald-500/40 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100",
+                  "border-green-500/40 bg-green-500/10 text-green-900 dark:text-green-100",
                 current &&
                   "border-primary/50 bg-primary/10 text-primary ring-primary/20 ring-1",
                 !complete &&
@@ -42,7 +42,7 @@ export function DisputeWorkflow({ status, className }: DisputeWorkflowProps) {
               <span
                 className={cn(
                   "flex size-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold",
-                  complete && "border-emerald-500/60 bg-emerald-500/20",
+                  complete && "border-green-500/60 bg-green-500/20",
                   current && "border-primary bg-primary/20",
                   !complete && !current && "border-border"
                 )}

@@ -23,7 +23,7 @@ export const VendorSearch = forwardRef<HTMLInputElement, VendorSearchProps>(
           id="vendor-search"
           name="vendor-search"
           placeholder="Search…"
-          className="h-9 rounded-lg border-border/40 bg-muted/20 pr-4 pl-10 text-sm backdrop-blur-sm transition-all placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-muted/30 focus:shadow-[0_0_20px_rgba(139,92,246,0.15)] focus:ring-0"
+          className="h-9 rounded-lg border-border/40 bg-muted/20 pr-4 pl-10 text-sm backdrop-blur-sm transition-all placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-muted/30 focus:shadow-[0_0_20px_rgba(34,197,94,0.15)] focus:ring-0"
           autoComplete="off"
           aria-label="Global search"
         />

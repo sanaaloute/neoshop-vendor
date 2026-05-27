@@ -131,6 +131,18 @@ export function ProductForm({
     }
   }, [watchedName, form]);
 
+  useEffect(() => {
+    if (!watchedName?.trim()) return;
+    const currentSlug = form.getValues("seo.slug");
+    const generated = slugify(watchedName);
+    if (!currentSlug || currentSlug === slugify(watchedName.slice(0, -1) || watchedName)) {
+      form.setValue("seo.slug", generated, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+  }, [watchedName, form]);
+
   const handleAddFiles = useCallback(
     (files: File[]) => {
       if (!canWriteCatalog) return;
@@ -314,14 +326,14 @@ export function ProductForm({
                 className="md:col-span-2"
               />
               <div className="grid gap-1.5">
-                <Label className="text-sm font-medium">SKU</Label>
+                <Label className="text-sm font-medium">SKU (optional)</Label>
                 <Input
                   readOnly
                   disabled
                   value={form.watch("sku")}
                   className="bg-muted/50 h-9 font-mono text-xs tabular-nums"
                 />
-                <p className="text-muted-foreground text-[10px]">
+                <p className="text-black text-[10px]">
                   Auto-generated from product name
                 </p>
               </div>
@@ -351,7 +363,7 @@ export function ProductForm({
                       ref={field.ref}
                     />
                     {fieldState.error?.message ? (
-                      <p className="text-destructive text-xs">
+                      <p className="text-red-600 text-xs">
                         {fieldState.error.message}
                       </p>
                     ) : null}
@@ -373,7 +385,7 @@ export function ProductForm({
                     {...field}
                   />
                   {fieldState.error?.message ? (
-                    <p className="text-destructive text-xs">
+                    <p className="text-red-600 text-xs">
                       {fieldState.error.message}
                     </p>
                   ) : null}
@@ -447,10 +459,10 @@ export function ProductForm({
                     aria-invalid={fieldState.invalid}
                     {...field}
                   />
-                  <div className="text-muted-foreground flex justify-between text-xs">
+                  <div className="text-black flex justify-between text-xs">
                     <span>{field.value?.length ?? 0} / 320</span>
                     {fieldState.error?.message ? (
-                      <span className="text-destructive">
+                      <span className="text-red-600">
                         {fieldState.error.message}
                       </span>
                     ) : null}
@@ -527,7 +539,7 @@ export function ProductForm({
                 )}
               />
             ) : null}
-            <p className="text-muted-foreground text-xs">
+            <p className="text-black text-xs">
               Drafts stay private. Published products appear to buyers according
               to your marketplace rules. Use Scheduled to set a future publish
               time.
@@ -535,9 +547,9 @@ export function ProductForm({
           </TabsContent>
         </Tabs>
 
-        <div className="border-border flex flex-col gap-2 border-t pt-4">
+        <div className="border-gray-300 flex flex-col gap-2 border-t pt-4">
           {saveError ? (
-            <p className="text-destructive text-sm">{saveError}</p>
+            <p className="text-red-600 text-sm">{saveError}</p>
           ) : null}
           <div className="flex flex-wrap gap-2">
             <Button
@@ -579,7 +591,7 @@ function CategorySelector() {
       </p>
       <div className="flex flex-wrap gap-2">
         {categories.length === 0 ? (
-          <p className="text-muted-foreground text-xs">
+          <p className="text-black text-xs">
             No categories available. Categories are loaded from the server.
           </p>
         ) : (
@@ -609,7 +621,7 @@ function CategorySelector() {
         )}
       </div>
       {errors.categoryIds?.message ? (
-        <p className="text-destructive text-xs">{errors.categoryIds.message}</p>
+        <p className="text-red-600 text-xs">{errors.categoryIds.message}</p>
       ) : null}
     </div>
   );
@@ -634,8 +646,8 @@ function TagSelector({
 
   return (
     <div className="grid gap-2">
-      <Label htmlFor="product-tag-input">Tags</Label>
-      <p className="text-muted-foreground text-xs">
+      <Label htmlFor="product-tag-input">Tags (optional)</Label>
+      <p className="text-black text-xs">
         Suggested tags or add your own (press Enter).
       </p>
       <div className="flex flex-wrap gap-2">

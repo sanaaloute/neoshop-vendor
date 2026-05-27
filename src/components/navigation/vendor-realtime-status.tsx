@@ -28,9 +28,9 @@ export function VendorRealtimeStatus({
 
   const dotClass =
     state === "live"
-      ? "bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.55)]"
+      ? "bg-green-400 shadow-[0_0_12px_rgba(34,197,94,0.55)]"
       : state === "degraded"
-        ? "bg-amber-400"
+        ? "bg-red-400"
         : "bg-muted-foreground/60";
 
   return (

@@ -10,14 +10,14 @@ const statusVariants = cva("", {
       success:
         "border-success/40 bg-success/10 text-success shadow-[0_0_12px_rgba(34,197,94,0.15)]",
       warning:
-        "border-warning/40 bg-warning/10 text-warning shadow-[0_0_12px_rgba(234,179,8,0.15)]",
+        "border-warning/40 bg-warning/10 text-warning shadow-[0_0_12px_rgba(239,68,68,0.15)]",
       danger:
         "border-danger/40 bg-danger/10 text-danger shadow-[0_0_12px_rgba(239,68,68,0.15)]",
-      info: "border-info/40 bg-info/10 text-info shadow-[0_0_12px_rgba(56,189,248,0.15)]",
+      info: "border-info/40 bg-info/10 text-info shadow-[0_0_12px_rgba(34,197,94,0.15)]",
       neutral:
         "border-border/60 bg-muted/40 text-muted-foreground",
       pending:
-        "border-primary/40 bg-primary/10 text-primary shadow-[0_0_12px_rgba(139,92,246,0.15)]",
+        "border-primary/40 bg-primary/10 text-primary shadow-[0_0_12px_rgba(34,197,94,0.15)]",
     },
   },
   defaultVariants: {

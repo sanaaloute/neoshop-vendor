@@ -65,7 +65,7 @@ function RatingStars({ rating }: { rating: number }) {
           key={i}
           className={`size-3.5 ${
             i < rating
-              ? "fill-amber-400 text-amber-400"
+              ? "fill-red-400 text-red-400"
               : "text-muted-foreground"
           }`}
         />

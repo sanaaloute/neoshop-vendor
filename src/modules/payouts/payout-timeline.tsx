@@ -48,7 +48,7 @@ export function PayoutTimeline({ events, className }: PayoutTimelineProps) {
                     className={cn(
                       "flex size-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
                       done &&
-                        "border-emerald-500/50 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+                        "border-green-500/50 bg-green-500/15 text-green-600 dark:text-green-400",
                       current &&
                         "border-primary/60 bg-primary/15 text-primary ring-primary/25 ring-2",
                       !done &&

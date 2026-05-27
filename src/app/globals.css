@@ -88,10 +88,10 @@
   --sidebar-ring: oklch(0.708 0 0);
   --success: oklch(0.55 0.14 150);
   --success-foreground: oklch(0.98 0.005 150);
-  --warning: oklch(0.65 0.14 85);
-  --warning-foreground: oklch(0.15 0.02 85);
-  --info: oklch(0.55 0.14 210);
-  --info-foreground: oklch(0.98 0.005 210);
+  --warning: oklch(0.55 0.22 25);
+  --warning-foreground: oklch(0.98 0 0);
+  --info: oklch(0.55 0.18 145);
+  --info-foreground: oklch(0.08 0 0);
   --danger: oklch(0.577 0.245 27.325);
   --danger-foreground: oklch(0.98 0.005 27.325);
   --background: oklch(1 0 0);
@@ -99,46 +99,45 @@
 }
 
 .dark {
-  /* Deep space command center */
-  --background: oklch(0.08 0.02 264);
-  --foreground: oklch(0.97 0.005 264);
-  --card: oklch(0.105 0.03 264);
-  --card-foreground: oklch(0.97 0.005 264);
-  --popover: oklch(0.11 0.035 264);
-  --popover-foreground: oklch(0.97 0.005 264);
-  --primary: oklch(0.62 0.22 280);
-  --primary-foreground: oklch(0.08 0.04 280);
-  --secondary: oklch(0.15 0.04 264);
-  --secondary-foreground: oklch(0.92 0.015 264);
-  --muted: oklch(0.14 0.03 264);
-  --muted-foreground: oklch(0.58 0.02 264);
-  --accent: oklch(0.18 0.05 264);
-  --accent-foreground: oklch(0.97 0.005 264);
-  --destructive: oklch(0.58 0.22 25);
-  --border: oklch(0.22 0.03 264);
-  --input: oklch(0.2 0.03 264);
-  --ring: oklch(0.62 0.22 280);
-  --chart-1: oklch(0.62 0.22 280);
-  --chart-2: oklch(0.65 0.18 195);
-  --chart-3: oklch(0.6 0.16 150);
-  --chart-4: oklch(0.7 0.16 85);
-  --chart-5: oklch(0.6 0.2 320);
-  --sidebar: oklch(0.07 0.025 264);
-  --sidebar-foreground: oklch(0.92 0.015 264);
-  --sidebar-primary: oklch(0.62 0.22 280);
-  --sidebar-primary-foreground: oklch(0.08 0.04 280);
-  --sidebar-accent: oklch(0.13 0.04 264);
-  --sidebar-accent-foreground: oklch(0.97 0.005 264);
-  --sidebar-border: oklch(0.18 0.03 264);
-  --sidebar-ring: oklch(0.62 0.22 280);
-  --success: oklch(0.6 0.16 150);
-  --success-foreground: oklch(0.08 0.03 150);
-  --warning: oklch(0.7 0.16 85);
-  --warning-foreground: oklch(0.1 0.03 85);
-  --info: oklch(0.6 0.16 195);
-  --info-foreground: oklch(0.08 0.03 195);
-  --danger: oklch(0.58 0.22 25);
-  --danger-foreground: oklch(0.98 0.005 25);
+  --background: oklch(0.08 0 0);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(0.12 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.14 0 0);
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: oklch(0.55 0.18 145);
+  --primary-foreground: oklch(0.08 0 0);
+  --secondary: oklch(0.18 0 0);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(0.18 0 0);
+  --muted-foreground: oklch(0.65 0 0);
+  --accent: oklch(0.22 0 0);
+  --accent-foreground: oklch(0.97 0 0);
+  --destructive: oklch(0.55 0.22 25);
+  --border: oklch(0.25 0 0);
+  --input: oklch(0.22 0 0);
+  --ring: oklch(0.55 0.18 145);
+  --chart-1: oklch(0.6 0.18 145);
+  --chart-2: oklch(0.6 0.22 25);
+  --chart-3: oklch(0.97 0 0);
+  --chart-4: oklch(0.5 0 0);
+  --chart-5: oklch(0.2 0 0);
+  --sidebar: oklch(0.06 0 0);
+  --sidebar-foreground: oklch(0.92 0 0);
+  --sidebar-primary: oklch(0.55 0.18 145);
+  --sidebar-primary-foreground: oklch(0.08 0 0);
+  --sidebar-accent: oklch(0.14 0 0);
+  --sidebar-accent-foreground: oklch(0.97 0 0);
+  --sidebar-border: oklch(0.2 0 0);
+  --sidebar-ring: oklch(0.55 0.18 145);
+  --success: oklch(0.55 0.18 145);
+  --success-foreground: oklch(0.08 0 0);
+  --warning: oklch(0.6 0.2 25);
+  --warning-foreground: oklch(0.98 0 0);
+  --info: oklch(0.55 0.18 145);
+  --info-foreground: oklch(0.08 0 0);
+  --danger: oklch(0.55 0.22 25);
+  --danger-foreground: oklch(0.98 0 0);
 }
 
 @layer base {
@@ -156,24 +155,14 @@
   }
 }
 
-/* ── Deep space nebula background ── */
+/* ── App background ── */
 .vendor-app-bg {
   background-color: var(--background);
   background-image:
     radial-gradient(
       140% 100% at 0% 0%,
-      color-mix(in oklch, var(--primary) 18%, transparent) 0%,
+      color-mix(in oklch, var(--primary) 10%, transparent) 0%,
       transparent 55%
-    ),
-    radial-gradient(
-      100% 80% at 100% 0%,
-      color-mix(in oklch, var(--chart-2) 14%, transparent) 0%,
-      transparent 45%
-    ),
-    radial-gradient(
-      80% 60% at 50% 100%,
-      color-mix(in oklch, var(--chart-5) 10%, transparent) 0%,
-      transparent 50%
     );
 }
 

@@ -196,7 +196,7 @@ export function PayoutsHome() {
                       className={cn(
                         "pr-4 text-right font-medium tabular-nums",
                         t.amount >= 0
-                          ? "text-emerald-600 dark:text-emerald-400"
+                          ? "text-green-600 dark:text-green-400"
                           : ""
                       )}
                     >

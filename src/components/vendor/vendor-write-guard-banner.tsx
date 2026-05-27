@@ -29,7 +29,7 @@ export function VendorWriteGuardBanner({
 
   return (
     <div
-      className="border-amber-500/35 bg-amber-500/10 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100 flex gap-3 rounded-lg border px-4 py-3 text-sm"
+      className="border-red-500/35 bg-red-500/10 text-red-950 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-100 flex gap-3 rounded-lg border px-4 py-3 text-sm"
       role="status"
     >
       <AlertTriangle className="mt-0.5 size-4 shrink-0 opacity-80" aria-hidden />

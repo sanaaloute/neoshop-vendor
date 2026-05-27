@@ -81,14 +81,14 @@ export function InventoryHome() {
 
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="secondary" className="gap-1.5 font-normal tabular-nums">
-          <Radio className="size-3.5 text-emerald-500" aria-hidden />
+          <Radio className="size-3.5 text-green-500" aria-hidden />
           Inventory
         </Badge>
       </div>
 
       {lowAlertCount > 0 ? (
         <div
-          className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100"
+          className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-900 dark:text-red-100"
           role="status"
         >
           <strong className="font-semibold">Low inventory:</strong>{" "}

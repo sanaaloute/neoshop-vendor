@@ -52,7 +52,7 @@ export function VariantBulkBar({
   };
 
   return (
-    <Card className="border-primary/30 bg-primary/5 shadow-vendor-card p-4">
+    <Card className="border-gray-300 bg-gray-50 shadow-sm p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <p className="text-sm font-medium">
           Bulk update ({selected.size} selected)
@@ -61,9 +61,9 @@ export function VariantBulkBar({
           <Field label="MOQ" value={moq} onChange={setMoq} />
           <Field label="Stock" value={stock} onChange={setStock} />
           <Field label="Price" value={price} onChange={setPrice} />
-          <Field label="Weight g" value={weight} onChange={setWeight} />
+          <Field label="Weight g (optional)" value={weight} onChange={setWeight} />
           <div className="grid min-w-[8rem] gap-1">
-            <Label className="text-xs">Barcode</Label>
+            <Label className="text-xs">Barcode (optional)</Label>
             <Input
               className="h-9 text-xs"
               value={barcode}

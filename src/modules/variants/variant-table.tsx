@@ -99,9 +99,9 @@ export function VariantTable({
               <TableHead className="w-16">MOQ</TableHead>
               <TableHead className="w-20">Stock</TableHead>
               <TableHead className="w-24">Price</TableHead>
-              <TableHead className="w-20">Weight g</TableHead>
-              <TableHead className="min-w-[120px]">L×W×H cm</TableHead>
-              <TableHead className="min-w-[120px]">Barcode</TableHead>
+              <TableHead className="w-20">Weight g (optional)</TableHead>
+              <TableHead className="min-w-[120px]">L×W×H cm (optional)</TableHead>
+              <TableHead className="min-w-[120px]">Barcode (optional)</TableHead>
               <TableHead className="w-10 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>

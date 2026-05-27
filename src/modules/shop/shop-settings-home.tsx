@@ -56,7 +56,7 @@ function verificationBadge(status: ShopVerificationStatus) {
   switch (status) {
     case "verified":
       return (
-        <Badge className="gap-1 border-emerald-500/40 bg-emerald-500/15 font-normal text-emerald-800 dark:text-emerald-200">
+        <Badge className="gap-1 border-green-500/40 bg-green-500/15 font-normal text-green-800 dark:text-green-200">
           <CheckCircle2 className="size-3.5" aria-hidden />
           Verified
         </Badge>
@@ -205,7 +205,7 @@ export function ShopSettingsHome() {
                 Loading saved settings…
               </span>
             ) : saveHint ? (
-              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+              <span className="text-xs font-medium text-green-600 dark:text-green-400">
                 {saveHint}
               </span>
             ) : null}

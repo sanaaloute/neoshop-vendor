@@ -17,7 +17,7 @@ function bubbleStyles(role: DisputeMessage["senderRole"]) {
     case "platform":
       return "mr-auto max-w-[92%] border-border bg-muted/50 text-foreground";
     default:
-      return "mr-auto max-w-[92%] border-amber-500/25 bg-amber-500/10 text-foreground dark:bg-amber-500/5";
+      return "mr-auto max-w-[92%] border-red-500/25 bg-red-500/10 text-foreground dark:bg-red-500/5";
   }
 }
 

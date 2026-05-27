@@ -267,7 +267,7 @@ export function DashboardHome() {
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-semibold">{m.from}</span>
                   {m.unread ? (
-                    <span className="bg-primary size-2 rounded-full shadow-[0_0_8px_rgba(139,92,246,0.6)]" />
+                    <span className="bg-primary size-2 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
                   ) : null}
                 </div>
                 <VendorMuted className="mt-0.5 line-clamp-2 text-[11px]">
