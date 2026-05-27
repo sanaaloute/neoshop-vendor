@@ -13,6 +13,7 @@ import { httpErrorMessageForUser } from "@/lib/http-error-message";
 import { setVariantQuantity } from "@/services/vendor/inventory-api";
 import {
   createVariant,
+  deleteVariant,
   updateVariant as updateVariantApi,
 } from "@/services/vendor/variants-api";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
@@ -41,6 +42,7 @@ export function VariantsHome() {
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const saveMessageTimerRef = useRef<number | undefined>(undefined);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const catalogSync = useGatewayCatalogBootstrap();
   const variantSync = useGatewayVariantsBootstrap(selectedProductId);
@@ -66,6 +68,42 @@ export function VariantsHome() {
     setPreviewRows(rows);
     setPreviewTitle(title);
     setPreviewOpen(true);
+  };
+
+  const handleDeleteVariant = async (variantId: string) => {
+    const row = variants.find((v) => v.id === variantId);
+    if (!row) return;
+
+    // Always remove from local store immediately for a responsive UI
+    useVariantWorkbenchStore.getState().removeVariant(variantId);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.delete(variantId);
+      return next;
+    });
+
+    if (!getApiBaseUrl()) return;
+    if (row.isLocalOnly) return;
+    if (!selectedProductId) return;
+
+    setDeleteBusy(true);
+    setSaveMessage(null);
+    try {
+      await deleteVariant(selectedProductId, variantId);
+    } catch (e) {
+      setSaveMessage(
+        httpErrorMessageForUser(e, "Could not delete variant. Try again.")
+      );
+      if (saveMessageTimerRef.current !== undefined) {
+        window.clearTimeout(saveMessageTimerRef.current);
+      }
+      saveMessageTimerRef.current = window.setTimeout(
+        () => setSaveMessage(null),
+        5000
+      );
+    } finally {
+      setDeleteBusy(false);
+    }
   };
 
   const saveRows = async (rows: VariantRow[]) => {
@@ -228,6 +266,7 @@ export function VariantsHome() {
         selected={selected}
         onToggle={toggle}
         onToggleAll={toggleAll}
+        onDelete={handleDeleteVariant}
       />
 
       <VariantPreviewSheet

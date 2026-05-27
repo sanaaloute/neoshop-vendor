@@ -4,8 +4,10 @@ import type { ComponentProps } from "react";
 
 import { formatCurrency } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -53,12 +55,14 @@ type VariantTableProps = {
   selected: Set<string>;
   onToggle: (id: string) => void;
   onToggleAll: () => void;
+  onDelete?: (id: string) => void;
 };
 
 export function VariantTable({
   selected,
   onToggle,
   onToggleAll,
+  onDelete,
 }: VariantTableProps) {
   const variants = useVariantWorkbenchStore((s) => s.variants);
   const attributes = useVariantWorkbenchStore((s) => s.attributes);
@@ -98,6 +102,7 @@ export function VariantTable({
               <TableHead className="w-20">Weight g</TableHead>
               <TableHead className="min-w-[120px]">L×W×H cm</TableHead>
               <TableHead className="min-w-[120px]">Barcode</TableHead>
+              <TableHead className="w-10 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -243,6 +248,19 @@ export function VariantTable({
                     }
                     placeholder="—"
                   />
+                </TableCell>
+                <TableCell className="text-right">
+                  {onDelete ? (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Delete variant"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => onDelete(row.id)}
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                    </Button>
+                  ) : null}
                 </TableCell>
               </TableRow>
             ))}

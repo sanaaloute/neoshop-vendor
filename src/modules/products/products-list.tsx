@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useGatewayCatalogBootstrap } from "@/hooks/use-gateway-catalog-bootstrap";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Archive, Copy, Eye, Loader2, Pencil, Plus } from "lucide-react";
+import { Archive, Copy, Eye, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { EmptyState } from "@/components/cards/empty-state";
 import { VendorWriteGuardBanner } from "@/components/vendor/vendor-write-guard-banner";
@@ -29,10 +29,12 @@ import { cn } from "@/lib/utils";
 import {
   archiveProductOnGateway,
   bulkPatchProductsOnGateway,
+  deleteProductOnGateway,
   duplicateProductOnGateway,
 } from "@/services/vendor/product-gateway-sync";
 import { useVendorWritesAllowed } from "@/hooks/use-vendor-writes";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
+import { useVariantWorkbenchStore } from "@/store/variant-workbench-store";
 
 import { useCategoriesStore } from "@/store/categories-store";
 import { ProductPreviewSheet } from "./product-preview-sheet";
@@ -64,6 +66,7 @@ export function ProductsList() {
     useGatewayCatalogBootstrap();
   const products = useProductCatalogStore((s) => s.products);
   const archiveProduct = useProductCatalogStore((s) => s.archiveProduct);
+  const deleteProduct = useProductCatalogStore((s) => s.deleteProduct);
   const duplicateProduct = useProductCatalogStore((s) => s.duplicateProduct);
   const bulkPatch = useProductCatalogStore((s) => s.bulkPatch);
   const replaceCatalog = useProductCatalogStore((s) => s.replaceCatalog);
@@ -371,6 +374,42 @@ export function ProductsList() {
                     <Button
                       variant="ghost"
                       size="icon-sm"
+                      title="Duplicate"
+                      disabled={listBusy || !canWriteCatalog}
+                      onClick={() => {
+                        void (async () => {
+                          setListError(null);
+                          if (getApiBaseUrl()) {
+                            setListBusy(true);
+                            try {
+                              const copy = await duplicateProductOnGateway(p.id);
+                              if (!copy) return;
+                              replaceCatalog(
+                                [copy, ...products.filter((x) => x.id !== copy.id)]
+                              );
+                              router.push(`/products/${copy.id}/edit`);
+                            } catch (e) {
+                              setListError(
+                                httpErrorMessageForUser(
+                                  e,
+                                  "Could not duplicate this product."
+                                )
+                              );
+                            } finally {
+                              setListBusy(false);
+                            }
+                            return;
+                          }
+                          const nid = duplicateProduct(p.id);
+                          if (nid) router.push(`/products/${nid}/edit`);
+                        })();
+                      }}
+                    >
+                      <Copy className="size-4" aria-hidden />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       title="Archive"
                       disabled={listBusy || !canWriteCatalog}
                       onClick={() => {
@@ -398,6 +437,43 @@ export function ProductsList() {
                       }}
                     >
                       <Archive className="size-4" aria-hidden />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Delete"
+                      disabled={listBusy || !canWriteCatalog}
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => {
+                        void (async () => {
+                          setListError(null);
+                          if (getApiBaseUrl()) {
+                            setListBusy(true);
+                            try {
+                              await deleteProductOnGateway(p.id);
+                              replaceCatalog(products.filter((x) => x.id !== p.id));
+                            } catch (e) {
+                              setListError(
+                                httpErrorMessageForUser(
+                                  e,
+                                  "Could not delete this product."
+                                )
+                              );
+                            } finally {
+                              setListBusy(false);
+                            }
+                          } else {
+                            deleteProduct(p.id);
+                          }
+                          const workbenchProductId =
+                            useVariantWorkbenchStore.getState().productId;
+                          if (workbenchProductId === p.id) {
+                            useVariantWorkbenchStore.getState().resetWorkbench();
+                          }
+                        })();
+                      }}
+                    >
+                      <Trash2 className="size-4" aria-hidden />
                     </Button>
                   </div>
                 </TableCell>

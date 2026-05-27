@@ -40,6 +40,7 @@ type VariantWorkbenchState = {
   removeValueFromAttribute: (attrId: string, value: string) => void;
   generateMatrix: (defaults: VariantGenerationDefaults) => void;
   updateVariant: (id: string, patch: Partial<VariantRow>) => void;
+  removeVariant: (id: string) => void;
   bulkUpdateVariants: (
     ids: string[],
     patch: Partial<
@@ -165,6 +166,11 @@ export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
           variants: s.variants.map((r) =>
             r.id === id ? { ...r, ...patch } : r
           ),
+        })),
+
+      removeVariant: (id) =>
+        set((s) => ({
+          variants: s.variants.filter((r) => r.id !== id),
         })),
 
       bulkUpdateVariants: (ids, patch) => {

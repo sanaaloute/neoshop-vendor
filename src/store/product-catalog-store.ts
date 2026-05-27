@@ -19,6 +19,7 @@ type CatalogState = {
   addProduct: (values: ProductFormValues) => string;
   updateProduct: (id: string, values: ProductFormValues) => void;
   archiveProduct: (id: string) => void;
+  deleteProduct: (id: string) => void;
   duplicateProduct: (id: string) => string | null;
   bulkPatch: (
     ids: string[],
@@ -79,6 +80,12 @@ export const useProductCatalogStore = create<CatalogState>()(
               ? { ...p, status: "archived" as const, updatedAt: ts }
               : p
           ),
+        }));
+      },
+
+      deleteProduct: (id) => {
+        set((s) => ({
+          products: s.products.filter((p) => p.id !== id),
         }));
       },
 

@@ -93,6 +93,10 @@ export async function archiveProductOnGateway(productId: string) {
   await deleteProduct(productId);
 }
 
+export async function deleteProductOnGateway(productId: string) {
+  await deleteProduct(productId);
+}
+
 export async function duplicateProductOnGateway(
   sourceProductId: string
 ): Promise<Product | null> {
