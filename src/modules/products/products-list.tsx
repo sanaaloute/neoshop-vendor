@@ -143,9 +143,9 @@ export function ProductsList() {
         <VendorWriteGuardBanner area="catalog" status={vendorStatus} />
         <GatewaySyncBanner loading={gatewayLoading} error={gatewayError} />
         {gatewayLoading ? (
-          <Card className="border-border/80 text-muted-foreground border-dashed p-12 text-center text-sm">
+          <Card className="border-gray-300 text-black border-dashed p-12 text-center text-sm">
             <Loader2
-              className="text-primary mx-auto size-8 animate-spin"
+              className="text-black mx-auto size-8 animate-spin"
               aria-hidden
             />
             <p className="mt-3">Loading…</p>
@@ -172,7 +172,7 @@ export function ProductsList() {
       <VendorWriteGuardBanner area="catalog" status={vendorStatus} />
       <GatewaySyncBanner loading={gatewayLoading} error={gatewayError} />
       {listError ? (
-        <p className="text-destructive text-sm">{listError}</p>
+        <p className="text-red-600 text-sm">{listError}</p>
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Link
@@ -181,7 +181,7 @@ export function ProductsList() {
           className={cn(
             buttonVariants({ variant: "default", size: "default" }),
             "gap-1.5",
-            !canWriteCatalog && "pointer-events-none opacity-50"
+            !canWriteCatalog && "pointer-events-none bg-gray-400"
           )}
           onClick={(e) => {
             if (!canWriteCatalog) e.preventDefault();
@@ -193,7 +193,7 @@ export function ProductsList() {
       </div>
 
       {selected.size > 0 ? (
-        <Card className="border-primary/30 bg-primary/5 shadow-vendor-card p-4">
+        <Card className="border-gray-300 bg-gray-50 shadow-sm p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <p className="text-sm font-medium">
               Bulk edit ({selected.size} selected)
@@ -251,7 +251,7 @@ export function ProductsList() {
         </Card>
       ) : null}
 
-      <Card className="border-border/80 shadow-vendor-card overflow-hidden">
+      <Card className="border-gray-300 shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -278,7 +278,7 @@ export function ProductsList() {
               <TableRow
                 key={p.id}
                 data-state={selected.has(p.id) ? "selected" : undefined}
-                className={cn(p.status === "archived" && "opacity-60")}
+                className={cn(p.status === "archived" && "bg-gray-50")}
               >
                 <TableCell>
                   <input
@@ -298,10 +298,10 @@ export function ProductsList() {
                     {p.name}
                   </Link>
                 </TableCell>
-                <TableCell className="text-muted-foreground tabular-nums">
+                <TableCell className="text-black tabular-nums">
                   {p.sku}
                 </TableCell>
-                <TableCell className="text-muted-foreground hidden max-w-[180px] truncate md:table-cell">
+                <TableCell className="text-black hidden max-w-[180px] truncate md:table-cell">
                   {categorySummary(p.categoryIds, categories)}
                 </TableCell>
                 <TableCell className="tabular-nums">
@@ -334,42 +334,6 @@ export function ProductsList() {
                       onClick={() => openPreview(p)}
                     >
                       <Eye className="size-4" aria-hidden />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      title="Duplicate"
-                      disabled={listBusy || !canWriteCatalog}
-                      onClick={() => {
-                        void (async () => {
-                          setListError(null);
-                          if (getApiBaseUrl()) {
-                            setListBusy(true);
-                            try {
-                              const copy = await duplicateProductOnGateway(p.id);
-                              if (!copy) return;
-                              replaceCatalog(
-                                [copy, ...products.filter((x) => x.id !== copy.id)]
-                              );
-                              router.push(`/products/${copy.id}/edit`);
-                            } catch (e) {
-                              setListError(
-                                httpErrorMessageForUser(
-                                  e,
-                                  "Could not duplicate this product."
-                                )
-                              );
-                            } finally {
-                              setListBusy(false);
-                            }
-                            return;
-                          }
-                          const nid = duplicateProduct(p.id);
-                          if (nid) router.push(`/products/${nid}/edit`);
-                        })();
-                      }}
-                    >
-                      <Copy className="size-4" aria-hidden />
                     </Button>
                     <Button
                       variant="ghost"
@@ -443,7 +407,7 @@ export function ProductsList() {
                       size="icon-sm"
                       title="Delete"
                       disabled={listBusy || !canWriteCatalog}
-                      className="text-destructive hover:text-destructive"
+                      className="text-red-600 hover:text-red-700"
                       onClick={() => {
                         void (async () => {
                           setListError(null);

@@ -53,7 +53,7 @@ export function VendorBody({
 }: ComponentProps<"p">) {
   return (
     <p
-      className={cn("text-sm leading-relaxed text-foreground/90", className)}
+      className={cn("text-sm leading-relaxed text-black", className)}
       {...props}
     />
   );
@@ -65,7 +65,7 @@ export function VendorMuted({
 }: ComponentProps<"p">) {
   return (
     <p
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-sm text-black", className)}
       {...props}
     />
   );
@@ -78,7 +78,7 @@ export function VendorOverline({
   return (
     <p
       className={cn(
-        "text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/60",
+        "text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500",
         className
       )}
       {...props}

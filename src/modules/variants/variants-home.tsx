@@ -193,7 +193,7 @@ export function VariantsHome() {
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           {saveMessage ? (
-            <span className="text-muted-foreground text-xs">{saveMessage}</span>
+            <span className="text-black text-xs">{saveMessage}</span>
           ) : null}
           <Button
             type="button"
