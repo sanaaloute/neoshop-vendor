@@ -123,7 +123,7 @@ export function VariantsHome() {
             sku: row.sku,
             wholesalePrice: row.price,
             moq: row.moq,
-            selectionIds: row.selectionIds ?? [],
+            attributeValueIds: row.attributeValueIds ?? [],
             isActive: true,
           });
           const createdId = String(

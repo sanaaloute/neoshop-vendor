@@ -47,17 +47,17 @@ export function buildVariantMatrix(
 
   return tuples.map((vals, idx) => {
     const combo: Record<string, string> = {};
-    const selectionIds: string[] = [];
+    const attributeValueIds: string[] = [];
     definitions.forEach((d, i) => {
       const val = vals[i] ?? "";
       combo[d.id] = val;
       const valueId = d.valueIdMap?.[val];
-      if (valueId) selectionIds.push(valueId);
+      if (valueId) attributeValueIds.push(valueId);
     });
     return {
       id: genVariantId(),
       combo,
-      selectionIds,
+      attributeValueIds,
       isLocalOnly: true,
       sku: buildSku(skuPrefix, vals as string[], idx),
       moq: defaults.moq,
