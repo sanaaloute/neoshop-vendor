@@ -68,6 +68,10 @@ export async function createProductFromForm(
   const pid = String((row as Record<string, unknown>).id);
   await setProductCategories(pid, { categoryIds: values.categoryIds });
   await ensurePrimaryVariant(pid, values);
+  const apiStatus = uiStatusToApi(values.status);
+  if (apiStatus !== "draft") {
+    await updateProduct(pid, { status: apiStatus });
+  }
   const refreshed = await getProduct(pid);
   return mapApiProductRowToProduct(refreshed as Record<string, unknown>);
 }

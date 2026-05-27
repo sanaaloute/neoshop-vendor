@@ -26,7 +26,7 @@ import {
   createProductFromForm,
   updateProductFromForm,
 } from "@/services/vendor/product-gateway-sync";
-import { attachProductMedia, getProduct } from "@/services/vendor/products-api";
+import { attachProductMedia, deleteProductMedia, getProduct } from "@/services/vendor/products-api";
 import { uploadStorageObject } from "@/services/vendor/storage-api";
 import { useVendorWritesAllowed } from "@/hooks/use-vendor-writes";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
@@ -67,8 +67,16 @@ export function ProductForm({
   const clearDraft = useProductEditorDraftStore((s) => s.clearDraft);
 
   const filesByMediaId = useRef(new Map<string, File>());
+  const removedMediaIds = useRef(new Set<string>());
+  const originalMediaIds = useRef(new Set<string>());
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    originalMediaIds.current = new Set(
+      (defaultValues.media ?? []).map((m) => m.id)
+    );
+  }, [catalogProductId]);
 
   const watched = useWatch({ control: form.control });
   const values = useMemo(
@@ -175,6 +183,9 @@ export function ProductForm({
         blobUrls.current.delete(url);
       }
       filesByMediaId.current.delete(id);
+      if (originalMediaIds.current.has(id)) {
+        removedMediaIds.current.add(id);
+      }
       setPreviews((p) => {
         const n = { ...p };
         delete n[id];
@@ -223,6 +234,14 @@ export function ProductForm({
       });
       filesByMediaId.current.delete(m.id);
     }
+    for (const mediaId of removedMediaIds.current) {
+      try {
+        await deleteProductMedia(productId, mediaId);
+      } catch (e) {
+        console.warn("Failed to delete product media", mediaId, e);
+      }
+    }
+    removedMediaIds.current.clear();
     const refreshed = await getProduct(productId);
     upsertProduct(
       mapApiProductRowToProduct(refreshed as Record<string, unknown>)
@@ -520,40 +539,55 @@ export function ProductForm({
             <Controller
               control={form.control}
               name="status"
-              render={({ field }) => (
-                <div className="grid gap-2">
-                  <Label>Workflow status</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {(
-                      [
-                        ["draft", "Draft"],
-                        ["pending_review", "In review"],
-                        ["published", "Published"],
-                        ["hidden", "Hidden"],
-                        ["scheduled", "Scheduled"],
-                        ["archived", "Archived"],
-                        ["rejected", "Rejected"],
-                      ] as const
-                    ).map(([val, label]) => (
-                      <Button
-                        key={val}
-                        type="button"
-                        size="sm"
-                        variant={field.value === val ? "default" : "outline"}
-                        className="rounded-full"
-                        onClick={() => {
-                          field.onChange(val);
-                          if (val !== "scheduled") {
-                            form.setValue("publishAt", null);
-                          }
-                        }}
-                      >
-                        {label}
-                      </Button>
-                    ))}
+              render={({ field }) => {
+                const isNew = !catalogProductId;
+                const options: [ProductFormValues["status"], string][] = isNew
+                  ? [
+                      ["draft", "Save as draft"],
+                      ["scheduled", "Schedule"],
+                      ["published", "Publish now"],
+                    ]
+                  : [
+                      ["draft", "Draft"],
+                      ["pending_review", "In review"],
+                      ["published", "Published"],
+                      ["hidden", "Hidden"],
+                      ["scheduled", "Scheduled"],
+                      ["archived", "Archived"],
+                      ["rejected", "Rejected"],
+                    ];
+                return (
+                  <div className="grid gap-2">
+                    <Label>Workflow status</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {options.map(([val, label]) => (
+                        <Button
+                          key={val}
+                          type="button"
+                          size="sm"
+                          variant={field.value === val ? "default" : "outline"}
+                          className="rounded-full"
+                          onClick={() => {
+                            field.onChange(val);
+                            if (val !== "scheduled") {
+                              form.setValue("publishAt", null);
+                            }
+                          }}
+                        >
+                          {label}
+                        </Button>
+                      ))}
+                    </div>
+                    {isNew ? (
+                      <p className="text-muted-foreground text-xs">
+                        Choose how to publish your new product. Draft saves
+                        privately; Schedule sets a future time; Publish now
+                        makes it live immediately.
+                      </p>
+                    ) : null}
                   </div>
-                </div>
-              )}
+                );
+              }}
             />
             {form.watch("status") === "scheduled" ? (
               <Controller

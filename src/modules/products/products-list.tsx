@@ -79,11 +79,30 @@ export function ProductsList() {
   const [bulkCategory, setBulkCategory] = useState("");
   const [preview, setPreview] = useState<ProductFormValues | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<ProductStatus | "">("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterSearch, setFilterSearch] = useState("");
 
-  const sorted = useMemo(
-    () => [...products].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
-    [products]
-  );
+  const filtered = useMemo(() => {
+    let result = [...products].sort((a, b) =>
+      b.updatedAt.localeCompare(a.updatedAt)
+    );
+    if (filterStatus) {
+      result = result.filter((p) => p.status === filterStatus);
+    }
+    if (filterCategory) {
+      result = result.filter((p) => p.categoryIds.includes(filterCategory));
+    }
+    if (filterSearch.trim()) {
+      const q = filterSearch.trim().toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.sku.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [products, filterStatus, filterCategory, filterSearch]);
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -95,10 +114,10 @@ export function ProductsList() {
   };
 
   const toggleAll = () => {
-    if (selected.size === sorted.length) {
+    if (selected.size === filtered.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(sorted.map((p) => p.id)));
+      setSelected(new Set(filtered.map((p) => p.id)));
     }
   };
 
@@ -137,7 +156,7 @@ export function ProductsList() {
     setPreviewOpen(true);
   };
 
-  if (!sorted.length) {
+  if (!products.length) {
     return (
       <div className="flex flex-col gap-4">
         <VendorWriteGuardBanner area="catalog" status={vendorStatus} />
@@ -191,6 +210,64 @@ export function ProductsList() {
           New product
         </Link>
       </div>
+
+      <Card className="border-border/80 shadow-vendor-card p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="grid gap-1 flex-1">
+            <Label className="text-xs">Search</Label>
+            <input
+              type="text"
+              placeholder="Product name or SKU…"
+              className="border-input bg-background h-9 rounded-md border px-2 text-sm"
+              value={filterSearch}
+              onChange={(e) => setFilterSearch(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-1">
+            <Label className="text-xs">Status</Label>
+            <select
+              className="border-input bg-background h-9 rounded-md border px-2 text-sm"
+              value={filterStatus}
+              onChange={(e) =>
+                setFilterStatus((e.target.value || "") as ProductStatus | "")
+              }
+            >
+              <option value="">All statuses</option>
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+          <div className="grid gap-1">
+            <Label className="text-xs">Category</Label>
+            <select
+              className="border-input bg-background h-9 min-w-[10rem] rounded-md border px-2 text-sm"
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+            >
+              <option value="">All categories</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setFilterStatus("");
+              setFilterCategory("");
+              setFilterSearch("");
+            }}
+          >
+            Reset
+          </Button>
+        </div>
+      </Card>
 
       {selected.size > 0 ? (
         <Card className="border-primary/30 bg-primary/5 shadow-vendor-card p-4">
@@ -260,7 +337,7 @@ export function ProductsList() {
                   type="checkbox"
                   className="accent-primary size-4"
                   disabled={!canWriteCatalog}
-                  checked={sorted.length > 0 && selected.size === sorted.length}
+                  checked={filtered.length > 0 && selected.size === filtered.length}
                   onChange={toggleAll}
                   aria-label="Select all"
                 />
@@ -274,7 +351,17 @@ export function ProductsList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sorted.map((p) => (
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className="text-muted-foreground text-center text-sm"
+                >
+                  No products match your filters.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map((p) => (
               <TableRow
                 key={p.id}
                 data-state={selected.has(p.id) ? "selected" : undefined}
@@ -441,7 +528,8 @@ export function ProductsList() {
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+            ))
+            )}
           </TableBody>
         </Table>
       </Card>

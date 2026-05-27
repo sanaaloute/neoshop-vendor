@@ -97,7 +97,13 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
         catalogProductId={catalogProductId}
         defaultValues={defaultValues}
         onCatalogCreated={(id) => {
-          router.replace(`/products/${id}/edit`);
+          if (!id || typeof id !== "string") {
+            console.error("[ProductEditor] Invalid catalog created id:", id);
+            return;
+          }
+          const url = `/products/${id}/edit`;
+          console.log("[ProductEditor] Redirecting to:", url);
+          router.push(url);
         }}
         onValuesSnapshot={handleSnapshot}
       />
