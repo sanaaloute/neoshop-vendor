@@ -14,11 +14,11 @@ function money(v: unknown): number {
 
 const API_STATUS_TO_UI: Record<ApiProductStatus, ProductStatus> = {
   draft: "draft",
-  pending_review: "draft",
+  pending_review: "pending_review",
   published: "published",
-  hidden: "published",
+  hidden: "hidden",
   archived: "archived",
-  rejected: "archived",
+  rejected: "rejected",
 };
 
 function mapProductStatus(raw: string): ProductStatus {

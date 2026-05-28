@@ -285,11 +285,11 @@ export function ProductForm({
   });
 
   const publishNow = form.handleSubmit(async (v) => {
-    const next = { ...v, status: "published" as const, publishAt: null };
+    const next = { ...v, status: "pending_review" as const, publishAt: null };
     form.reset(next);
     setSaveError(null);
     if (!canWriteCatalog) {
-      setSaveError("Publishing unlocks after NeoShop approves your vendor account.");
+      setSaveError("Catalog changes unlock after NeoShop approves your vendor account.");
       return;
     }
     if (getApiBaseUrl()) {
@@ -308,7 +308,7 @@ export function ProductForm({
         }
       } catch (e) {
         setSaveError(
-          httpErrorMessageForUser(e, "Could not publish. Try again.")
+          httpErrorMessageForUser(e, "Could not submit for review. Try again.")
         );
       } finally {
         setSaving(false);
@@ -541,24 +541,41 @@ export function ProductForm({
               name="status"
               render={({ field }) => {
                 const isNew = !catalogProductId;
+                const currentStatus = field.value;
+                const adminControlled = [
+                  "published",
+                  "archived",
+                  "rejected",
+                ] as const;
+                const isAdminControlled = adminControlled.includes(
+                  currentStatus as (typeof adminControlled)[number]
+                );
+
                 const options: [ProductFormValues["status"], string][] = isNew
                   ? [
                       ["draft", "Save as draft"],
-                      ["scheduled", "Schedule"],
-                      ["published", "Publish now"],
+                      ["pending_review", "Submit for review"],
                     ]
                   : [
                       ["draft", "Draft"],
-                      ["pending_review", "In review"],
-                      ["published", "Published"],
+                      ["pending_review", "Submit for review"],
                       ["hidden", "Hidden"],
-                      ["scheduled", "Scheduled"],
-                      ["archived", "Archived"],
-                      ["rejected", "Rejected"],
                     ];
+
                 return (
                   <div className="grid gap-2">
                     <Label>Workflow status</Label>
+                    {isAdminControlled ? (
+                      <div className="bg-muted/50 rounded-md border px-3 py-2 text-sm">
+                        <span className="font-medium capitalize">
+                          {currentStatus.replace(/_/g, " ")}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {" "}
+                          — administrators control this status.
+                        </span>
+                      </div>
+                    ) : null}
                     <div className="flex flex-wrap gap-2">
                       {options.map(([val, label]) => (
                         <Button
@@ -569,59 +586,22 @@ export function ProductForm({
                           className="rounded-full"
                           onClick={() => {
                             field.onChange(val);
-                            if (val !== "scheduled") {
-                              form.setValue("publishAt", null);
-                            }
+                            form.setValue("publishAt", null);
                           }}
                         >
                           {label}
                         </Button>
                       ))}
                     </div>
-                    {isNew ? (
-                      <p className="text-muted-foreground text-xs">
-                        Choose how to publish your new product. Draft saves
-                        privately; Schedule sets a future time; Publish now
-                        makes it live immediately.
-                      </p>
-                    ) : null}
+                    <p className="text-muted-foreground text-xs">
+                      {isNew
+                        ? "Save as draft to keep working privately. Submit for review when ready — administrators will approve or request changes."
+                        : "Drafts stay private. Submit for review to request administrator approval. Hidden listings are removed from buyer view."}
+                    </p>
                   </div>
                 );
               }}
             />
-            {form.watch("status") === "scheduled" ? (
-              <Controller
-                control={form.control}
-                name="publishAt"
-                render={({ field, fieldState }) => (
-                  <div className="grid gap-1.5">
-                    <Label htmlFor={field.name}>Publish at</Label>
-                    <Input
-                      id={field.name}
-                      type="datetime-local"
-                      aria-invalid={fieldState.invalid}
-                      value={field.value ?? ""}
-                      onChange={(e) =>
-                        field.onChange(e.target.value ? e.target.value : null)
-                      }
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
-                    />
-                    {form.formState.errors.publishAt?.message ? (
-                      <p className="text-destructive text-xs">
-                        {form.formState.errors.publishAt.message}
-                      </p>
-                    ) : null}
-                  </div>
-                )}
-              />
-            ) : null}
-            <p className="text-muted-foreground text-xs">
-              Drafts stay private. Published products appear to buyers according
-              to your marketplace rules. Use Scheduled to set a future publish
-              time.
-            </p>
             <div className="flex justify-start">
               <Button
                 type="button"
@@ -654,7 +634,7 @@ export function ProductForm({
                 disabled={saving || !canWriteCatalog}
                 onClick={() => void publishNow()}
               >
-                Publish now
+                Submit for review
               </Button>
             ) : null}
           </div>

@@ -234,9 +234,11 @@ export function ProductsList() {
             >
               <option value="">All statuses</option>
               <option value="draft">Draft</option>
+              <option value="pending_review">In review</option>
               <option value="published">Published</option>
-              <option value="scheduled">Scheduled</option>
+              <option value="hidden">Hidden</option>
               <option value="archived">Archived</option>
+              <option value="rejected">Rejected</option>
             </select>
           </div>
           <div className="grid gap-1">
@@ -287,9 +289,8 @@ export function ProductsList() {
                 >
                   <option value="">—</option>
                   <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                  <option value="scheduled">Scheduled</option>
-                  <option value="archived">Archived</option>
+                  <option value="pending_review">Submit for review</option>
+                  <option value="hidden">Hidden</option>
                 </select>
               </div>
               <div className="grid gap-1">

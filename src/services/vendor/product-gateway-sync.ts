@@ -68,10 +68,6 @@ export async function createProductFromForm(
   const pid = String((row as Record<string, unknown>).id);
   await setProductCategories(pid, { categoryIds: values.categoryIds });
   await ensurePrimaryVariant(pid, values);
-  const apiStatus = uiStatusToApi(values.status);
-  if (apiStatus !== "draft") {
-    await updateProduct(pid, { status: apiStatus });
-  }
   const refreshed = await getProduct(pid);
   return mapApiProductRowToProduct(refreshed as Record<string, unknown>);
 }
@@ -80,13 +76,23 @@ export async function updateProductFromForm(
   productId: string,
   values: ProductFormValues
 ): Promise<Product> {
-  await updateProduct(productId, {
+  const apiStatus = uiStatusToApi(values.status);
+  // Vendors may only set draft, pending_review, or hidden.
+  const vendorControlledStatuses: ApiProductStatus[] = [
+    "draft",
+    "pending_review",
+    "hidden",
+  ];
+  const body: Record<string, unknown> = {
     title: values.name.trim(),
     slug: values.seo.slug.trim().toLowerCase(),
     description: values.description.trim() || undefined,
-    status: uiStatusToApi(values.status),
     moq: 1,
-  });
+  };
+  if (vendorControlledStatuses.includes(apiStatus)) {
+    body.status = apiStatus;
+  }
+  await updateProduct(productId, body);
   await setProductCategories(productId, { categoryIds: values.categoryIds });
   await ensurePrimaryVariant(productId, values);
   const refreshed = await getProduct(productId);
@@ -173,10 +179,18 @@ export async function bulkPatchProductsOnGateway(
   productIds: string[],
   patch: { status?: ProductStatus; categoryIds?: string[] }
 ) {
+  const vendorControlledStatuses: ApiProductStatus[] = [
+    "draft",
+    "pending_review",
+    "hidden",
+  ];
   for (const id of productIds) {
     const body: Record<string, unknown> = {};
     if (patch.status !== undefined) {
-      body.status = uiProductStatusToApi(patch.status);
+      const apiStatus = uiProductStatusToApi(patch.status);
+      if (vendorControlledStatuses.includes(apiStatus)) {
+        body.status = apiStatus;
+      }
     }
     if (Object.keys(body).length) {
       await updateProduct(id, body);
