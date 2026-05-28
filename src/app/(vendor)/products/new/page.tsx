@@ -3,7 +3,7 @@ import { ProductEditor } from "@/modules/products";
 
 export default function NewProductRoutePage() {
   return (
-    <FeaturePageShell title="New product" className="max-w-6xl">
+    <FeaturePageShell className="max-w-6xl">
       <ProductEditor catalogProductId={null} />
     </FeaturePageShell>
   );

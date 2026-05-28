@@ -9,7 +9,7 @@ export default async function EditProductRoutePage({ params }: PageProps) {
   const { id } = await params;
 
   return (
-    <FeaturePageShell title="Edit product" className="max-w-6xl">
+    <FeaturePageShell className="max-w-6xl">
       <ProductEditor catalogProductId={id} />
     </FeaturePageShell>
   );

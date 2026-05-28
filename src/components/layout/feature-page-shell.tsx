@@ -4,7 +4,7 @@ import { VendorDisplay, VendorMuted } from "@/components/layout/typography";
 import { cn } from "@/lib/utils";
 
 type FeaturePageShellProps = {
-  title: string;
+  title?: string;
   description?: string;
   children?: ReactNode;
   className?: string;
@@ -23,14 +23,16 @@ export function FeaturePageShell({
         className
       )}
     >
-      <header className="space-y-2">
-        <VendorDisplay>{title}</VendorDisplay>
-        {description ? (
-          <VendorMuted className="max-w-2xl text-base">
-            {description}
-          </VendorMuted>
-        ) : null}
-      </header>
+      {title ? (
+        <header className="space-y-2">
+          <VendorDisplay>{title}</VendorDisplay>
+          {description ? (
+            <VendorMuted className="max-w-2xl text-base">
+              {description}
+            </VendorMuted>
+          ) : null}
+        </header>
+      ) : null}
       {children}
     </main>
   );

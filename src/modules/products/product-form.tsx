@@ -342,16 +342,13 @@ export function ProductForm({
               className="md:col-span-2"
             />
             <div className="grid gap-1.5">
-              <Label className="text-sm font-medium">SKU (optional)</Label>
+              <Label className="text-sm font-medium">SKU</Label>
               <Input
                 readOnly
                 disabled
                 value={form.watch("sku")}
                 className="bg-muted/50 h-9 font-mono text-xs tabular-nums"
               />
-              <p className="text-muted-foreground text-[10px]">
-                Auto-generated from product name
-              </p>
             </div>
             <Controller
               control={form.control}
@@ -490,76 +487,6 @@ export function ProductForm({
           />
         </section>
 
-        <section className="grid max-w-xl gap-4">
-          <h2 className="text-base font-semibold tracking-tight">Publishing</h2>
-          <Controller
-            control={form.control}
-            name="status"
-            render={({ field }) => {
-              const isNew = !catalogProductId;
-              const currentStatus = field.value;
-              const adminControlled = [
-                "published",
-                "archived",
-                "rejected",
-              ] as const;
-              const isAdminControlled = adminControlled.includes(
-                currentStatus as (typeof adminControlled)[number]
-              );
-
-              const options: [ProductFormValues["status"], string][] = isNew
-                ? [
-                    ["draft", "Save as draft"],
-                    ["pending_review", "Submit for review"],
-                  ]
-                : [
-                    ["draft", "Draft"],
-                    ["pending_review", "Submit for review"],
-                    ["hidden", "Hidden"],
-                  ];
-
-              return (
-                <div className="grid gap-2">
-                  <Label>Workflow status</Label>
-                  {isAdminControlled ? (
-                    <div className="bg-muted/50 rounded-md border px-3 py-2 text-sm">
-                      <span className="font-medium capitalize">
-                        {currentStatus.replace(/_/g, " ")}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {" "}
-                        — administrators control this status.
-                      </span>
-                    </div>
-                  ) : null}
-                  <div className="flex flex-wrap gap-2">
-                    {options.map(([val, label]) => (
-                      <Button
-                        key={val}
-                        type="button"
-                        size="sm"
-                        variant={field.value === val ? "default" : "outline"}
-                        className="rounded-full"
-                        onClick={() => {
-                          field.onChange(val);
-                          form.setValue("publishAt", null);
-                        }}
-                      >
-                        {label}
-                      </Button>
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground text-xs">
-                    {isNew
-                      ? "Save as draft to keep working privately. Submit for review when ready — administrators will approve or request changes."
-                      : "Drafts stay private. Submit for review to request administrator approval. Hidden listings are removed from buyer view."}
-                  </p>
-                </div>
-              );
-            }}
-          />
-        </section>
-
         <div className="border-border flex flex-col gap-2 border-t pt-4">
           {saveError ? (
             <p className="text-destructive text-sm">{saveError}</p>
@@ -571,7 +498,7 @@ export function ProductForm({
               disabled={saving || !canWriteCatalog}
               onClick={() => void saveToCatalog()}
             >
-              {catalogProductId ? "Save to catalog" : "Create in catalog"}
+              Save as draft
             </Button>
             <Button
               type="button"
@@ -599,9 +526,6 @@ function CategorySelector() {
   return (
     <div className="grid gap-2">
       <Label>Categories</Label>
-      <p className="text-muted-foreground text-xs">
-        Select one or more categories.
-      </p>
       <div className="flex flex-wrap gap-2">
         {categories.length === 0 ? (
           <p className="text-muted-foreground text-xs">
@@ -659,10 +583,7 @@ function TagSelector({
 
   return (
     <div className="grid gap-2">
-      <Label htmlFor="product-tag-input">Tags (optional)</Label>
-      <p className="text-muted-foreground text-xs">
-        Suggested tags or add your own (press Enter).
-      </p>
+      <Label htmlFor="product-tag-input">Tags</Label>
       <div className="flex flex-wrap gap-2">
         {SUGGESTED_PRODUCT_TAGS.map((t) => {
           const on = tags.includes(t);
