@@ -36,8 +36,12 @@ export function mapApiProductRowToProduct(
     ? (row.variants as Record<string, unknown>[])
     : [];
   const first = variants[0];
-  const price = first ? money(first.wholesalePrice) : 0;
-  const sku = first ? String(first.sku ?? "—") : "—";
+  const price = money(
+    row.price ?? row.wholesalePrice ?? (first ? first.wholesalePrice : undefined)
+  );
+  const sku = String(
+    row.sku ?? (first ? first.sku : undefined) ?? "—"
+  );
 
   const categories = Array.isArray(row.categories) ? row.categories : [];
   const categoryIds = categories

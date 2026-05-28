@@ -66,6 +66,17 @@ export async function createProductFromForm(
       values.categoryIds.length > 0 ? values.categoryIds : undefined,
   });
   const pid = String((row as Record<string, unknown>).id);
+
+  const apiStatus = uiStatusToApi(values.status);
+  const vendorControlledStatuses: ApiProductStatus[] = [
+    "draft",
+    "pending_review",
+    "hidden",
+  ];
+  if (vendorControlledStatuses.includes(apiStatus) && apiStatus !== "draft") {
+    await updateProduct(pid, { status: apiStatus });
+  }
+
   await setProductCategories(pid, { categoryIds: values.categoryIds });
   await ensurePrimaryVariant(pid, values);
   const refreshed = await getProduct(pid);

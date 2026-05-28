@@ -36,7 +36,25 @@ export const useProductCatalogStore = create<CatalogState>()(
     (set, get) => ({
       products: [],
 
-      replaceCatalog: (products) => set({ products }),
+      replaceCatalog: (products) =>
+        set((s) => {
+          const byId = new Map(s.products.map((p) => [p.id, p]));
+          const merged = products.map((p) => {
+            const ex = byId.get(p.id);
+            if (!ex) return p;
+            return {
+              ...ex,
+              ...p,
+              sku:
+                p.sku === "—" && ex.sku !== "—" && ex.sku !== ""
+                  ? ex.sku
+                  : p.sku,
+              price:
+                p.price === 0 && ex.price !== 0 ? ex.price : p.price,
+            };
+          });
+          return { products: merged };
+        }),
 
       upsertProduct: (product) =>
         set((s) => {
