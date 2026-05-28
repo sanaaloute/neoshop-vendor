@@ -146,6 +146,7 @@ export function VariantsHome() {
       setSaveMessage(
         `${rows.length} variant${rows.length === 1 ? "" : "s"} saved.`
       );
+      resetWorkbench();
     } catch (e) {
       setSaveMessage(
         httpErrorMessageForUser(e, "Could not save variants. Try again.")

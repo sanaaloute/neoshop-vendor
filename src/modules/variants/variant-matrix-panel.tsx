@@ -40,7 +40,7 @@ export function VariantMatrixPanel() {
 
   const [defaults, setDefaults] = useState(emptyGenerationDefaults);
   const [valueDraft, setValueDraft] = useState<Record<string, string>>({});
-  const [newAttrName, setNewAttrName] = useState("");
+  const [newAttrName, setNewAttrName] = useState("Color");
 
   const canGenerate =
     attributes.length > 0 && attributes.every((a) => a.values.length > 0);
@@ -265,8 +265,8 @@ export function VariantMatrixPanel() {
             size="sm"
             className="h-9"
             onClick={() => {
-              addAttribute(newAttrName || "New attribute", "custom");
-              setNewAttrName("");
+              addAttribute(newAttrName || "Color", "color");
+              setNewAttrName("Color");
             }}
           >
             <Plus className="size-4" aria-hidden />

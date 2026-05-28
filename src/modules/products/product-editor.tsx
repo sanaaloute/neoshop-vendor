@@ -25,6 +25,12 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
   const router = useRouter();
   const editorKey = catalogProductId ?? "new";
 
+  useEffect(() => {
+    if (!catalogProductId) {
+      useProductEditorDraftStore.getState().clearDraft("new");
+    }
+  }, [catalogProductId]);
+
   const defaultValues = useMemo(() => {
     const d = useProductEditorDraftStore.getState().getDraft(editorKey);
     if (d) return d;
@@ -96,15 +102,7 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
         editorKey={editorKey}
         catalogProductId={catalogProductId}
         defaultValues={defaultValues}
-        onCatalogCreated={(id) => {
-          if (!id || typeof id !== "string") {
-            console.error("[ProductEditor] Invalid catalog created id:", id);
-            return;
-          }
-          const url = `/products/${id}/edit`;
-          console.log("[ProductEditor] Redirecting to:", url);
-          router.push(url);
-        }}
+        onSuccess={() => router.push("/products")}
         onValuesSnapshot={handleSnapshot}
       />
 

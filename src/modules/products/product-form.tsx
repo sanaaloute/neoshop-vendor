@@ -15,7 +15,7 @@ import { VendorWriteGuardBanner } from "@/components/vendor/vendor-write-guard-b
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Textarea } from "@/components/ui/textarea";
 import { getApiBaseUrl } from "@/config/auth";
 import { UI_DELAYS } from "@/config/ui";
@@ -42,7 +42,7 @@ type ProductFormProps = {
   editorKey: string;
   catalogProductId: string | null;
   defaultValues: ProductFormValues;
-  onCatalogCreated?: (id: string) => void;
+  onSuccess?: () => void;
   onValuesSnapshot?: (values: ProductFormValues) => void;
 };
 
@@ -50,7 +50,7 @@ export function ProductForm({
   editorKey,
   catalogProductId,
   defaultValues,
-  onCatalogCreated,
+  onSuccess,
   onValuesSnapshot,
 }: ProductFormProps) {
   const { canWriteCatalog, status: vendorStatus } = useVendorWritesAllowed();
@@ -201,7 +201,10 @@ export function ProductForm({
   );
 
   const [tagDraft, setTagDraft] = useState("");
-  const [activeTab, setActiveTab] = useState("general");
+
+  useEffect(() => {
+    form.reset(defaultValues);
+  }, [defaultValues, form]);
 
   const initSnapshot = useRef(false);
   useEffect(() => {
@@ -266,7 +269,7 @@ export function ProductForm({
           upsertProduct(p);
           await syncPendingMedia(p.id, v.media);
           clearDraft(editorKey);
-          onCatalogCreated?.(p.id);
+          onSuccess?.();
         }
       } catch (e) {
         setSaveError(httpErrorMessageForUser(e, "Could not save. Try again."));
@@ -280,7 +283,7 @@ export function ProductForm({
     } else {
       const id = addProduct(v);
       clearDraft(editorKey);
-      onCatalogCreated?.(id);
+      onSuccess?.();
     }
   });
 
@@ -304,7 +307,7 @@ export function ProductForm({
           upsertProduct(p);
           await syncPendingMedia(p.id, next.media);
           clearDraft(editorKey);
-          onCatalogCreated?.(p.id);
+          onSuccess?.();
         }
       } catch (e) {
         setSaveError(
@@ -320,7 +323,7 @@ export function ProductForm({
     } else {
       const id = addProduct(next);
       clearDraft(editorKey);
-      onCatalogCreated?.(id);
+      onSuccess?.();
     }
   });
 
@@ -328,81 +331,52 @@ export function ProductForm({
     <FormProvider {...form}>
       <div className="grid gap-6">
         <VendorWriteGuardBanner area="catalog" status={vendorStatus} />
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
-          <TabsList variant="line" className="w-full max-w-2xl flex-wrap">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="media">Media</TabsTrigger>
-            <TabsTrigger value="seo">SEO</TabsTrigger>
-            <TabsTrigger value="publishing">Publishing</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="general" className="grid gap-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <VendorTextField
-                control={form.control}
-                name="name"
-                label="Product name"
-                placeholder="Wholesale ceramic mugs"
-                className="md:col-span-2"
+        <section className="grid gap-4">
+          <h2 className="text-base font-semibold tracking-tight">General</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <VendorTextField
+              control={form.control}
+              name="name"
+              label="Product name"
+              placeholder="Wholesale ceramic mugs"
+              className="md:col-span-2"
+            />
+            <div className="grid gap-1.5">
+              <Label className="text-sm font-medium">SKU (optional)</Label>
+              <Input
+                readOnly
+                disabled
+                value={form.watch("sku")}
+                className="bg-muted/50 h-9 font-mono text-xs tabular-nums"
               />
-              <div className="grid gap-1.5">
-                <Label className="text-sm font-medium">SKU (optional)</Label>
-                <Input
-                  readOnly
-                  disabled
-                  value={form.watch("sku")}
-                  className="bg-muted/50 h-9 font-mono text-xs tabular-nums"
-                />
-                <p className="text-muted-foreground text-[10px]">
-                  Auto-generated from product name
-                </p>
-              </div>
-              <Controller
-                control={form.control}
-                name="price"
-                render={({ field, fieldState }) => (
-                  <div className="grid gap-1.5">
-                    <Label htmlFor={field.name}>Price (USD)</Label>
-                    <Input
-                      id={field.name}
-                      type="number"
-                      step="0.01"
-                      min={0.01}
-                      aria-invalid={fieldState.invalid}
-                      value={
-                        Number.isFinite(field.value) ? String(field.value) : ""
-                      }
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        field.onChange(
-                          raw === "" ? NaN : Number.parseFloat(raw)
-                        );
-                      }}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
-                    />
-                    {fieldState.error?.message ? (
-                      <p className="text-destructive text-xs">
-                        {fieldState.error.message}
-                      </p>
-                    ) : null}
-                  </div>
-                )}
-              />
+              <p className="text-muted-foreground text-[10px]">
+                Auto-generated from product name
+              </p>
             </div>
             <Controller
               control={form.control}
-              name="description"
+              name="price"
               render={({ field, fieldState }) => (
                 <div className="grid gap-1.5">
-                  <Label htmlFor={field.name}>Description</Label>
-                  <Textarea
+                  <Label htmlFor={field.name}>Price (USD)</Label>
+                  <Input
                     id={field.name}
-                    rows={5}
+                    type="number"
+                    step="0.01"
+                    min={0.01}
                     aria-invalid={fieldState.invalid}
-                    placeholder="Specs, MOQ, lead times, packaging…"
-                    {...field}
+                    value={
+                      Number.isFinite(field.value) ? String(field.value) : ""
+                    }
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      field.onChange(
+                        raw === "" ? NaN : Number.parseFloat(raw)
+                      );
+                    }}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
                   />
                   {fieldState.error?.message ? (
                     <p className="text-destructive text-xs">
@@ -412,208 +386,179 @@ export function ProductForm({
                 </div>
               )}
             />
-
-            <CategorySelector />
-            <TagSelector tagDraft={tagDraft} setTagDraft={setTagDraft} />
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => setActiveTab("media")}
-              >
-                Next →
-              </Button>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="media">
-            <ProductMediaGallery
-              media={mediaList}
-              previews={previews}
-              mutationsDisabled={!canWriteCatalog}
-              onChange={(next) =>
-                form.setValue("media", next, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                })
-              }
-              onAddFiles={handleAddFiles}
-              onRemove={handleRemoveMedia}
-            />
-            <div className="flex justify-between">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => setActiveTab("general")}
-              >
-                ← Previous
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => setActiveTab("seo")}
-              >
-                Next →
-              </Button>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="seo" className="grid max-w-2xl gap-4">
-            <div className="flex flex-wrap items-end gap-2">
-              <div className="min-w-0 flex-1">
-                <VendorTextField
-                  control={form.control}
-                  name="seo.slug"
-                  label="URL slug"
-                  placeholder="wholesale-ceramic-mugs"
+          </div>
+          <Controller
+            control={form.control}
+            name="description"
+            render={({ field, fieldState }) => (
+              <div className="grid gap-1.5">
+                <Label htmlFor={field.name}>Description</Label>
+                <Textarea
+                  id={field.name}
+                  rows={5}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="Specs, MOQ, lead times, packaging…"
+                  {...field}
                 />
+                {fieldState.error?.message ? (
+                  <p className="text-destructive text-xs">
+                    {fieldState.error.message}
+                  </p>
+                ) : null}
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="shrink-0"
-                onClick={() => {
-                  const name = form.getValues("name");
-                  if (name?.trim()) {
-                    form.setValue("seo.slug", slugify(name), {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    });
-                  }
-                }}
-              >
-                From name
-              </Button>
+            )}
+          />
+
+          <CategorySelector />
+          <TagSelector tagDraft={tagDraft} setTagDraft={setTagDraft} />
+        </section>
+
+        <section className="grid gap-4">
+          <h2 className="text-base font-semibold tracking-tight">Media</h2>
+          <ProductMediaGallery
+            media={mediaList}
+            previews={previews}
+            mutationsDisabled={!canWriteCatalog}
+            onChange={(next) =>
+              form.setValue("media", next, {
+                shouldDirty: true,
+                shouldValidate: true,
+              })
+            }
+            onAddFiles={handleAddFiles}
+            onRemove={handleRemoveMedia}
+          />
+        </section>
+
+        <section className="grid max-w-2xl gap-4">
+          <h2 className="text-base font-semibold tracking-tight">SEO</h2>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="min-w-0 flex-1">
+              <VendorTextField
+                control={form.control}
+                name="seo.slug"
+                label="URL slug"
+                placeholder="wholesale-ceramic-mugs"
+              />
             </div>
-            <VendorTextField
-              control={form.control}
-              name="seo.metaTitle"
-              label="Meta title"
-              placeholder="Shown in search results"
-            />
-            <Controller
-              control={form.control}
-              name="seo.metaDescription"
-              render={({ field, fieldState }) => (
-                <div className="grid gap-1.5">
-                  <Label htmlFor={field.name}>Meta description</Label>
-                  <Textarea
-                    id={field.name}
-                    rows={3}
-                    maxLength={320}
-                    aria-invalid={fieldState.invalid}
-                    {...field}
-                  />
-                  <div className="text-muted-foreground flex justify-between text-xs">
-                    <span>{field.value?.length ?? 0} / 320</span>
-                    {fieldState.error?.message ? (
-                      <span className="text-destructive">
-                        {fieldState.error.message}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-              )}
-            />
-            <div className="flex justify-between">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => setActiveTab("media")}
-              >
-                ← Previous
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => setActiveTab("publishing")}
-              >
-                Next →
-              </Button>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="publishing" className="grid max-w-xl gap-4">
-            <Controller
-              control={form.control}
-              name="status"
-              render={({ field }) => {
-                const isNew = !catalogProductId;
-                const currentStatus = field.value;
-                const adminControlled = [
-                  "published",
-                  "archived",
-                  "rejected",
-                ] as const;
-                const isAdminControlled = adminControlled.includes(
-                  currentStatus as (typeof adminControlled)[number]
-                );
-
-                const options: [ProductFormValues["status"], string][] = isNew
-                  ? [
-                      ["draft", "Save as draft"],
-                      ["pending_review", "Submit for review"],
-                    ]
-                  : [
-                      ["draft", "Draft"],
-                      ["pending_review", "Submit for review"],
-                      ["hidden", "Hidden"],
-                    ];
-
-                return (
-                  <div className="grid gap-2">
-                    <Label>Workflow status</Label>
-                    {isAdminControlled ? (
-                      <div className="bg-muted/50 rounded-md border px-3 py-2 text-sm">
-                        <span className="font-medium capitalize">
-                          {currentStatus.replace(/_/g, " ")}
-                        </span>
-                        <span className="text-muted-foreground">
-                          {" "}
-                          — administrators control this status.
-                        </span>
-                      </div>
-                    ) : null}
-                    <div className="flex flex-wrap gap-2">
-                      {options.map(([val, label]) => (
-                        <Button
-                          key={val}
-                          type="button"
-                          size="sm"
-                          variant={field.value === val ? "default" : "outline"}
-                          className="rounded-full"
-                          onClick={() => {
-                            field.onChange(val);
-                            form.setValue("publishAt", null);
-                          }}
-                        >
-                          {label}
-                        </Button>
-                      ))}
-                    </div>
-                    <p className="text-muted-foreground text-xs">
-                      {isNew
-                        ? "Save as draft to keep working privately. Submit for review when ready — administrators will approve or request changes."
-                        : "Drafts stay private. Submit for review to request administrator approval. Hidden listings are removed from buyer view."}
-                    </p>
-                  </div>
-                );
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0"
+              onClick={() => {
+                const name = form.getValues("name");
+                if (name?.trim()) {
+                  form.setValue("seo.slug", slugify(name), {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }
               }}
-            />
-            <div className="flex justify-start">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => setActiveTab("seo")}
-              >
-                ← Previous
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+            >
+              From name
+            </Button>
+          </div>
+          <VendorTextField
+            control={form.control}
+            name="seo.metaTitle"
+            label="Meta title"
+            placeholder="Shown in search results"
+          />
+          <Controller
+            control={form.control}
+            name="seo.metaDescription"
+            render={({ field, fieldState }) => (
+              <div className="grid gap-1.5">
+                <Label htmlFor={field.name}>Meta description</Label>
+                <Textarea
+                  id={field.name}
+                  rows={3}
+                  maxLength={320}
+                  aria-invalid={fieldState.invalid}
+                  {...field}
+                />
+                <div className="text-muted-foreground flex justify-between text-xs">
+                  <span>{field.value?.length ?? 0} / 320</span>
+                  {fieldState.error?.message ? (
+                    <span className="text-destructive">
+                      {fieldState.error.message}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            )}
+          />
+        </section>
+
+        <section className="grid max-w-xl gap-4">
+          <h2 className="text-base font-semibold tracking-tight">Publishing</h2>
+          <Controller
+            control={form.control}
+            name="status"
+            render={({ field }) => {
+              const isNew = !catalogProductId;
+              const currentStatus = field.value;
+              const adminControlled = [
+                "published",
+                "archived",
+                "rejected",
+              ] as const;
+              const isAdminControlled = adminControlled.includes(
+                currentStatus as (typeof adminControlled)[number]
+              );
+
+              const options: [ProductFormValues["status"], string][] = isNew
+                ? [
+                    ["draft", "Save as draft"],
+                    ["pending_review", "Submit for review"],
+                  ]
+                : [
+                    ["draft", "Draft"],
+                    ["pending_review", "Submit for review"],
+                    ["hidden", "Hidden"],
+                  ];
+
+              return (
+                <div className="grid gap-2">
+                  <Label>Workflow status</Label>
+                  {isAdminControlled ? (
+                    <div className="bg-muted/50 rounded-md border px-3 py-2 text-sm">
+                      <span className="font-medium capitalize">
+                        {currentStatus.replace(/_/g, " ")}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {" "}
+                        — administrators control this status.
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className="flex flex-wrap gap-2">
+                    {options.map(([val, label]) => (
+                      <Button
+                        key={val}
+                        type="button"
+                        size="sm"
+                        variant={field.value === val ? "default" : "outline"}
+                        className="rounded-full"
+                        onClick={() => {
+                          field.onChange(val);
+                          form.setValue("publishAt", null);
+                        }}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    {isNew
+                      ? "Save as draft to keep working privately. Submit for review when ready — administrators will approve or request changes."
+                      : "Drafts stay private. Submit for review to request administrator approval. Hidden listings are removed from buyer view."}
+                  </p>
+                </div>
+              );
+            }}
+          />
+        </section>
 
         <div className="border-border flex flex-col gap-2 border-t pt-4">
           {saveError ? (
@@ -628,15 +573,13 @@ export function ProductForm({
             >
               {catalogProductId ? "Save to catalog" : "Create in catalog"}
             </Button>
-            {activeTab === "publishing" ? (
-              <Button
-                type="button"
-                disabled={saving || !canWriteCatalog}
-                onClick={() => void publishNow()}
-              >
-                Submit for review
-              </Button>
-            ) : null}
+            <Button
+              type="button"
+              disabled={saving || !canWriteCatalog}
+              onClick={() => void publishNow()}
+            >
+              Submit for review
+            </Button>
           </div>
         </div>
       </div>

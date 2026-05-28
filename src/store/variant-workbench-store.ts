@@ -109,7 +109,7 @@ export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
       renameAttribute: (id, name) =>
         set((s) => ({
           attributes: s.attributes.map((a) =>
-            a.id === id ? { ...a, name: name.trim() || a.name } : a
+            a.id === id ? { ...a, name: name.trim() } : a
           ),
         })),
 
