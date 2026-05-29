@@ -471,7 +471,7 @@ export function ProductsList() {
                             setListBusy(true);
                             try {
                               await archiveProductOnGateway(p.id);
-                              replaceCatalog(products.filter((x) => x.id !== p.id));
+                              archiveProduct(p.id);
                             } catch (e) {
                               setListError(
                                 httpErrorMessageForUser(

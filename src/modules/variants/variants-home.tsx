@@ -120,7 +120,6 @@ export function VariantsHome() {
       for (const row of rows) {
         if (row.isLocalOnly) {
           const created = await createVariant(selectedProductId, {
-            sku: row.sku,
             wholesalePrice: row.price,
             moq: row.moq,
             attributeValueIds: row.attributeValueIds ?? [],
@@ -135,7 +134,6 @@ export function VariantsHome() {
             .updateVariant(row.id, { id: createdId, isLocalOnly: false });
         } else {
           await updateVariantApi(selectedProductId, row.id, {
-            sku: row.sku,
             wholesalePrice: row.price,
             moq: row.moq,
           });

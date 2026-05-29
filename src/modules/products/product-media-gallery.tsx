@@ -133,7 +133,7 @@ export function ProductMediaGallery({
       {ordered.length > 0 ? (
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {ordered.map((m) => {
-            const src = previews[m.id];
+            const src = previews[m.id] ?? m.url;
             return (
               <li
                 key={m.id}

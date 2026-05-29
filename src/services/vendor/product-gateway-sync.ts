@@ -111,7 +111,7 @@ export async function updateProductFromForm(
 }
 
 export async function archiveProductOnGateway(productId: string) {
-  await deleteProduct(productId);
+  await updateProduct(productId, { status: "archived" });
 }
 
 export async function deleteProductOnGateway(productId: string) {
