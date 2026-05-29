@@ -82,7 +82,7 @@ function statusBadge(status: WalletTransaction["status"]) {
   }
 }
 
-function signedCurrency(n: number, currency = "USD") {
+function signedCurrency(n: number, currency = "CNY") {
   const abs = formatCurrency(Math.abs(n), currency);
   if (n > 0) return `+${abs}`;
   if (n < 0) return `−${abs}`;

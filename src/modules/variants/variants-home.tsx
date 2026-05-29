@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Eye, Loader2, Save } from "lucide-react";
 
 import { GatewaySyncBanner } from "@/components/feedback/gateway-sync-banner";
@@ -26,6 +27,9 @@ import type { VariantRow } from "./types";
 import { VariantTable } from "./variant-table";
 
 export function VariantsHome() {
+  const searchParams = useSearchParams();
+  const urlProductId = searchParams.get("productId");
+
   const products = useProductCatalogStore((s) => s.products);
   const variants = useVariantWorkbenchStore((s) => s.variants);
   const attributes = useVariantWorkbenchStore((s) => s.attributes);
@@ -34,7 +38,7 @@ export function VariantsHome() {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
-    productId
+    urlProductId ?? productId
   );
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewRows, setPreviewRows] = useState<VariantRow[]>([]);

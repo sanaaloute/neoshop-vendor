@@ -211,7 +211,7 @@ export function DashboardHome() {
             </Link>
           </DashboardCardHeader>
           <DashboardCardContent className="px-4 py-4">
-            <DashboardMiniBars data={bestBarData} valuePrefix="$" />
+            <DashboardMiniBars data={bestBarData} valuePrefix="¥" />
           </DashboardCardContent>
         </DashboardCard>
 

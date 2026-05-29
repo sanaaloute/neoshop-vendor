@@ -23,7 +23,7 @@ export type ShopBranding = {
 export type ShippingRules = {
   processingDaysMin: number;
   processingDaysMax: number;
-  /** USD — empty means no free-shipping threshold */
+  /** CNY — empty means no free-shipping threshold */
   freeShippingThresholdUsd: string;
   carriersNote: string;
 };

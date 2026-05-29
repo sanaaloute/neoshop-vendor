@@ -38,6 +38,7 @@ export const productFormSchema = z
       "rejected",
     ]),
     publishAt: z.string().nullable(),
+    configureVariants: z.boolean(),
   })
   .superRefine((data, ctx) => {
     if (data.status === "scheduled") {

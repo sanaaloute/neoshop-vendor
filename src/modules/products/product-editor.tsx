@@ -102,7 +102,13 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
         editorKey={editorKey}
         catalogProductId={catalogProductId}
         defaultValues={defaultValues}
-        onSuccess={() => router.push("/products")}
+        onSuccess={(createdId, configureVariants) => {
+          if (createdId && configureVariants) {
+            router.push(`/variants?productId=${createdId}`);
+          } else {
+            router.push("/products");
+          }
+        }}
         onValuesSnapshot={handleSnapshot}
       />
 

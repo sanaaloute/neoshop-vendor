@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useGatewayCatalogBootstrap } from "@/hooks/use-gateway-catalog-bootstrap";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Archive, Copy, Eye, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Archive, Copy, Eye, Layers, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { EmptyState } from "@/components/cards/empty-state";
 import { VendorWriteGuardBanner } from "@/components/vendor/vendor-write-guard-banner";
@@ -423,6 +423,16 @@ export function ProductsList() {
                     >
                       <Eye className="size-4" aria-hidden />
                     </Button>
+                    <Link
+                      href={`/variants?productId=${p.id}`}
+                      title="Edit variants"
+                      className={buttonVariants({
+                        variant: "ghost",
+                        size: "icon-sm",
+                      })}
+                    >
+                      <Layers className="size-4" aria-hidden />
+                    </Link>
                     <Button
                       variant="ghost"
                       size="icon-sm"

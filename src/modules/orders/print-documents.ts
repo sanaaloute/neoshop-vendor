@@ -12,7 +12,7 @@ function esc(s: string) {
 function money(n: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: "CNY",
   }).format(n);
 }
 

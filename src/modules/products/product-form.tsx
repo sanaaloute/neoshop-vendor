@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Controller,
@@ -42,7 +43,7 @@ type ProductFormProps = {
   editorKey: string;
   catalogProductId: string | null;
   defaultValues: ProductFormValues;
-  onSuccess?: () => void;
+  onSuccess?: (createdProductId?: string, configureVariants?: boolean) => void;
   onValuesSnapshot?: (values: ProductFormValues) => void;
 };
 
@@ -269,7 +270,7 @@ export function ProductForm({
           upsertProduct(p);
           await syncPendingMedia(p.id, v.media);
           clearDraft(editorKey);
-          onSuccess?.();
+          onSuccess?.(p.id, v.configureVariants);
         }
       } catch (e) {
         setSaveError(httpErrorMessageForUser(e, "Could not save. Try again."));
@@ -355,7 +356,7 @@ export function ProductForm({
               name="price"
               render={({ field, fieldState }) => (
                 <div className="grid gap-1.5">
-                  <Label htmlFor={field.name}>Price (USD)</Label>
+                  <Label htmlFor={field.name}>Price (CNY)</Label>
                   <Input
                     id={field.name}
                     type="number"
@@ -425,6 +426,40 @@ export function ProductForm({
             onAddFiles={handleAddFiles}
             onRemove={handleRemoveMedia}
           />
+        </section>
+
+        <section className="grid max-w-2xl gap-4">
+          <h2 className="text-base font-semibold tracking-tight">Variants</h2>
+          {catalogProductId ? (
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/variants?productId=${catalogProductId}`}
+                className="text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline"
+              >
+                Edit variants →
+              </Link>
+            </div>
+          ) : (
+            <Controller
+              control={form.control}
+              name="configureVariants"
+              render={({ field }) => (
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="accent-primary size-4"
+                    checked={field.value ?? false}
+                    onChange={(e) =>
+                      field.onChange(e.target.checked)
+                    }
+                  />
+                  <span className="text-sm">
+                    Go to variant setup after saving this product
+                  </span>
+                </label>
+              )}
+            />
+          )}
         </section>
 
         <section className="grid max-w-2xl gap-4">

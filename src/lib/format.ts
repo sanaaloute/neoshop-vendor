@@ -3,7 +3,7 @@ const NUMBER_LOCALE = "en-US";
 
 export function formatCurrency(
   value: number,
-  currency = "USD",
+  currency = "CNY",
   maximumFractionDigits = 0
 ) {
   return new Intl.NumberFormat(NUMBER_LOCALE, {

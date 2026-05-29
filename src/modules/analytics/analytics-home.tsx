@@ -237,7 +237,7 @@ export function AnalyticsHome() {
                 label: p.label,
                 value: p.value,
               }))}
-              valuePrefix="$"
+              valuePrefix="¥"
             />
           </DashboardCardContent>
         </DashboardCard>

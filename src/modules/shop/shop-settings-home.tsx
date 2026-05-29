@@ -368,7 +368,7 @@ export function ShopSettingsHome() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="free-threshold">
-                    Free shipping threshold (USD)
+                    Free shipping threshold (CNY)
                   </Label>
                   <Input
                     id="free-threshold"
@@ -631,7 +631,7 @@ export function ShopSettingsHome() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="min-pay">Minimum payout (USD)</Label>
+                  <Label htmlFor="min-pay">Minimum payout (CNY)</Label>
                   <Input
                     id="min-pay"
                     inputMode="decimal"
