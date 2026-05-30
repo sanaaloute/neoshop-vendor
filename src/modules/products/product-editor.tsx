@@ -26,18 +26,23 @@ type ProductEditorProps = {
   catalogProductId: string | null;
 };
 
-function mergeMediaUrls(
+function mergeFetchedProduct(
   target: ProductFormValues,
   source: ProductFormValues
 ): ProductFormValues {
-  if (!source.media.length) return target;
-  const urlById = new Map(source.media.map((m) => [m.id, m.url]));
+  // If local media is empty (list endpoint doesn't include media), use API media directly
+  if (!target.media.length) {
+    return { ...target, media: source.media };
+  }
+  // Otherwise merge API URLs into local items by ID, preserving local edits/order
+  const apiById = new Map(source.media.map((m) => [m.id, m]));
   return {
     ...target,
-    media: target.media.map((m) => ({
-      ...m,
-      url: m.url || urlById.get(m.id) || undefined,
-    })),
+    media: target.media.map((m) => {
+      const api = apiById.get(m.id);
+      if (!api) return m; // newly added local item
+      return { ...m, url: m.url || api.url || undefined };
+    }),
   };
 }
 
@@ -80,7 +85,7 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
         useProductCatalogStore.getState().upsertProduct(p);
         const fetched = productToFormValues(p);
         // Merge fetched image URLs into current values so local edits are preserved
-        setDefaultValues((prev) => mergeMediaUrls(prev, fetched));
+        setDefaultValues((prev) => mergeFetchedProduct(prev, fetched));
       })
       .catch(() => {
         // silently fail — local store is the fallback

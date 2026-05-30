@@ -284,9 +284,9 @@ export function ProductStatusPanel({
         <CardContent className="grid gap-3">
           <div className="bg-background/50 rounded-xl border border-border/50 overflow-hidden">
             <div className="aspect-[4/3] bg-muted/40 relative">
-              {primaryImage ? (
+              {primaryImage?.url ? (
                 <img
-                  src={primaryImage.url || ""}
+                  src={primaryImage.url}
                   alt={values.name || "Product"}
                   className="size-full object-cover"
                 />
