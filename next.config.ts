@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
-function getApiOrigin(): string | null {
+function getEnvOrigin(key: string): string | null {
   try {
-    const url = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const url = process.env[key];
     if (!url) return null;
     return new URL(url).origin;
   } catch {
@@ -10,7 +10,8 @@ function getApiOrigin(): string | null {
   }
 }
 
-const apiOrigin = getApiOrigin();
+const apiOrigin = getEnvOrigin("NEXT_PUBLIC_API_BASE_URL");
+const supabaseOrigin = getEnvOrigin("NEXT_PUBLIC_SUPABASE_URL");
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -63,7 +64,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Next.js requires unsafe-inline for styled-jsx
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' blob: data:",
+              `img-src 'self' blob: data:${apiOrigin ? ` ${apiOrigin}` : ""}${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
               "font-src 'self'",
               `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ""} ws: wss:`,
               "frame-ancestors 'none'",
