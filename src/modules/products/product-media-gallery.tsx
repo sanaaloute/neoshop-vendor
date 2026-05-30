@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { GripVertical, ImageIcon, Trash2, Upload } from "lucide-react";
+import {
+  GripVertical,
+  ImageIcon,
+  Star,
+  Trash2,
+  Upload,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -37,6 +43,16 @@ function reorderById(
   return next.map((m, i) => ({ ...m, sortIndex: i }));
 }
 
+function setPrimary(media: ProductMedia[], primaryId: string): ProductMedia[] {
+  const list = sortedMedia(media);
+  const idx = list.findIndex((m) => m.id === primaryId);
+  if (idx <= 0) return list.map((m, i) => ({ ...m, sortIndex: i }));
+  const next = [...list];
+  const [item] = next.splice(idx, 1);
+  next.unshift(item);
+  return next.map((m, i) => ({ ...m, sortIndex: i }));
+}
+
 export function ProductMediaGallery({
   media,
   previews,
@@ -61,12 +77,13 @@ export function ProductMediaGallery({
 
   return (
     <div className="grid gap-4">
+      {/* Upload Zone */}
       <div
         className={cn(
-          "border-border/80 bg-muted/20 flex min-h-[140px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-8 text-center transition-colors",
+          "flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed px-4 py-10 text-center transition-all",
           mutationsDisabled
-            ? "cursor-not-allowed opacity-60"
-            : "cursor-pointer",
+            ? "cursor-not-allowed opacity-60 bg-muted/20 border-border/40"
+            : "cursor-pointer bg-muted/10 border-border/60 hover:border-primary/40 hover:bg-primary/[0.03]",
           dragOver && !mutationsDisabled && "border-primary bg-primary/5"
         )}
         onDragEnter={(e) => {
@@ -106,16 +123,20 @@ export function ProductMediaGallery({
         role={mutationsDisabled ? undefined : "button"}
         tabIndex={mutationsDisabled ? undefined : 0}
       >
-        <Upload className="text-muted-foreground size-8" aria-hidden />
-        <p className="text-sm font-medium">
-          {mutationsDisabled
-            ? "Media changes are locked until your vendor account is approved"
-            : "Drag images here or click to upload"}
-        </p>
-        <p className="text-muted-foreground text-xs">
-          Images only (JPG or PNG recommended). Files upload securely when you
-          save or publish.
-        </p>
+        <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10">
+          <Upload className="size-5 text-primary" aria-hidden />
+        </div>
+        <div className="grid gap-1">
+          <p className="text-sm font-medium">
+            {mutationsDisabled
+              ? "Media changes are locked until your vendor account is approved"
+              : "Drag images here or click to upload"}
+          </p>
+          <p className="text-muted-foreground text-xs">
+            Images only (JPG or PNG recommended). Files upload securely when you
+            save or publish.
+          </p>
+        </div>
         <input
           id="product-media-file-input"
           type="file"
@@ -130,10 +151,12 @@ export function ProductMediaGallery({
         />
       </div>
 
+      {/* Image Grid */}
       {ordered.length > 0 ? (
-        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {ordered.map((m) => {
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {ordered.map((m, index) => {
             const src = previews[m.id] ?? m.url;
+            const isPrimary = index === 0;
             return (
               <li
                 key={m.id}
@@ -160,46 +183,72 @@ export function ProductMediaGallery({
                   setDraggingId(null);
                 }}
                 className={cn(
-                  "border-border bg-card flex gap-2 rounded-lg border p-2 shadow-sm transition-opacity",
-                  draggingId === m.id && "opacity-60"
+                  "group relative flex flex-col gap-2 rounded-xl border bg-card/60 p-2 shadow-sm transition-all hover:bg-card",
+                  draggingId === m.id && "opacity-50"
                 )}
               >
-                <div className="text-muted-foreground flex shrink-0 flex-col items-center gap-1">
+                {/* Image */}
+                <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted/40">
+                  {src ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={src}
+                      alt={m.fileName}
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex size-full items-center justify-center">
+                      <ImageIcon
+                        className="size-10 text-muted-foreground/30"
+                        aria-hidden
+                      />
+                    </div>
+                  )}
+                  {/* Primary Badge */}
+                  {isPrimary && (
+                    <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-sm">
+                      <Star className="size-3 fill-current" />
+                      Primary
+                    </div>
+                  )}
+                </div>
+
+                {/* Controls */}
+                <div className="flex items-center gap-1.5 px-1">
                   <GripVertical
                     className={cn(
-                      "size-4",
+                      "size-4 text-muted-foreground/50",
                       mutationsDisabled ? "opacity-40" : "cursor-grab"
                     )}
                     aria-hidden
                   />
-                </div>
-                <div className="bg-muted relative aspect-square w-24 shrink-0 overflow-hidden rounded-md">
-                  {src ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={src} alt={m.fileName} className="size-full object-cover" />
-                  ) : (
-                    <div className="flex size-full items-center justify-center">
-                      <ImageIcon className="size-8 opacity-40" aria-hidden />
-                    </div>
-                  )}
-                </div>
-                <div className="flex min-w-0 flex-1 flex-col justify-between gap-1">
                   <p
-                    className="truncate text-xs font-medium"
+                    className="min-w-0 flex-1 truncate text-xs font-medium text-muted-foreground"
                     title={m.fileName}
                   >
                     {m.fileName}
                   </p>
+                  {!isPrimary && !mutationsDisabled && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className="size-6 text-muted-foreground hover:text-primary"
+                      title="Set as primary"
+                      onClick={() => onChange(setPrimary(media, m.id))}
+                    >
+                      <Star className="size-3.5" />
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive h-8 self-start"
+                    size="icon-xs"
+                    className="size-6 text-muted-foreground hover:text-destructive"
                     disabled={mutationsDisabled}
                     onClick={() => onRemove(m.id)}
                   >
-                    <Trash2 className="size-4" aria-hidden />
-                    Remove
+                    <Trash2 className="size-3.5" />
                   </Button>
                 </div>
               </li>

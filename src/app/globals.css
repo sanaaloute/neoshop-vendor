@@ -148,6 +148,27 @@
     );
 }
 
+/* Premium product editor: deeper depth with indigo accent */
+.product-editor-bg {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(
+      140% 100% at 0% 0%,
+      color-mix(in oklch, var(--primary) 10%, transparent) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      100% 80% at 100% 0%,
+      color-mix(in oklch, var(--chart-2) 8%, transparent) 0%,
+      transparent 45%
+    ),
+    radial-gradient(
+      80% 60% at 50% 100%,
+      color-mix(in oklch, var(--chart-5) 6%, transparent) 0%,
+      transparent 40%
+    );
+}
+
 @utility shadow-vendor-card {
   box-shadow:
     0 1px 1px color-mix(in oklch, var(--foreground) 8%, transparent),
@@ -158,4 +179,43 @@
   box-shadow:
     0 1px 0 color-mix(in oklch, white 8%, transparent),
     0 28px 70px color-mix(in oklch, black 55%, transparent);
+}
+
+/* Glass morphism card for premium B2B feel */
+@utility glass-card {
+  background:
+    color-mix(in oklch, var(--card) 70%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in oklch, var(--foreground) 8%, transparent);
+  border-radius: calc(var(--radius) + 8px);
+}
+
+.dark .glass-card {
+  background:
+    color-mix(in oklch, var(--card) 65%, transparent);
+  border: 1px solid color-mix(in oklch, white 8%, transparent);
+}
+
+@utility shadow-glass {
+  box-shadow:
+    0 1px 0 color-mix(in oklch, white 6%, transparent),
+    0 12px 40px color-mix(in oklch, black 35%, transparent);
+}
+
+/* Premium input styling */
+@utility input-premium {
+  height: 48px;
+  border-radius: calc(var(--radius) + 4px);
+  background: color-mix(in oklch, var(--input) 60%, transparent);
+  border: 1px solid color-mix(in oklch, var(--border) 80%, transparent);
+  padding-left: 1rem;
+  padding-right: 1rem;
+  font-size: 0.9375rem;
+  transition: all 150ms ease;
+}
+
+.input-premium:focus {
+  border-color: color-mix(in oklch, var(--ring) 60%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 15%, transparent);
 }

@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Eye } from "lucide-react";
+import { ArrowLeft, Eye, Package } from "lucide-react";
 
 import { VendorMuted } from "@/components/layout/typography";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
 import { useProductEditorDraftStore } from "@/store/product-editor-draft-store";
@@ -14,6 +14,7 @@ import { useProductEditorDraftStore } from "@/store/product-editor-draft-store";
 import { emptyProductFormValues } from "./defaults";
 import { ProductForm } from "./product-form";
 import { ProductPreviewSheet } from "./product-preview-sheet";
+import { ProductStatusPanel } from "./product-status-panel";
 import type { ProductFormValues } from "./types";
 import { productToFormValues } from "./types";
 
@@ -44,6 +45,7 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [snapshot, setSnapshot] = useState<ProductFormValues>(defaultValues);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setSnapshot(defaultValues);
@@ -60,57 +62,86 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
   }, []);
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/products"
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "inline-flex gap-1.5"
-            )}
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-            Products
-          </Link>
-          <h1 className="text-lg font-semibold tracking-tight md:text-xl">
-            {catalogProductId ? "Edit product" : "New product"}
-          </h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {savedAt ? (
-            <VendorMuted className="text-xs tabular-nums">
-              Saved {savedAt}
-            </VendorMuted>
-          ) : null}
-          <button
-            type="button"
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "gap-1.5"
-            )}
-            onClick={() => setPreviewOpen(true)}
-          >
-            <Eye className="size-4" aria-hidden />
-            Preview
-          </button>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-30 -mx-4 px-4 pt-4 pb-2 md:-mx-6 md:px-6 md:pt-6 md:pb-3">
+        <div className="glass-card shadow-glass rounded-xl px-4 py-3 md:px-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/products"
+                className={cn(
+                  "inline-flex items-center justify-center rounded-lg border border-border/60 bg-background/50 px-2.5 py-1.5 text-sm font-medium transition-colors hover:bg-muted/60",
+                )}
+              >
+                <ArrowLeft className="size-4 mr-1.5" aria-hidden />
+                Products
+              </Link>
+              <div className="flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+                  <Package className="size-4 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-base font-semibold tracking-tight">
+                    {catalogProductId ? "Edit Product" : "Create Product"}
+                  </h1>
+                  {savedAt ? (
+                    <VendorMuted className="text-[11px] tabular-nums leading-none">
+                      Last saved {savedAt}
+                    </VendorMuted>
+                  ) : (
+                    <VendorMuted className="text-[11px] leading-none">
+                      Draft
+                    </VendorMuted>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setPreviewOpen(true)}
+              >
+                <Eye className="size-4" aria-hidden />
+                Preview
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <ProductForm
-        key={editorKey}
-        editorKey={editorKey}
-        catalogProductId={catalogProductId}
-        defaultValues={defaultValues}
-        onSuccess={(createdId, configureVariants) => {
-          if (createdId && configureVariants) {
-            router.push(`/variants?productId=${createdId}`);
-          } else {
-            router.push("/products");
-          }
-        }}
-        onValuesSnapshot={handleSnapshot}
-      />
+      {/* Main Content */}
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <ProductForm
+          key={editorKey}
+          editorKey={editorKey}
+          catalogProductId={catalogProductId}
+          defaultValues={defaultValues}
+          onSuccess={(createdId, configureVariants) => {
+            if (createdId && configureVariants) {
+              router.push(`/variants?productId=${createdId}`);
+            } else {
+              router.push("/products");
+            }
+          }}
+          onValuesSnapshot={handleSnapshot}
+          onSavingChange={setSaving}
+        />
+
+        {/* Right Sidebar */}
+        <aside className="hidden lg:block">
+          <ProductStatusPanel
+            values={snapshot}
+            catalogProductId={catalogProductId}
+            savedAt={savedAt}
+            onPreview={() => setPreviewOpen(true)}
+            saving={saving}
+          />
+        </aside>
+      </div>
 
       <ProductPreviewSheet
         open={previewOpen}

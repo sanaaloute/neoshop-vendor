@@ -10,13 +10,36 @@ import {
   useFormContext,
   useWatch,
 } from "react-hook-form";
+import {
+  ChevronDown,
+  ChevronUp,
+  FolderOpen,
+  GripVertical,
+  ImageIcon,
+  Layers,
+  Save,
+  Search,
+  Send,
+  Sparkles,
+  Tag,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 
 import { VendorTextField } from "@/components/forms/vendor-text-field";
+import { VendorMuted } from "@/components/layout/typography";
 import { VendorWriteGuardBanner } from "@/components/vendor/vendor-write-guard-banner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import { Textarea } from "@/components/ui/textarea";
 import { getApiBaseUrl } from "@/config/auth";
 import { UI_DELAYS } from "@/config/ui";
@@ -27,14 +50,19 @@ import {
   createProductFromForm,
   updateProductFromForm,
 } from "@/services/vendor/product-gateway-sync";
-import { attachProductMedia, deleteProductMedia, getProduct } from "@/services/vendor/products-api";
+import {
+  attachProductMedia,
+  deleteProductMedia,
+  getProduct,
+} from "@/services/vendor/products-api";
 import { uploadStorageObject } from "@/services/vendor/storage-api";
 import { useVendorWritesAllowed } from "@/hooks/use-vendor-writes";
+import { useCategories } from "@/hooks/use-categories";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
 import { useProductEditorDraftStore } from "@/store/product-editor-draft-store";
+import { cn } from "@/lib/utils";
 
 import { SUGGESTED_PRODUCT_TAGS } from "./constants";
-import { useCategories } from "@/hooks/use-categories";
 import { ProductMediaGallery } from "./product-media-gallery";
 import { productFormSchema } from "./schemas";
 import type { ProductFormValues } from "./types";
@@ -45,6 +73,7 @@ type ProductFormProps = {
   defaultValues: ProductFormValues;
   onSuccess?: (createdProductId?: string, configureVariants?: boolean) => void;
   onValuesSnapshot?: (values: ProductFormValues) => void;
+  onSavingChange?: (saving: boolean) => void;
 };
 
 export function ProductForm({
@@ -53,6 +82,7 @@ export function ProductForm({
   defaultValues,
   onSuccess,
   onValuesSnapshot,
+  onSavingChange,
 }: ProductFormProps) {
   const { canWriteCatalog, status: vendorStatus } = useVendorWritesAllowed();
   const form = useForm<ProductFormValues>({
@@ -72,6 +102,10 @@ export function ProductForm({
   const originalMediaIds = useRef(new Set<string>());
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    onSavingChange?.(saving);
+  }, [saving, onSavingChange]);
 
   useEffect(() => {
     originalMediaIds.current = new Set(
@@ -132,7 +166,12 @@ export function ProductForm({
     const base = slugify(watchedName).toUpperCase();
     const shortId = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
     const generated = `${base}-${shortId}`;
-    if (!currentSku || currentSku.startsWith(slugify(watchedName.slice(0, -1) || watchedName).toUpperCase())) {
+    if (
+      !currentSku ||
+      currentSku.startsWith(
+        slugify(watchedName.slice(0, -1) || watchedName).toUpperCase()
+      )
+    ) {
       form.setValue("sku", generated, {
         shouldValidate: true,
         shouldDirty: true,
@@ -144,7 +183,10 @@ export function ProductForm({
     if (!watchedName?.trim()) return;
     const currentSlug = form.getValues("seo.slug");
     const generated = slugify(watchedName);
-    if (!currentSlug || currentSlug === slugify(watchedName.slice(0, -1) || watchedName)) {
+    if (
+      !currentSlug ||
+      currentSlug === slugify(watchedName.slice(0, -1) || watchedName)
+    ) {
       form.setValue("seo.slug", generated, {
         shouldValidate: true,
         shouldDirty: true,
@@ -201,8 +243,6 @@ export function ProductForm({
     [form, previews, canWriteCatalog]
   );
 
-  const [tagDraft, setTagDraft] = useState("");
-
   useEffect(() => {
     form.reset(defaultValues);
   }, [defaultValues, form]);
@@ -255,7 +295,9 @@ export function ProductForm({
   const saveToCatalog = form.handleSubmit(async (v) => {
     setSaveError(null);
     if (!canWriteCatalog) {
-      setSaveError("Catalog changes unlock after NeoShop approves your vendor account.");
+      setSaveError(
+        "Catalog changes unlock after NeoShop approves your vendor account."
+      );
       return;
     }
     if (getApiBaseUrl()) {
@@ -293,7 +335,9 @@ export function ProductForm({
     form.reset(next);
     setSaveError(null);
     if (!canWriteCatalog) {
-      setSaveError("Catalog changes unlock after NeoShop approves your vendor account.");
+      setSaveError(
+        "Catalog changes unlock after NeoShop approves your vendor account."
+      );
       return;
     }
     if (getApiBaseUrl()) {
@@ -330,51 +374,105 @@ export function ProductForm({
 
   return (
     <FormProvider {...form}>
-      <div className="grid gap-6">
+      <div className="flex flex-col gap-5">
         <VendorWriteGuardBanner area="catalog" status={vendorStatus} />
-        <section className="grid gap-4">
-          <h2 className="text-base font-semibold tracking-tight">General</h2>
-          <div className="grid gap-4 md:grid-cols-2">
+
+        {/* Gallery — First & Emphasized */}
+        <Card className="glass-card shadow-glass overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <ImageIcon className="size-4 text-primary" />
+              Product Gallery
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ProductMediaGallery
+              media={mediaList}
+              previews={previews}
+              mutationsDisabled={!canWriteCatalog}
+              onChange={(next) =>
+                form.setValue("media", next, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+              onAddFiles={handleAddFiles}
+              onRemove={handleRemoveMedia}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Product Details */}
+        <Card className="glass-card shadow-glass">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <Sparkles className="size-4 text-primary" />
+              Product Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-5">
             <VendorTextField
               control={form.control}
               name="name"
-              label="Product name"
+              label="Product Name"
               placeholder="Wholesale ceramic mugs"
-              className="md:col-span-2"
             />
-            <div className="grid gap-1.5">
-              <Label className="text-sm font-medium">SKU</Label>
-              <Input
-                readOnly
-                disabled
-                value={form.watch("sku")}
-                className="bg-muted/50 h-9 font-mono text-xs tabular-nums"
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label className="text-sm font-medium">SKU</Label>
+                <Input
+                  readOnly
+                  disabled
+                  value={form.watch("sku")}
+                  className="bg-muted/50 h-9 font-mono text-xs tabular-nums"
+                />
+              </div>
+              <Controller
+                control={form.control}
+                name="price"
+                render={({ field, fieldState }) => (
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={field.name}>Price (CNY)</Label>
+                    <Input
+                      id={field.name}
+                      type="number"
+                      step="0.01"
+                      min={0.01}
+                      aria-invalid={fieldState.invalid}
+                      value={
+                        Number.isFinite(field.value) ? String(field.value) : ""
+                      }
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        field.onChange(
+                          raw === "" ? NaN : Number.parseFloat(raw)
+                        );
+                      }}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                    />
+                    {fieldState.error?.message ? (
+                      <p className="text-destructive text-xs">
+                        {fieldState.error.message}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
               />
             </div>
             <Controller
               control={form.control}
-              name="price"
+              name="description"
               render={({ field, fieldState }) => (
                 <div className="grid gap-1.5">
-                  <Label htmlFor={field.name}>Price (CNY)</Label>
-                  <Input
+                  <Label htmlFor={field.name}>Description</Label>
+                  <Textarea
                     id={field.name}
-                    type="number"
-                    step="0.01"
-                    min={0.01}
+                    rows={5}
                     aria-invalid={fieldState.invalid}
-                    value={
-                      Number.isFinite(field.value) ? String(field.value) : ""
-                    }
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      field.onChange(
-                        raw === "" ? NaN : Number.parseFloat(raw)
-                      );
-                    }}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    ref={field.ref}
+                    placeholder="Specs, MOQ, lead times, packaging…"
+                    {...field}
                   />
                   {fieldState.error?.message ? (
                     <p className="text-destructive text-xs">
@@ -384,92 +482,333 @@ export function ProductForm({
                 </div>
               )}
             />
-          </div>
-          <Controller
-            control={form.control}
-            name="description"
-            render={({ field, fieldState }) => (
-              <div className="grid gap-1.5">
-                <Label htmlFor={field.name}>Description</Label>
-                <Textarea
-                  id={field.name}
-                  rows={5}
-                  aria-invalid={fieldState.invalid}
-                  placeholder="Specs, MOQ, lead times, packaging…"
-                  {...field}
-                />
-                {fieldState.error?.message ? (
-                  <p className="text-destructive text-xs">
-                    {fieldState.error.message}
-                  </p>
-                ) : null}
+          </CardContent>
+        </Card>
+
+        {/* Categories */}
+        <Card className="glass-card shadow-glass">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <FolderOpen className="size-4 text-primary" />
+              Categories
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CategorySelector />
+          </CardContent>
+        </Card>
+
+        {/* Tags */}
+        <Card className="glass-card shadow-glass">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <Tag className="size-4 text-primary" />
+              Tags
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TagSelector />
+          </CardContent>
+        </Card>
+
+        {/* Variants */}
+        <Card className="glass-card shadow-glass">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <Layers className="size-4 text-primary" />
+              Variants
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {catalogProductId ? (
+              <div className="flex items-center gap-3">
+                <Link
+                  href={`/variants?productId=${catalogProductId}`}
+                  className="text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline"
+                >
+                  Edit variants →
+                </Link>
               </div>
+            ) : (
+              <Controller
+                control={form.control}
+                name="configureVariants"
+                render={({ field }) => (
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="accent-primary size-4"
+                      checked={field.value ?? false}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                    />
+                    <span className="text-sm">
+                      Go to variant setup after saving this product
+                    </span>
+                  </label>
+                )}
+              />
             )}
-          />
+          </CardContent>
+        </Card>
 
-          <CategorySelector />
-          <TagSelector tagDraft={tagDraft} setTagDraft={setTagDraft} />
-        </section>
+        {/* SEO — Collapsible */}
+        <SeoSection />
 
-        <section className="grid gap-4">
-          <h2 className="text-base font-semibold tracking-tight">Media</h2>
-          <ProductMediaGallery
-            media={mediaList}
-            previews={previews}
-            mutationsDisabled={!canWriteCatalog}
-            onChange={(next) =>
-              form.setValue("media", next, {
-                shouldDirty: true,
-                shouldValidate: true,
-              })
-            }
-            onAddFiles={handleAddFiles}
-            onRemove={handleRemoveMedia}
-          />
-        </section>
-
-        <section className="grid max-w-2xl gap-4">
-          <h2 className="text-base font-semibold tracking-tight">Variants</h2>
-          {catalogProductId ? (
-            <div className="flex items-center gap-3">
-              <Link
-                href={`/variants?productId=${catalogProductId}`}
-                className="text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline"
-              >
-                Edit variants →
-              </Link>
+        {/* Sticky Action Bar */}
+        <div className="sticky bottom-0 z-20 -mx-4 px-4 pb-4 md:-mx-6 md:px-6 md:pb-6">
+          <div className="glass-card shadow-glass rounded-xl p-4">
+            {saveError ? (
+              <p className="text-destructive text-sm mb-3">{saveError}</p>
+            ) : null}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <VendorMuted className="text-xs">
+                {saving
+                  ? "Saving…"
+                  : "Changes are auto-saved locally. Submit when ready."}
+              </VendorMuted>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={saving || !canWriteCatalog}
+                  onClick={() => void saveToCatalog()}
+                  className="gap-1.5"
+                >
+                  <Save className="size-4" />
+                  Save Draft
+                </Button>
+                <Button
+                  type="button"
+                  disabled={saving || !canWriteCatalog}
+                  onClick={() => void publishNow()}
+                  className="gap-1.5"
+                >
+                  <Send className="size-4" />
+                  Submit Review
+                </Button>
+              </div>
             </div>
-          ) : (
-            <Controller
-              control={form.control}
-              name="configureVariants"
-              render={({ field }) => (
-                <label className="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="checkbox"
-                    className="accent-primary size-4"
-                    checked={field.value ?? false}
-                    onChange={(e) =>
-                      field.onChange(e.target.checked)
-                    }
-                  />
-                  <span className="text-sm">
-                    Go to variant setup after saving this product
-                  </span>
-                </label>
-              )}
-            />
-          )}
-        </section>
+          </div>
+        </div>
+      </div>
+    </FormProvider>
+  );
+}
 
-        <section className="grid max-w-2xl gap-4">
-          <h2 className="text-base font-semibold tracking-tight">SEO</h2>
+/* ─── Modern Category Selector ─── */
+function CategorySelector() {
+  const {
+    setValue,
+    watch,
+    formState: { errors },
+  } = useFormContext<ProductFormValues>();
+  const selected = watch("categoryIds") ?? [];
+  const categories = useCategories();
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return categories;
+    const q = search.toLowerCase();
+    return categories.filter((c) => c.name.toLowerCase().includes(q));
+  }, [categories, search]);
+
+  return (
+    <div className="grid gap-3">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+        <Input
+          placeholder="Search categories…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {categories.length === 0 ? (
+          <p className="text-muted-foreground text-xs">
+            No categories available. Categories are loaded from the server.
+          </p>
+        ) : filtered.length === 0 ? (
+          <p className="text-muted-foreground text-xs">
+            No categories match your search.
+          </p>
+        ) : (
+          filtered.map((c) => {
+            const on = selected.includes(c.id);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => {
+                  const next = on
+                    ? selected.filter((id) => id !== c.id)
+                    : [...selected, c.id];
+                  setValue("categoryIds", next, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  });
+                }}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-all",
+                  on
+                    ? "border-primary/30 bg-primary/15 text-primary"
+                    : "border-border/60 bg-background/40 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                )}
+              >
+                {on && (
+                  <span className="flex size-3.5 items-center justify-center rounded-full bg-primary text-[8px] text-primary-foreground font-bold">
+                    ✓
+                  </span>
+                )}
+                {c.name}
+              </button>
+            );
+          })
+        )}
+      </div>
+      {errors.categoryIds?.message ? (
+        <p className="text-destructive text-xs">
+          {errors.categoryIds.message}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/* ─── Modern Tag Input ─── */
+function TagSelector() {
+  const { setValue, watch } = useFormContext<ProductFormValues>();
+  const tags = watch("tags") ?? [];
+  const [draft, setDraft] = useState("");
+
+  const addTag = (raw: string) => {
+    const t = raw.trim().toLowerCase();
+    if (!t || tags.includes(t)) return;
+    setValue("tags", [...tags, t], { shouldValidate: true, shouldDirty: true });
+    setDraft("");
+  };
+
+  const removeTag = (t: string) => {
+    setValue(
+      "tags",
+      tags.filter((x) => x !== t),
+      { shouldValidate: true, shouldDirty: true }
+    );
+  };
+
+  return (
+    <div className="grid gap-3">
+      {/* Suggested tags */}
+      <div className="flex flex-wrap gap-2">
+        {SUGGESTED_PRODUCT_TAGS.map((t) => {
+          const on = tags.includes(t);
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => {
+                if (on) {
+                  removeTag(t);
+                } else {
+                  setValue("tags", [...tags, t], {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  });
+                }
+              }}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium capitalize transition-all",
+                on
+                  ? "border-primary/30 bg-primary/15 text-primary"
+                  : "border-border/60 bg-background/40 text-muted-foreground hover:bg-muted/50"
+              )}
+            >
+              {on ? "✓" : "+"} {t}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Active tags */}
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {tags.map((t) => (
+            <Badge
+              key={t}
+              variant="secondary"
+              className="cursor-pointer gap-1 capitalize pr-1.5 hover:bg-destructive/10 hover:text-destructive transition-colors"
+              onClick={() => removeTag(t)}
+            >
+              {t}
+              <X className="size-3" />
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      {/* Custom tag input */}
+      <div className="flex gap-2">
+        <Input
+          placeholder="Add custom tag…"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addTag(draft);
+            }
+          }}
+          className="flex-1"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => addTag(draft)}
+          disabled={!draft.trim()}
+        >
+          Add
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Collapsible SEO Section ─── */
+function SeoSection() {
+  const [open, setOpen] = useState(false);
+  const { control, setValue, getValues } = useFormContext<ProductFormValues>();
+
+  return (
+    <Card className="glass-card shadow-glass overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-muted/20 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Search className="size-4 text-primary" />
+          <CardTitle className="text-base font-semibold">
+            SEO Settings
+          </CardTitle>
+          <span className="text-xs text-muted-foreground ml-1">
+            (Optional)
+          </span>
+        </div>
+        {open ? (
+          <ChevronUp className="size-4 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="size-4 text-muted-foreground" />
+        )}
+      </button>
+      {open && (
+        <CardContent className="grid gap-5 border-t border-border/40 pt-4">
           <div className="flex flex-wrap items-end gap-2">
             <div className="min-w-0 flex-1">
               <VendorTextField
-                control={form.control}
+                control={control}
                 name="seo.slug"
-                label="URL slug"
+                label="URL Slug"
                 placeholder="wholesale-ceramic-mugs"
               />
             </div>
@@ -478,9 +817,9 @@ export function ProductForm({
               variant="outline"
               className="shrink-0"
               onClick={() => {
-                const name = form.getValues("name");
+                const name = getValues("name");
                 if (name?.trim()) {
-                  form.setValue("seo.slug", slugify(name), {
+                  setValue("seo.slug", slugify(name), {
                     shouldDirty: true,
                     shouldValidate: true,
                   });
@@ -491,17 +830,17 @@ export function ProductForm({
             </Button>
           </div>
           <VendorTextField
-            control={form.control}
+            control={control}
             name="seo.metaTitle"
-            label="Meta title"
+            label="Meta Title"
             placeholder="Shown in search results"
           />
           <Controller
-            control={form.control}
+            control={control}
             name="seo.metaDescription"
             render={({ field, fieldState }) => (
               <div className="grid gap-1.5">
-                <Label htmlFor={field.name}>Meta description</Label>
+                <Label htmlFor={field.name}>Meta Description</Label>
                 <Textarea
                   id={field.name}
                   rows={3}
@@ -520,167 +859,8 @@ export function ProductForm({
               </div>
             )}
           />
-        </section>
-
-        <div className="border-border flex flex-col gap-2 border-t pt-4">
-          {saveError ? (
-            <p className="text-destructive text-sm">{saveError}</p>
-          ) : null}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={saving || !canWriteCatalog}
-              onClick={() => void saveToCatalog()}
-            >
-              Save as draft
-            </Button>
-            <Button
-              type="button"
-              disabled={saving || !canWriteCatalog}
-              onClick={() => void publishNow()}
-            >
-              Submit for review
-            </Button>
-          </div>
-        </div>
-      </div>
-    </FormProvider>
-  );
-}
-
-function CategorySelector() {
-  const {
-    setValue,
-    watch,
-    formState: { errors },
-  } = useFormContext<ProductFormValues>();
-  const selected = watch("categoryIds") ?? [];
-  const categories = useCategories();
-
-  return (
-    <div className="grid gap-2">
-      <Label>Categories</Label>
-      <div className="flex flex-wrap gap-2">
-        {categories.length === 0 ? (
-          <p className="text-muted-foreground text-xs">
-            No categories available. Categories are loaded from the server.
-          </p>
-        ) : (
-          categories.map((c) => {
-            const on = selected.includes(c.id);
-            return (
-              <Button
-                key={c.id}
-                type="button"
-                size="sm"
-                variant={on ? "default" : "outline"}
-                className="rounded-full"
-                onClick={() => {
-                  const next = on
-                    ? selected.filter((id) => id !== c.id)
-                    : [...selected, c.id];
-                  setValue("categoryIds", next, {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  });
-                }}
-              >
-                {c.name}
-              </Button>
-            );
-          })
-        )}
-      </div>
-      {errors.categoryIds?.message ? (
-        <p className="text-destructive text-xs">{errors.categoryIds.message}</p>
-      ) : null}
-    </div>
-  );
-}
-
-function TagSelector({
-  tagDraft,
-  setTagDraft,
-}: {
-  tagDraft: string;
-  setTagDraft: (v: string) => void;
-}) {
-  const { setValue, watch } = useFormContext<ProductFormValues>();
-  const tags = watch("tags") ?? [];
-
-  const addTag = (raw: string) => {
-    const t = raw.trim().toLowerCase();
-    if (!t || tags.includes(t)) return;
-    setValue("tags", [...tags, t], { shouldValidate: true, shouldDirty: true });
-    setTagDraft("");
-  };
-
-  return (
-    <div className="grid gap-2">
-      <Label htmlFor="product-tag-input">Tags</Label>
-      <div className="flex flex-wrap gap-2">
-        {SUGGESTED_PRODUCT_TAGS.map((t) => {
-          const on = tags.includes(t);
-          return (
-            <Button
-              key={t}
-              type="button"
-              size="sm"
-              variant={on ? "default" : "outline"}
-              className="rounded-full capitalize"
-              onClick={() => {
-                if (on) {
-                  setValue(
-                    "tags",
-                    tags.filter((x) => x !== t),
-                    { shouldValidate: true, shouldDirty: true }
-                  );
-                } else {
-                  setValue("tags", [...tags, t], {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  });
-                }
-              }}
-            >
-              {t}
-            </Button>
-          );
-        })}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {tags.map((t) => (
-          <Button
-            key={t}
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="rounded-full capitalize"
-            onClick={() =>
-              setValue(
-                "tags",
-                tags.filter((x) => x !== t),
-                { shouldValidate: true, shouldDirty: true }
-              )
-            }
-          >
-            {t} ×
-          </Button>
-        ))}
-      </div>
-      <Input
-        id="product-tag-input"
-        placeholder="custom-tag"
-        value={tagDraft}
-        onChange={(e) => setTagDraft(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            addTag(tagDraft);
-          }
-        }}
-      />
-    </div>
+        </CardContent>
+      )}
+    </Card>
   );
 }
