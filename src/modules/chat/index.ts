@@ -13,4 +13,5 @@ export type {
   ChatMessage,
   ChatAttachment,
   ChatAuthorRole,
+  ChatParticipant,
 } from "./types";

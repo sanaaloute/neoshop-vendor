@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 
-import type { ChatMessage, ChatThread } from "@/modules/chat/types";
+import type { ChatMessage, ChatParticipant, ChatThread } from "@/modules/chat/types";
 
 function upsertMessage(
   messages: ChatMessage[],
@@ -20,6 +20,10 @@ type ChatStoreState = {
   setSelectedThreadId: (id: string | null) => void;
   replaceThreads: (threads: ChatThread[]) => void;
   mergeThreadMessages: (threadId: string, messages: ChatMessage[]) => void;
+  mergeThreadParticipantMap: (
+    threadId: string,
+    map: Record<string, ChatParticipant>
+  ) => void;
   mergeIncomingMessage: (message: ChatMessage) => void;
   appendVendorMessage: (threadId: string, msg: ChatMessage) => void;
   markThreadRead: (threadId: string) => void;
@@ -35,6 +39,14 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
     set((s) => ({
       threads: s.threads.map((t) =>
         t.id === threadId ? { ...t, messages } : t
+      ),
+    })),
+  mergeThreadParticipantMap: (threadId, map) =>
+    set((s) => ({
+      threads: s.threads.map((t) =>
+        t.id === threadId
+          ? { ...t, participantMap: { ...t.participantMap, ...map } }
+          : t
       ),
     })),
   mergeIncomingMessage: (message) => {

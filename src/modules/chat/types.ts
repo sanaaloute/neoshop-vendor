@@ -7,6 +7,16 @@ export type ChatAttachment = {
   sizeBytes: number;
 };
 
+export type ChatParticipant = {
+  id: string;
+  name: string;
+  surname?: string;
+  email?: string;
+  phone?: string;
+  avatarUrl?: string;
+  role: ChatAuthorRole;
+};
+
 export type ChatMessage = {
   id: string;
   threadId: string;
@@ -25,6 +35,8 @@ export type ChatThread = {
   customerPhone?: string;
   /** The vendor's participant ID in this conversation (for role detection) */
   vendorChatId?: string;
+  /** Cached participant info keyed by senderUserId */
+  participantMap: Record<string, ChatParticipant>;
   orderRef?: string;
   /** ISO — messages from customer at or after this count as unread for badge */
   lastReadAt: string;

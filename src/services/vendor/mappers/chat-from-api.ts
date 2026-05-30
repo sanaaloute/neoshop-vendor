@@ -1,4 +1,4 @@
-import type { ChatMessage, ChatThread } from "@/modules/chat/types";
+import type { ChatMessage, ChatParticipant, ChatThread } from "@/modules/chat/types";
 
 function extractParticipantId(
   p: Record<string, unknown> | undefined
@@ -6,6 +6,35 @@ function extractParticipantId(
   if (!p) return "";
   const usr = p.user as Record<string, unknown> | undefined;
   return String(p.userId ?? usr?.id ?? "");
+}
+
+function mapParticipant(
+  p: Record<string, unknown> | undefined
+): ChatParticipant | undefined {
+  if (!p) return undefined;
+  const usr = p.user as Record<string, unknown> | undefined;
+  const u = (usr ?? p) as Record<string, unknown> | undefined;
+  if (!u) return undefined;
+
+  const id = String(u.id ?? "");
+  if (!id) return undefined;
+
+  const roleStr = String(u.role ?? "").toLowerCase();
+  const role: ChatParticipant["role"] =
+    roleStr === "vendor" ? "vendor" : "customer";
+
+  return {
+    id,
+    name: String(u.name ?? ""),
+    surname: String(u.surname ?? ""),
+    email: String(u.email ?? "") || undefined,
+    phone: String(u.phone ?? u.phoneNumber ?? u.mobile ?? "") || undefined,
+    avatarUrl:
+      (typeof u.avatarUrl === "string" && u.avatarUrl) ||
+      (typeof u.avatar === "string" && u.avatar) ||
+      undefined,
+    role,
+  };
 }
 
 function isCurrentUser(senderId: string, currentUserIds: string[]): boolean {
@@ -37,10 +66,19 @@ export function mapConversationToThread(
     ? (raw.participants as Record<string, unknown>[])
     : [];
 
+  // Build participant map from full profiles
+  const participantMap: Record<string, ChatParticipant> = {};
+  for (const p of participants) {
+    const participant = mapParticipant(p);
+    if (participant) {
+      participantMap[participant.id] = participant;
+    }
+  }
+
   // Identify the vendor participant by role, then extract their chat ID
   const vendorParticipant = participants.find((p) => {
     const usr = p.user as Record<string, unknown> | undefined;
-    return String(usr?.role ?? "") === "vendor";
+    return String(usr?.role ?? "").toLowerCase() === "vendor";
   });
   const vendorParticipantId = extractParticipantId(vendorParticipant);
 
@@ -56,13 +94,10 @@ export function mapConversationToThread(
       return !isCurrentUser(extractParticipantId(p), vendorIds);
     }) ?? participants[0];
 
-  const usr = peer?.user as Record<string, unknown> | undefined;
-  const u = (usr ?? peer) as Record<string, unknown> | undefined;
-  const email = String(u?.email ?? "");
-  const phone = String(u?.phone ?? u?.phoneNumber ?? u?.mobile ?? "");
-  const name = String(
-    u?.name ?? u?.fullName ?? (email || phone || "Customer")
-  );
+  const peerParticipant = mapParticipant(peer);
+  const name = peerParticipant
+    ? `${peerParticipant.name}${peerParticipant.surname ? ` ${peerParticipant.surname}` : ""}`.trim() || "Customer"
+    : "Customer";
 
   const last = raw.lastMessage as Record<string, unknown> | undefined;
   const seedMsgs =
@@ -86,9 +121,10 @@ export function mapConversationToThread(
   return {
     id: String(raw.id),
     customerName: name,
-    customerEmail: email,
-    customerPhone: phone || undefined,
+    customerEmail: peerParticipant?.email ?? "",
+    customerPhone: peerParticipant?.phone,
     vendorChatId: vendorParticipantId || undefined,
+    participantMap,
     orderRef: undefined,
     lastReadAt: new Date(0).toISOString(),
     messages: seedMsgs,

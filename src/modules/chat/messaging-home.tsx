@@ -37,7 +37,6 @@ import {
   deleteConversationMessage,
 } from "@/services/vendor/chat-api";
 import {
-  useChatMessageRealtimeEvents,
   useChatTypingRealtimeEvents,
   useRealtimeVendorStatus,
 } from "@/realtime/hooks";
@@ -56,6 +55,15 @@ function unreadCount(t: ChatThread): number {
   return t.messages.filter(
     (m) => m.authorRole === "customer" && m.sentAt > t.lastReadAt
   ).length;
+}
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 function formatShortTime(iso: string) {
@@ -80,7 +88,6 @@ export function MessagingHome() {
   const threads = useChatStore((s) => s.threads);
   const selectedId = useChatStore((s) => s.selectedThreadId);
   const setSelectedThreadId = useChatStore((s) => s.setSelectedThreadId);
-  const mergeIncomingMessage = useChatStore((s) => s.mergeIncomingMessage);
   const appendVendorMessage = useChatStore((s) => s.appendVendorMessage);
   const markThreadRead = useChatStore((s) => s.markThreadRead);
   const deleteMessage = useChatStore((s) => s.deleteMessage);
@@ -114,18 +121,6 @@ export function MessagingHome() {
     if (!selectedId) return;
     markThreadRead(selectedId);
   }, [selectedId, markThreadRead]);
-
-  // Socket.IO incoming messages
-  useChatMessageRealtimeEvents((payload) => {
-    const isFromVendor = payload.senderUserId === vendorUserId;
-    mergeIncomingMessage({
-      id: payload.id,
-      threadId: payload.conversationId,
-      authorRole: isFromVendor ? "vendor" : "customer",
-      body: payload.body,
-      sentAt: payload.createdAt,
-    });
-  });
 
   // Socket.IO typing events
   useChatTypingRealtimeEvents((payload) => {
@@ -344,42 +339,60 @@ export function MessagingHome() {
                 const active = t.id === selectedId;
                 const unread = unreadCount(t);
                 const preview = t.messages[t.messages.length - 1];
+                const peer = Object.values(t.participantMap).find(
+                  (p) => p.role === "customer"
+                );
                 return (
                   <li key={t.id}>
                     <button
                       type="button"
                       onClick={() => selectThread(t.id)}
                       className={cn(
-                        "flex w-full flex-col gap-1 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
+                        "flex w-full gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
                         active ? "bg-muted/70" : "hover:bg-muted/40"
                       )}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="truncate font-medium">
-                          {t.customerName}
-                        </span>
-                        <span className="text-muted-foreground shrink-0 text-[11px] tabular-nums">
-                          {preview ? formatShortTime(preview.sentAt) : ""}
-                        </span>
+                      <div className="shrink-0">
+                        {peer?.avatarUrl ? (
+                          <img
+                            src={peer.avatarUrl}
+                            alt=""
+                            className="size-9 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-full text-xs font-semibold">
+                            {initials(t.customerName)}
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-muted-foreground truncate text-xs">
-                          {preview?.body ?? "No messages yet"}
-                        </span>
-                        {unread > 0 ? (
-                          <Badge
-                            variant="default"
-                            className="h-5 min-w-5 shrink-0 justify-center px-1.5 text-[10px] tabular-nums"
-                          >
-                            {unread > 99 ? "99+" : unread}
-                          </Badge>
+                      <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate font-medium">
+                            {t.customerName}
+                          </span>
+                          <span className="text-muted-foreground shrink-0 text-[11px] tabular-nums">
+                            {preview ? formatShortTime(preview.sentAt) : ""}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-muted-foreground truncate text-xs">
+                            {preview?.body ?? "No messages yet"}
+                          </span>
+                          {unread > 0 ? (
+                            <Badge
+                              variant="default"
+                              className="h-5 min-w-5 shrink-0 justify-center px-1.5 text-[10px] tabular-nums"
+                            >
+                              {unread > 99 ? "99+" : unread}
+                            </Badge>
+                          ) : null}
+                        </div>
+                        {t.orderRef ? (
+                          <span className="text-muted-foreground font-mono text-[11px]">
+                            {t.orderRef}
+                          </span>
                         ) : null}
                       </div>
-                      {t.orderRef ? (
-                        <span className="text-muted-foreground font-mono text-[11px]">
-                          {t.orderRef}
-                        </span>
-                      ) : null}
                     </button>
                   </li>
                 );
@@ -423,18 +436,36 @@ export function MessagingHome() {
         >
           {selected ? (
             <>
-              <SheetHeader className="border-border/60 border-b px-4 py-3 text-left">
-                <SheetTitle className="leading-snug">
-                  {selected.customerName}
-                </SheetTitle>
-                <SheetDescription className="truncate">
-                  {selected.customerEmail || selected.customerPhone || ""}
-                  {selected.orderRef ? (
-                    <span className="ml-2 font-mono text-xs">
-                      {selected.orderRef}
-                    </span>
-                  ) : null}
-                </SheetDescription>
+              <SheetHeader className="border-border/60 flex-row items-center gap-3 border-b px-4 py-3 text-left">
+                {(() => {
+                  const peer = Object.values(selected.participantMap).find(
+                    (p) => p.role === "customer"
+                  );
+                  return peer?.avatarUrl ? (
+                    <img
+                      src={peer.avatarUrl}
+                      alt=""
+                      className="size-9 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-full text-xs font-semibold">
+                      {initials(selected.customerName)}
+                    </div>
+                  );
+                })()}
+                <div className="min-w-0">
+                  <SheetTitle className="leading-snug">
+                    {selected.customerName}
+                  </SheetTitle>
+                  <SheetDescription className="truncate">
+                    {selected.customerEmail || selected.customerPhone || ""}
+                    {selected.orderRef ? (
+                      <span className="ml-2 font-mono text-xs">
+                        {selected.orderRef}
+                      </span>
+                    ) : null}
+                  </SheetDescription>
+                </div>
               </SheetHeader>
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-2 pb-2">
                 <Button
@@ -521,79 +552,125 @@ function ConversationBody({
 
   return (
     <>
-      <header className="border-border/60 hidden shrink-0 border-b px-4 py-3 lg:block">
-        <h2 className="text-base leading-tight font-semibold">
-          {thread.customerName}
-        </h2>
-        <p className="text-muted-foreground text-xs">
-          {thread.customerEmail || thread.customerPhone || ""}
-          {thread.orderRef ? (
-            <span className="ml-2 font-mono">· {thread.orderRef}</span>
-          ) : null}
-        </p>
+      <header className="border-border/60 hidden shrink-0 items-center gap-3 border-b px-4 py-3 lg:flex">
+        {(() => {
+          const peer = Object.values(thread.participantMap).find(
+            (p) => p.role === "customer"
+          );
+          return peer?.avatarUrl ? (
+            <img
+              src={peer.avatarUrl}
+              alt=""
+              className="size-9 rounded-full object-cover"
+            />
+          ) : (
+            <div className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-full text-xs font-semibold">
+              {initials(thread.customerName)}
+            </div>
+          );
+        })()}
+        <div className="min-w-0">
+          <h2 className="text-base leading-tight font-semibold">
+            {thread.customerName}
+          </h2>
+          <p className="text-muted-foreground text-xs">
+            {thread.customerEmail || thread.customerPhone || ""}
+            {thread.orderRef ? (
+              <span className="ml-2 font-mono">· {thread.orderRef}</span>
+            ) : null}
+          </p>
+        </div>
       </header>
 
       <ScrollArea className="min-h-0 flex-1 px-2">
         <div className="space-y-3 py-3 pr-2">
-          {thread.messages.map((m) => (
-            <div
-              key={m.id}
-              className={cn(
-                "flex",
-                m.authorRole === "vendor" ? "justify-end" : "justify-start"
-              )}
-              onMouseEnter={() => setHoveredMessageId(m.id)}
-              onMouseLeave={() => setHoveredMessageId(null)}
-            >
+          {thread.messages.map((m) => {
+            // For historical/API messages, senderUserId isn't stored on ChatMessage.
+            // We rely on authorRole; for customer messages we show the peer info.
+            const isVendor = m.authorRole === "vendor";
+            const peer = Object.values(thread.participantMap).find(
+              (p) => p.role === "customer"
+            );
+            return (
               <div
+                key={m.id}
                 className={cn(
-                  "group max-w-[min(100%,420px)] rounded-2xl border px-3 py-2 text-sm shadow-sm relative",
-                  m.authorRole === "vendor"
-                    ? "border-primary/30 bg-primary/15 text-foreground"
-                    : "border-border bg-muted/40"
+                  "flex gap-2",
+                  isVendor ? "justify-end" : "justify-start"
                 )}
+                onMouseEnter={() => setHoveredMessageId(m.id)}
+                onMouseLeave={() => setHoveredMessageId(null)}
               >
-                {/* Delete button - only on vendor's own messages */}
-                {m.authorRole === "vendor" && hoveredMessageId === m.id && (
-                  <button
-                    type="button"
-                    onClick={() => onDeleteMessage(m.id)}
-                    className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-100"
-                    title="Delete message"
-                  >
-                    <Trash2 className="size-3" />
-                  </button>
-                )}
-                <p className="whitespace-pre-wrap">{m.body}</p>
-                {m.attachments?.length ? (
-                  <ul className="border-border/50 mt-2 space-y-1 border-t pt-2">
-                    {m.attachments.map((a) => (
-                      <li
-                        key={a.id}
-                        className="text-muted-foreground flex items-center gap-2 text-xs"
-                      >
-                        {a.mime.startsWith("image/") ? (
-                          <ImageIcon
-                            className="size-3.5 shrink-0"
-                            aria-hidden
-                          />
-                        ) : (
-                          <FileIcon className="size-3.5 shrink-0" aria-hidden />
-                        )}
-                        <span className="truncate">{a.filename}</span>
-                        <span className="tabular-nums">
-                          {(a.sizeBytes / 1024).toFixed(1)} KB
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                {!isVendor && peer?.avatarUrl ? (
+                  <img
+                    src={peer.avatarUrl}
+                    alt=""
+                    className="mt-1 size-7 shrink-0 rounded-full object-cover"
+                  />
+                ) : !isVendor ? (
+                  <div className="bg-primary/10 text-primary mt-1 flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
+                    {initials(peer?.name || thread.customerName)}
+                  </div>
                 ) : null}
-                <p className="text-muted-foreground mt-1 text-[10px] tabular-nums">
-                  {formatShortTime(m.sentAt)}
-                </p>
+                <div className="flex max-w-[min(100%,420px)] flex-col">
+                  {!isVendor && (
+                    <span className="text-muted-foreground mb-0.5 px-1 text-[11px]">
+                      {peer?.name
+                        ? `${peer.name}${peer.surname ? ` ${peer.surname}` : ""}`
+                        : thread.customerName}
+                    </span>
+                  )}
+                  <div
+                    className={cn(
+                      "group relative rounded-2xl border px-3 py-2 text-sm shadow-sm",
+                      isVendor
+                        ? "border-primary/30 bg-primary/15 text-foreground"
+                        : "border-border bg-muted/40"
+                    )}
+                  >
+                    {/* Delete button - only on vendor's own messages */}
+                    {isVendor && hoveredMessageId === m.id && (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteMessage(m.id)}
+                        className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-100"
+                        title="Delete message"
+                      >
+                        <Trash2 className="size-3" />
+                      </button>
+                    )}
+                    <p className="whitespace-pre-wrap">{m.body}</p>
+                    {m.attachments?.length ? (
+                      <ul className="border-border/50 mt-2 space-y-1 border-t pt-2">
+                        {m.attachments.map((a) => (
+                          <li
+                            key={a.id}
+                            className="text-muted-foreground flex items-center gap-2 text-xs"
+                          >
+                            {a.mime.startsWith("image/") ? (
+                              <ImageIcon
+                                className="size-3.5 shrink-0"
+                                aria-hidden
+                              />
+                            ) : (
+                              <FileIcon className="size-3.5 shrink-0" aria-hidden />
+                            )}
+                            <span className="truncate">{a.filename}</span>
+                            <span className="tabular-nums">
+                              {(a.sizeBytes / 1024).toFixed(1)} KB
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    <p className="text-muted-foreground mt-1 text-[10px] tabular-nums">
+                      {formatShortTime(m.sentAt)}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {peerTyping ? (
             <div className="flex justify-start">
               <div className="border-border bg-muted/30 text-muted-foreground rounded-2xl border border-dashed px-3 py-2 text-xs italic">
