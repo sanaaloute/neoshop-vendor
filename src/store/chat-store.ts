@@ -19,6 +19,8 @@ type ChatStoreState = {
   selectedThreadId: string | null;
   setSelectedThreadId: (id: string | null) => void;
   replaceThreads: (threads: ChatThread[]) => void;
+  /** Merge incoming threads from background polling — preserves local messages + read state */
+  mergeThreads: (threads: ChatThread[]) => void;
   mergeThreadMessages: (threadId: string, messages: ChatMessage[]) => void;
   mergeThreadParticipantMap: (
     threadId: string,
@@ -35,6 +37,28 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
   selectedThreadId: null,
   setSelectedThreadId: (id) => set({ selectedThreadId: id }),
   replaceThreads: (threads) => set({ threads }),
+  mergeThreads: (incoming) =>
+    set((s) => {
+      const existingById = new Map(s.threads.map((t) => [t.id, t]));
+      const merged = incoming.map((incomingThread) => {
+        const existing = existingById.get(incomingThread.id);
+        if (!existing) return incomingThread;
+        // Preserve local state: messages, lastReadAt, plus any locally-known participants
+        return {
+          ...incomingThread,
+          messages: existing.messages.length > 0 ? existing.messages : incomingThread.messages,
+          lastReadAt: existing.lastReadAt,
+          participantMap: {
+            ...incomingThread.participantMap,
+            ...existing.participantMap,
+          },
+        };
+      });
+      // Append any threads that only exist locally (shouldn't happen, but be safe)
+      const incomingIds = new Set(incoming.map((t) => t.id));
+      const localOnly = s.threads.filter((t) => !incomingIds.has(t.id));
+      return { threads: [...merged, ...localOnly] };
+    }),
   mergeThreadMessages: (threadId, messages) =>
     set((s) => ({
       threads: s.threads.map((t) =>

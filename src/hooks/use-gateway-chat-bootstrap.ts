@@ -13,12 +13,16 @@ import { useAuthStore } from "@/store/auth-store";
 import { useChatStore } from "@/store/chat-store";
 import { useVendorProfileStore } from "@/store/vendor-profile-store";
 
+const CONVERSATION_POLL_MS = 15_000;
+const MESSAGES_POLL_MS = 5_000;
+
 /** Loads GET /chat/conversations when the gateway and vendor session are available.
  *  Auto-refreshes every 15s as a fallback when Socket.IO is offline. */
 export function useGatewayChatBootstrap() {
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const vendorId = useVendorProfileStore((s) => s.profile?.id ?? null);
   const replaceThreads = useChatStore((s) => s.replaceThreads);
+  const mergeThreads = useChatStore((s) => s.mergeThreads);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,7 +84,8 @@ export function useGatewayChatBootstrap() {
       }
     })();
 
-    // Auto-refresh every 15s as fallback when Socket.IO is offline
+    // Auto-refresh every 15s as fallback when Socket.IO is offline.
+    // Use mergeThreads so we don't wipe local message history / read state.
     const interval = setInterval(() => {
       if (cancelled) return;
       (async () => {
@@ -92,18 +97,18 @@ export function useGatewayChatBootstrap() {
           const threads = (rawItems as Record<string, unknown>[]).map((row) =>
             mapConversationToThread(row, currentUserIds)
           );
-          if (!cancelled) replaceThreads(threads);
+          if (!cancelled) mergeThreads(threads);
         } catch {
           /* silently fail on background refresh */
         }
       })();
-    }, 15_000);
+    }, CONVERSATION_POLL_MS);
 
     return () => {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [currentUserIds.join(","), replaceThreads]);
+  }, [currentUserIds.join(","), replaceThreads, mergeThreads]);
 
   return { loading, error, enabled: Boolean(getApiBaseUrl() && currentUserIds.length > 0), refresh: load };
 }
@@ -123,11 +128,18 @@ export function useGatewayChatMessages(conversationId: string | null) {
     ? Array.from(new Set([...baseIds, threadVendorId]))
     : baseIds;
 
+  // Keep latest callback refs to avoid stale closures in the interval
+  const mergeRef = useRef(mergeThreadMessages);
+  mergeRef.current = mergeThreadMessages;
+  const idsRef = useRef(currentUserIds);
+  idsRef.current = currentUserIds;
+
   useEffect(() => {
     if (!getApiBaseUrl() || currentUserIds.length === 0 || !conversationId) return;
 
     let cancelled = false;
     const load = async () => {
+      if (cancelled) return;
       try {
         const res = await listConversationMessages(conversationId, {
           take: 100,
@@ -136,9 +148,9 @@ export function useGatewayChatMessages(conversationId: string | null) {
           (res as { items?: unknown[] })?.items ??
           (Array.isArray(res) ? res : []);
         const messages = (rawItems as Record<string, unknown>[])
-          .map((m) => mapChatMessage(m, conversationId, currentUserIds))
+          .map((m) => mapChatMessage(m, conversationId, idsRef.current))
           .sort((a, b) => +new Date(a.sentAt) - +new Date(b.sentAt));
-        if (!cancelled) mergeThreadMessages(conversationId, messages);
+        if (!cancelled) mergeRef.current(conversationId, messages);
       } catch {
         /* leave thread as-is */
       }
@@ -146,10 +158,9 @@ export function useGatewayChatMessages(conversationId: string | null) {
 
     void load();
 
-    // Auto-refresh every 5s as fallback when Socket.IO is offline
     const interval = setInterval(() => {
       if (!cancelled) void load();
-    }, 5_000);
+    }, MESSAGES_POLL_MS);
 
     return () => {
       cancelled = true;
