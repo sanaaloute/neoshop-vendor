@@ -53,7 +53,7 @@ import {
 
 function unreadCount(t: ChatThread): number {
   return t.messages.filter(
-    (m) => m.authorRole === "customer" && m.sentAt > t.lastReadAt
+    (m) => m.authorRole !== "vendor" && m.sentAt > t.lastReadAt
   ).length;
 }
 
@@ -64,6 +64,13 @@ function initials(name: string): string {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+}
+
+function roleBadge(role: string): string | null {
+  const r = role.toLowerCase();
+  if (r === "admin") return "Admin";
+  if (r === "super_admin") return "Super Admin";
+  return null;
 }
 
 function formatShortTime(iso: string) {
@@ -222,7 +229,7 @@ export function MessagingHome() {
   /** Check if the vendor is trying to send the first message in a customer thread.
    *  Returns true if the customer has sent at least one message. */
   const canVendorSend = (thread: ChatThread): boolean => {
-    return thread.messages.some((m) => m.authorRole === "customer");
+    return thread.messages.some((m) => m.authorRole !== "vendor");
   };
 
   const sendDraft = async () => {
@@ -249,6 +256,7 @@ export function MessagingHome() {
       id: `v-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       threadId: selectedId,
       authorRole: "vendor",
+      senderUserId: vendorUserId ?? undefined,
       body: text || (attachments?.length ? "Sent attachment(s)." : ""),
       sentAt: new Date().toISOString(),
       attachments,
@@ -340,7 +348,7 @@ export function MessagingHome() {
                 const unread = unreadCount(t);
                 const preview = t.messages[t.messages.length - 1];
                 const peer = Object.values(t.participantMap).find(
-                  (p) => p.role === "customer"
+                  (p) => p.role !== "vendor"
                 );
                 return (
                   <li key={t.id}>
@@ -439,7 +447,7 @@ export function MessagingHome() {
               <SheetHeader className="border-border/60 flex-row items-center gap-3 border-b px-4 py-3 text-left">
                 {(() => {
                   const peer = Object.values(selected.participantMap).find(
-                    (p) => p.role === "customer"
+                    (p) => p.role !== "vendor"
                   );
                   return peer?.avatarUrl ? (
                     <img
@@ -555,7 +563,7 @@ function ConversationBody({
       <header className="border-border/60 hidden shrink-0 items-center gap-3 border-b px-4 py-3 lg:flex">
         {(() => {
           const peer = Object.values(thread.participantMap).find(
-            (p) => p.role === "customer"
+            (p) => p.role !== "vendor"
           );
           return peer?.avatarUrl ? (
             <img
@@ -585,12 +593,12 @@ function ConversationBody({
       <ScrollArea className="min-h-0 flex-1 px-2">
         <div className="space-y-3 py-3 pr-2">
           {thread.messages.map((m) => {
-            // For historical/API messages, senderUserId isn't stored on ChatMessage.
-            // We rely on authorRole; for customer messages we show the peer info.
             const isVendor = m.authorRole === "vendor";
-            const peer = Object.values(thread.participantMap).find(
-              (p) => p.role === "customer"
-            );
+            const sender = m.senderUserId
+              ? thread.participantMap[m.senderUserId]
+              : undefined;
+            const senderName = sender?.name || thread.customerName;
+            const badge = sender ? roleBadge(sender.role) : null;
             return (
               <div
                 key={m.id}
@@ -601,23 +609,30 @@ function ConversationBody({
                 onMouseEnter={() => setHoveredMessageId(m.id)}
                 onMouseLeave={() => setHoveredMessageId(null)}
               >
-                {!isVendor && peer?.avatarUrl ? (
+                {!isVendor && sender?.avatarUrl ? (
                   <img
-                    src={peer.avatarUrl}
+                    src={sender.avatarUrl}
                     alt=""
                     className="mt-1 size-7 shrink-0 rounded-full object-cover"
                   />
                 ) : !isVendor ? (
                   <div className="bg-primary/10 text-primary mt-1 flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
-                    {initials(peer?.name || thread.customerName)}
+                    {initials(senderName)}
                   </div>
                 ) : null}
                 <div className="flex max-w-[min(100%,420px)] flex-col">
                   {!isVendor && (
-                    <span className="text-muted-foreground mb-0.5 px-1 text-[11px]">
-                      {peer?.name
-                        ? `${peer.name}${peer.surname ? ` ${peer.surname}` : ""}`
-                        : thread.customerName}
+                    <span className="text-muted-foreground mb-0.5 flex items-center gap-1.5 px-1 text-[11px]">
+                      <span>
+                        {sender?.surname
+                          ? `${sender.name} ${sender.surname}`
+                          : senderName}
+                      </span>
+                      {badge ? (
+                        <Badge variant="outline" className="h-4 px-1 text-[9px]">
+                          {badge}
+                        </Badge>
+                      ) : null}
                     </span>
                   )}
                   <div
@@ -674,7 +689,7 @@ function ConversationBody({
           {peerTyping ? (
             <div className="flex justify-start">
               <div className="border-border bg-muted/30 text-muted-foreground rounded-2xl border border-dashed px-3 py-2 text-xs italic">
-                Customer is typing…
+                Someone is typing…
               </div>
             </div>
           ) : null}

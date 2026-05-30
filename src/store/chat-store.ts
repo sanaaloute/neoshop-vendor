@@ -51,8 +51,8 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
     })),
   mergeIncomingMessage: (message) => {
     const selectedId = get().selectedThreadId;
-    const open =
-      selectedId === message.threadId && message.authorRole === "customer";
+    const isPeer = message.authorRole !== "vendor";
+    const open = selectedId === message.threadId && isPeer;
     const now = new Date().toISOString();
     set((s) => ({
       threads: s.threads.map((t) => {

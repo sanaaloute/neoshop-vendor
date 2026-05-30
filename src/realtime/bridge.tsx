@@ -82,11 +82,12 @@ export function RealtimeStoreBridge() {
         id: payload.id,
         threadId: payload.conversationId,
         authorRole: isFromVendor ? "vendor" : "customer",
+        senderUserId: payload.senderUserId,
         body: payload.body,
         sentAt: payload.createdAt,
       });
 
-      // Auto-mark read if the conversation is currently open and message is from customer
+      // Auto-mark read if the conversation is currently open and message is from peer
       if (isOpen && !isFromVendor) {
         state.markThreadRead(payload.conversationId);
       }
