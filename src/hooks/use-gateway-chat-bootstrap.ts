@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { getApiBaseUrl } from "@/config/auth";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
@@ -13,7 +13,8 @@ import { useAuthStore } from "@/store/auth-store";
 import { useChatStore } from "@/store/chat-store";
 import { useVendorProfileStore } from "@/store/vendor-profile-store";
 
-/** Loads GET /chat/conversations when the gateway and vendor session are available. */
+/** Loads GET /chat/conversations when the gateway and vendor session are available.
+ *  Auto-refreshes every 15s as a fallback when Socket.IO is offline. */
 export function useGatewayChatBootstrap() {
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const vendorId = useVendorProfileStore((s) => s.profile?.id ?? null);
@@ -22,6 +23,27 @@ export function useGatewayChatBootstrap() {
   const [error, setError] = useState<string | null>(null);
 
   const currentUserIds = [userId, vendorId].filter((id): id is string => Boolean(id));
+
+  const load = useCallback(async () => {
+    if (!getApiBaseUrl() || currentUserIds.length === 0) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await listConversations();
+      const rawItems =
+        (res as { items?: unknown[] })?.items ??
+        (Array.isArray(res) ? res : []);
+      const threads = (rawItems as Record<string, unknown>[]).map((row) =>
+        mapConversationToThread(row, currentUserIds)
+      );
+      replaceThreads(threads);
+    } catch (e) {
+      setError(httpErrorMessageForUser(e, "Could not load conversations."));
+      replaceThreads([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUserIds.join(","), replaceThreads]);
 
   useEffect(() => {
     if (!getApiBaseUrl()) {
@@ -50,9 +72,7 @@ export function useGatewayChatBootstrap() {
         if (!cancelled) replaceThreads(threads);
       } catch (e) {
         if (!cancelled) {
-          setError(
-            httpErrorMessageForUser(e, "Could not load conversations.")
-          );
+          setError(httpErrorMessageForUser(e, "Could not load conversations."));
           replaceThreads([]);
         }
       } finally {
@@ -60,15 +80,36 @@ export function useGatewayChatBootstrap() {
       }
     })();
 
+    // Auto-refresh every 15s as fallback when Socket.IO is offline
+    const interval = setInterval(() => {
+      if (cancelled) return;
+      (async () => {
+        try {
+          const res = await listConversations();
+          const rawItems =
+            (res as { items?: unknown[] })?.items ??
+            (Array.isArray(res) ? res : []);
+          const threads = (rawItems as Record<string, unknown>[]).map((row) =>
+            mapConversationToThread(row, currentUserIds)
+          );
+          if (!cancelled) replaceThreads(threads);
+        } catch {
+          /* silently fail on background refresh */
+        }
+      })();
+    }, 15_000);
+
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [currentUserIds.join(","), replaceThreads]);
 
-  return { loading, error, enabled: Boolean(getApiBaseUrl() && currentUserIds.length > 0) };
+  return { loading, error, enabled: Boolean(getApiBaseUrl() && currentUserIds.length > 0), refresh: load };
 }
 
-/** Loads messages for the active conversation from GET …/messages. */
+/** Loads messages for the active conversation from GET …/messages.
+ *  Auto-refreshes every 5s as a fallback when Socket.IO is offline. */
 export function useGatewayChatMessages(conversationId: string | null) {
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const vendorId = useVendorProfileStore((s) => s.profile?.id ?? null);
@@ -86,7 +127,7 @@ export function useGatewayChatMessages(conversationId: string | null) {
     if (!getApiBaseUrl() || currentUserIds.length === 0 || !conversationId) return;
 
     let cancelled = false;
-    (async () => {
+    const load = async () => {
       try {
         const res = await listConversationMessages(conversationId, {
           take: 100,
@@ -101,10 +142,18 @@ export function useGatewayChatMessages(conversationId: string | null) {
       } catch {
         /* leave thread as-is */
       }
-    })();
+    };
+
+    void load();
+
+    // Auto-refresh every 5s as fallback when Socket.IO is offline
+    const interval = setInterval(() => {
+      if (!cancelled) void load();
+    }, 5_000);
 
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [conversationId, currentUserIds.join(","), mergeThreadMessages]);
 }
