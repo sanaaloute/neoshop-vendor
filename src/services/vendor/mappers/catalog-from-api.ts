@@ -51,22 +51,35 @@ export function mapApiProductRowToProduct(
     })
     .filter(Boolean);
 
-  const mediaRows = Array.isArray(row.media) ? row.media : [];
-  const media: ProductMedia[] = mediaRows
+  // API may return media under "media" or "images"
+  const rawMedia = Array.isArray(row.media)
+    ? row.media
+    : Array.isArray(row.images)
+      ? row.images
+      : [];
+  const media: ProductMedia[] = rawMedia
     .slice(0, 40)
     .map((m, i) => {
       const item = m as Record<string, unknown>;
-      const url = typeof item.url === "string" ? item.url : "";
+      // Try common URL field names
+      const url =
+        (typeof item.url === "string" && item.url) ||
+        (typeof item.imageUrl === "string" && item.imageUrl) ||
+        (typeof item.publicUrl === "string" && item.publicUrl) ||
+        (typeof item.fileUrl === "string" && item.fileUrl) ||
+        (typeof item.src === "string" && item.src) ||
+        (typeof item.path === "string" && item.path) ||
+        "";
       return {
         id: String(item.id ?? `m_${i}`),
         fileName: String(
           item.fileName ??
-            (typeof url === "string" && url.length > 0
-              ? url.split("/").pop()
-              : null) ??
+            item.name ??
+            item.alt ??
+            (url.length > 0 ? url.split("/").pop() : null) ??
             "media"
         ),
-        sortIndex: Number(item.sortOrder ?? i),
+        sortIndex: Number(item.sortOrder ?? item.sortIndex ?? i),
         url: url || undefined,
       };
     });

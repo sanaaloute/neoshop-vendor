@@ -26,6 +26,21 @@ type ProductEditorProps = {
   catalogProductId: string | null;
 };
 
+function mergeMediaUrls(
+  target: ProductFormValues,
+  source: ProductFormValues
+): ProductFormValues {
+  if (!source.media.length) return target;
+  const urlById = new Map(source.media.map((m) => [m.id, m.url]));
+  return {
+    ...target,
+    media: target.media.map((m) => ({
+      ...m,
+      url: m.url || urlById.get(m.id) || undefined,
+    })),
+  };
+}
+
 export function ProductEditor({ catalogProductId }: ProductEditorProps) {
   const router = useRouter();
   const editorKey = catalogProductId ?? "new";
@@ -36,7 +51,6 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
     }
   }, [catalogProductId]);
 
-  // Try to get from local store first
   const storeValues = useMemo(() => {
     const d = useProductEditorDraftStore.getState().getDraft(editorKey);
     if (d) return d;
@@ -47,10 +61,14 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
     return emptyProductFormValues();
   }, [editorKey, catalogProductId]);
 
-  // Fetch full product from API when editing (to get all images)
-  const [fetchedValues, setFetchedValues] = useState<ProductFormValues | null>(null);
+  const [defaultValues, setDefaultValues] = useState<ProductFormValues>(storeValues);
   const [fetching, setFetching] = useState(false);
 
+  useEffect(() => {
+    setDefaultValues(storeValues);
+  }, [storeValues]);
+
+  // Fetch full product from API when editing (to get all image URLs)
   useEffect(() => {
     if (!catalogProductId || !getApiBaseUrl()) return;
     let cancelled = false;
@@ -60,7 +78,9 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
         if (cancelled) return;
         const p = mapApiProductRowToProduct(row as Record<string, unknown>);
         useProductCatalogStore.getState().upsertProduct(p);
-        setFetchedValues(productToFormValues(p));
+        const fetched = productToFormValues(p);
+        // Merge fetched image URLs into current values so local edits are preserved
+        setDefaultValues((prev) => mergeMediaUrls(prev, fetched));
       })
       .catch(() => {
         // silently fail — local store is the fallback
@@ -72,8 +92,6 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
       cancelled = true;
     };
   }, [catalogProductId]);
-
-  const defaultValues = fetchedValues ?? storeValues;
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [snapshot, setSnapshot] = useState<ProductFormValues>(defaultValues);
@@ -147,7 +165,7 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
       </div>
 
       {/* Main Content */}
-      {fetching && !fetchedValues ? (
+      {fetching && defaultValues.media.length === 0 ? (
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           <div className="flex flex-col gap-5">
             <Skeleton className="h-48 w-full rounded-2xl" />
