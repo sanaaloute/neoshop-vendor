@@ -7,7 +7,7 @@ import {
   type SocketOptions,
 } from "socket.io-client";
 
-import { getSocketIoUrl } from "@/config/realtime";
+import { getSocketIoUrl, getSocketIoPath } from "@/config/realtime";
 
 const defaultOptions: Partial<ManagerOptions & SocketOptions> = {
   transports: ["websocket", "polling"],
@@ -18,6 +18,7 @@ const defaultOptions: Partial<ManagerOptions & SocketOptions> = {
   randomizationFactor: 0.5,
   timeout: 20_000,
   autoConnect: false,
+  withCredentials: true, // required because CORS credentials=true
 };
 
 export type VendorSocket = Socket;
@@ -28,9 +29,16 @@ export function createVendorSocket(
   const url = getSocketIoUrl();
   if (!url) return null;
 
+  const token = accessToken
+    ? accessToken.startsWith("Bearer ")
+      ? accessToken
+      : `Bearer ${accessToken}`
+    : undefined;
+
   const socket = io(url, {
     ...defaultOptions,
-    auth: { token: accessToken ?? undefined },
+    path: getSocketIoPath(),
+    auth: { token },
   });
 
   return socket;

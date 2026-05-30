@@ -23,6 +23,7 @@ export {
   type InventoryUpdatedPayload,
   type ChatMessagePayload,
   type ChatTypingPayload,
+  type SubscribeOrderResponse,
 } from "./registry";
 export { createVendorSocket } from "./create-socket";
 export type { VendorSocket } from "./create-socket";
@@ -34,5 +35,6 @@ export {
   useInventoryRealtimeEvents,
   useChatMessageRealtimeEvents,
   useChatTypingRealtimeEvents,
+  useOrderSubscription,
   useRealtimeVendorStatus,
 } from "./hooks";

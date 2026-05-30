@@ -7,8 +7,8 @@ import type { StockMovementType } from "@/modules/inventory/types";
  * Align server emissions with these keys.
  */
 export const REALTIME_EVENTS = {
-  NOTIFICATION_CREATED: "notification:created",
-  ORDER_UPDATED: "order:updated",
+  NOTIFICATION_CREATED: "neoshop.notification.created",
+  ORDER_UPDATED: "neoshop.order.updated",
   INVENTORY_UPDATED: "inventory:updated",
   CHAT_MESSAGE: "neoshop.chat.message",
   CHAT_TYPING: "chat:typing",
@@ -57,3 +57,6 @@ export interface RealtimeEventPayloadMap {
   [REALTIME_EVENTS.CHAT_MESSAGE]: ChatMessagePayload;
   [REALTIME_EVENTS.CHAT_TYPING]: ChatTypingPayload;
 }
+
+/** Order room subscription response */
+export type SubscribeOrderResponse = { ok: boolean } | { ok: true };

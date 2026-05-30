@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { useRealtimeStore } from "@/store/realtime-store";
 
@@ -8,6 +8,7 @@ import {
   REALTIME_EVENTS,
   type RealtimeEventName,
   type RealtimeEventPayloadMap,
+  type SubscribeOrderResponse,
 } from "./registry";
 import { useRealtimeContext } from "./context";
 
@@ -69,6 +70,35 @@ export function useChatTypingRealtimeEvents(
   ) => void
 ) {
   useRealtimeEvent(REALTIME_EVENTS.CHAT_TYPING, handler);
+}
+
+/**
+ * Subscribe to a specific order room for targeted updates.
+ * Admins get this automatically; vendors/customers only if they own the order.
+ */
+export function useOrderSubscription() {
+  const { socket } = useRealtimeContext();
+
+  const subscribe = useCallback(
+    (orderId: string): Promise<SubscribeOrderResponse> => {
+      return new Promise((resolve) => {
+        if (!socket?.connected) {
+          resolve({ ok: false });
+          return;
+        }
+        socket.emit(
+          "neoshop.subscribe.order",
+          { orderId },
+          (response: SubscribeOrderResponse) => {
+            resolve(response);
+          }
+        );
+      });
+    },
+    [socket]
+  );
+
+  return { subscribe };
 }
 
 /** Maps provider phase to the vendor shell status pill (Socket.IO disabled → offline). */
