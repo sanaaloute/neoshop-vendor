@@ -9,6 +9,7 @@ import {
   Paperclip,
   Radio,
   Send,
+  Trash2,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +31,18 @@ import {
   useGatewayChatBootstrap,
   useGatewayChatMessages,
 } from "@/hooks/use-gateway-chat-bootstrap";
-import { postConversationMessage } from "@/services/vendor/chat-api";
+import { useIsDesktop } from "@/hooks/use-is-desktop";
+import {
+  postConversationMessage,
+  deleteConversationMessage,
+} from "@/services/vendor/chat-api";
+import {
+  useChatMessageRealtimeEvents,
+  useChatTypingRealtimeEvents,
+  useRealtimeVendorStatus,
+} from "@/realtime/hooks";
+import { useRealtimeContext } from "@/realtime/context";
+import { useAuthStore } from "@/store/auth-store";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store/chat-store";
 
@@ -39,8 +51,6 @@ import {
   useVendorChatRealtime,
   type ChatRealtimeEvent,
 } from "./use-vendor-chat-realtime";
-
-import { useIsDesktop } from "@/hooks/use-is-desktop";
 
 function unreadCount(t: ChatThread): number {
   return t.messages.filter(
@@ -65,21 +75,21 @@ function formatShortTime(iso: string) {
 }
 
 export function MessagingHome() {
-  const {
-    loading: chatSyncLoading,
-    error: chatSyncError,
-  } = useGatewayChatBootstrap();
+  const { loading: chatSyncLoading, error: chatSyncError } =
+    useGatewayChatBootstrap();
   const threads = useChatStore((s) => s.threads);
   const selectedId = useChatStore((s) => s.selectedThreadId);
   const setSelectedThreadId = useChatStore((s) => s.setSelectedThreadId);
   const mergeIncomingMessage = useChatStore((s) => s.mergeIncomingMessage);
   const appendVendorMessage = useChatStore((s) => s.appendVendorMessage);
   const markThreadRead = useChatStore((s) => s.markThreadRead);
+  const deleteMessage = useChatStore((s) => s.deleteMessage);
+  const vendorUserId = useAuthStore((s) => s.user?.id ?? null);
   const [draft, setDraft] = useState("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [peerTyping, setPeerTyping] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [liveConnected, setLiveConnected] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const desktop = useIsDesktop();
   const endRef = useRef<HTMLDivElement>(null);
   const typingIdleRef = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -89,6 +99,8 @@ export function MessagingHome() {
     undefined
   );
   const wsConfigured = Boolean(getVendorChatWsUrl());
+  const socketIoStatus = useRealtimeVendorStatus();
+  const { socket } = useRealtimeContext();
 
   useGatewayChatMessages(selectedId);
 
@@ -103,11 +115,34 @@ export function MessagingHome() {
     markThreadRead(selectedId);
   }, [selectedId, markThreadRead]);
 
+  // Socket.IO incoming messages
+  useChatMessageRealtimeEvents((payload) => {
+    const isFromVendor = payload.senderUserId === vendorUserId;
+    mergeIncomingMessage({
+      id: payload.id,
+      threadId: payload.conversationId,
+      authorRole: isFromVendor ? "vendor" : "customer",
+      body: payload.body,
+      sentAt: payload.createdAt,
+    });
+  });
+
+  // Socket.IO typing events
+  useChatTypingRealtimeEvents((payload) => {
+    if (payload.userId === vendorUserId) return;
+    if (peerTypingClearRef.current) clearTimeout(peerTypingClearRef.current);
+    setPeerTyping(payload.isTyping);
+    if (payload.isTyping) {
+      peerTypingClearRef.current = setTimeout(
+        () => setPeerTyping(false),
+        4500
+      );
+    }
+  });
+
+  // Native WebSocket fallback for sending typing + broadcast
   const onRealtimeEvent = useCallback(
     (e: ChatRealtimeEvent) => {
-      if (e.kind === "incoming_message") {
-        mergeIncomingMessage(e.message);
-      }
       if (e.kind === "peer_typing") {
         if (peerTypingClearRef.current)
           clearTimeout(peerTypingClearRef.current);
@@ -119,19 +154,15 @@ export function MessagingHome() {
           );
         }
       }
-      if (e.kind === "transport") {
-        setLiveConnected(e.connected);
-      }
     },
-    [mergeIncomingMessage]
+    []
   );
 
-  const { mode, sendTyping, sendChatOverWs } =
-    useVendorChatRealtime({
-      threadId: selectedId,
-      enabled: Boolean(selectedId),
-      onEvent: onRealtimeEvent,
-    });
+  const { mode, sendTyping, sendChatOverWs } = useVendorChatRealtime({
+    threadId: selectedId,
+    enabled: Boolean(selectedId),
+    onEvent: onRealtimeEvent,
+  });
 
   const selected = useMemo(
     () => threads.find((t) => t.id === selectedId) ?? null,
@@ -158,11 +189,27 @@ export function MessagingHome() {
 
   const onDraftChange = (v: string) => {
     setDraft(v);
+    setSendError(null);
     if (v.trim()) {
       sendTyping(true);
+      // Also emit via Socket.IO if available
+      if (socket && selectedId && vendorUserId) {
+        socket.emit("chat:typing", {
+          threadId: selectedId,
+          userId: vendorUserId,
+          isTyping: true,
+        });
+      }
       flushTypingIdle();
     } else {
       sendTyping(false);
+      if (socket && selectedId && vendorUserId) {
+        socket.emit("chat:typing", {
+          threadId: selectedId,
+          userId: vendorUserId,
+          isTyping: false,
+        });
+      }
     }
   };
 
@@ -177,10 +224,26 @@ export function MessagingHome() {
     }));
   };
 
+  /** Check if the vendor is trying to send the first message in a customer thread.
+   *  Returns true if the customer has sent at least one message. */
+  const canVendorSend = (thread: ChatThread): boolean => {
+    return thread.messages.some((m) => m.authorRole === "customer");
+  };
+
   const sendDraft = async () => {
     if (!selectedId || !selected) return;
     const text = draft.trim();
     if (!text && pendingFiles.length === 0) return;
+
+    // Vendor-first-message guard
+    if (!canVendorSend(selected)) {
+      setSendError(
+        "You cannot send a message until the customer has sent the first message."
+      );
+      return;
+    }
+
+    setSendError(null);
 
     const attachments =
       pendingFiles.length > 0
@@ -205,7 +268,14 @@ export function MessagingHome() {
       void (async () => {
         try {
           await postConversationMessage(selectedId, { body: msg.body });
-        } catch {
+        } catch (e) {
+          const status = (e as { response?: { status?: number } })?.response
+            ?.status;
+          if (status === 403) {
+            setSendError(
+              "You cannot send a message until the customer has sent the first message."
+            );
+          }
           /* message stays optimistic in thread */
         }
       })();
@@ -220,6 +290,20 @@ export function MessagingHome() {
     if (!list?.length) return;
     setPendingFiles((p) => [...p, ...Array.from(list)]);
   };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!selectedId) return;
+    deleteMessage(selectedId, messageId);
+    if (getApiBaseUrl()) {
+      try {
+        await deleteConversationMessage(selectedId, messageId);
+      } catch {
+        /* ignore - message already removed from UI */
+      }
+    }
+  };
+
+  const liveConnected = socketIoStatus === "live";
 
   return (
     <div className="flex min-h-[560px] flex-col gap-4">
@@ -236,15 +320,13 @@ export function MessagingHome() {
             )}
             aria-hidden
           />
-          {mode === "websocket"
-            ? wsConfigured
-              ? liveConnected
-                ? "Live"
-                : "Connecting…"
-              : "Standard mode"
-            : getApiBaseUrl()
-              ? "Connected"
-              : "Offline"}
+          {liveConnected
+            ? "Live"
+            : socketIoStatus === "degraded"
+              ? "Degraded"
+              : getApiBaseUrl()
+                ? "Offline"
+                : "Standard mode"}
         </Badge>
       </div>
 
@@ -318,6 +400,8 @@ export function MessagingHome() {
               onClearFiles={() => setPendingFiles([])}
               peerTyping={peerTyping}
               endRef={endRef}
+              sendError={sendError}
+              onDeleteMessage={handleDeleteMessage}
             />
           ) : (
             <EmptyConversation />
@@ -376,6 +460,8 @@ export function MessagingHome() {
                   onClearFiles={() => setPendingFiles([])}
                   peerTyping={peerTyping}
                   endRef={endRef}
+                  sendError={sendError}
+                  onDeleteMessage={handleDeleteMessage}
                 />
               </div>
             </>
@@ -416,6 +502,8 @@ function ConversationBody({
   onClearFiles,
   peerTyping,
   endRef,
+  sendError,
+  onDeleteMessage,
 }: {
   thread: ChatThread;
   draft: string;
@@ -426,7 +514,11 @@ function ConversationBody({
   onClearFiles: () => void;
   peerTyping: boolean;
   endRef: React.RefObject<HTMLDivElement | null>;
+  sendError: string | null;
+  onDeleteMessage: (messageId: string) => void;
 }) {
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+
   return (
     <>
       <header className="border-border/60 hidden shrink-0 border-b px-4 py-3 lg:block">
@@ -450,15 +542,28 @@ function ConversationBody({
                 "flex",
                 m.authorRole === "vendor" ? "justify-end" : "justify-start"
               )}
+              onMouseEnter={() => setHoveredMessageId(m.id)}
+              onMouseLeave={() => setHoveredMessageId(null)}
             >
               <div
                 className={cn(
-                  "max-w-[min(100%,420px)] rounded-2xl border px-3 py-2 text-sm shadow-sm",
+                  "group max-w-[min(100%,420px)] rounded-2xl border px-3 py-2 text-sm shadow-sm relative",
                   m.authorRole === "vendor"
                     ? "border-primary/30 bg-primary/15 text-foreground"
                     : "border-border bg-muted/40"
                 )}
               >
+                {/* Delete button - only on vendor's own messages */}
+                {m.authorRole === "vendor" && hoveredMessageId === m.id && (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteMessage(m.id)}
+                    className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-100"
+                    title="Delete message"
+                  >
+                    <Trash2 className="size-3" />
+                  </button>
+                )}
                 <p className="whitespace-pre-wrap">{m.body}</p>
                 {m.attachments?.length ? (
                   <ul className="border-border/50 mt-2 space-y-1 border-t pt-2">
@@ -501,6 +606,9 @@ function ConversationBody({
       </ScrollArea>
 
       <footer className="border-border/60 shrink-0 border-t p-3">
+        {sendError ? (
+          <p className="text-destructive mb-2 text-xs">{sendError}</p>
+        ) : null}
         {pendingFiles.length > 0 ? (
           <div className="mb-2 flex flex-wrap gap-2">
             {pendingFiles.map((f, i) => (

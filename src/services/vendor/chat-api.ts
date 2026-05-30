@@ -35,3 +35,14 @@ export async function postConversationMessage(
   const { data } = await vendorApiClient.post(`/api/v1/chat/conversations/${conversationId}/messages`, body);
   return data;
 }
+
+/** DELETE /chat/conversations/:conversationId/messages/:messageId */
+export async function deleteConversationMessage(
+  conversationId: string,
+  messageId: string
+) {
+  const { data } = await vendorApiClient.delete(
+    `/api/v1/chat/conversations/${conversationId}/messages/${messageId}`
+  );
+  return data;
+}

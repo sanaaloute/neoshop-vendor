@@ -8,18 +8,22 @@ import { getOrder } from "@/services/vendor/orders-api";
 import { useNotificationsStore } from "@/store/notifications-store";
 import { useOrdersStore } from "@/store/orders-store";
 import { useInventoryStore } from "@/store/inventory-store";
+import { useChatStore } from "@/store/chat-store";
+import { useAuthStore } from "@/store/auth-store";
 
 import { REALTIME_EVENTS } from "./registry";
 import type {
   InventoryUpdatedPayload,
   NotificationCreatedPayload,
   OrderUpdatedPayload,
+  ChatMessagePayload,
 } from "./registry";
 import { useRealtimeContext } from "./context";
 
 /** Maps Socket.IO payloads into Zustand when the gateway is configured. */
 export function RealtimeStoreBridge() {
   const { socket } = useRealtimeContext();
+  const vendorUserId = useAuthStore((s) => s.user?.id ?? null);
 
   useEffect(() => {
     if (!socket) return;
@@ -57,16 +61,38 @@ export function RealtimeStoreBridge() {
         );
     };
 
+    const onChatMessage = (payload: ChatMessagePayload) => {
+      const selectedId = useChatStore.getState().selectedThreadId;
+      const isOpen = selectedId === payload.conversationId;
+      const isFromVendor = payload.senderUserId === vendorUserId;
+      const now = new Date().toISOString();
+
+      useChatStore.getState().mergeIncomingMessage({
+        id: payload.id,
+        threadId: payload.conversationId,
+        authorRole: isFromVendor ? "vendor" : "customer",
+        body: payload.body,
+        sentAt: payload.createdAt,
+      });
+
+      // Auto-mark read if the conversation is currently open and message is from customer
+      if (isOpen && !isFromVendor) {
+        useChatStore.getState().markThreadRead(payload.conversationId);
+      }
+    };
+
     socket.on(REALTIME_EVENTS.NOTIFICATION_CREATED, onNotification);
     socket.on(REALTIME_EVENTS.ORDER_UPDATED, onOrder);
     socket.on(REALTIME_EVENTS.INVENTORY_UPDATED, onInventory);
+    socket.on(REALTIME_EVENTS.CHAT_MESSAGE, onChatMessage);
 
     return () => {
       socket.off(REALTIME_EVENTS.NOTIFICATION_CREATED, onNotification);
       socket.off(REALTIME_EVENTS.ORDER_UPDATED, onOrder);
       socket.off(REALTIME_EVENTS.INVENTORY_UPDATED, onInventory);
+      socket.off(REALTIME_EVENTS.CHAT_MESSAGE, onChatMessage);
     };
-  }, [socket]);
+  }, [socket, vendorUserId]);
 
   return null;
 }

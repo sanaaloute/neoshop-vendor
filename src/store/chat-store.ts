@@ -23,6 +23,7 @@ type ChatStoreState = {
   mergeIncomingMessage: (message: ChatMessage) => void;
   appendVendorMessage: (threadId: string, msg: ChatMessage) => void;
   markThreadRead: (threadId: string) => void;
+  deleteMessage: (threadId: string, messageId: string) => void;
 };
 
 export const useChatStore = create<ChatStoreState>((set, get) => ({
@@ -69,4 +70,12 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
       ),
     }));
   },
+  deleteMessage: (threadId, messageId) =>
+    set((s) => ({
+      threads: s.threads.map((t) =>
+        t.id === threadId
+          ? { ...t, messages: t.messages.filter((m) => m.id !== messageId) }
+          : t
+      ),
+    })),
 }));
