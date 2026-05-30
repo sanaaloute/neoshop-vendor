@@ -65,12 +65,20 @@ export function RealtimeStoreBridge() {
     };
 
     const onChatMessage = (payload: ChatMessagePayload) => {
-      const selectedId = useChatStore.getState().selectedThreadId;
+      const state = useChatStore.getState();
+      const selectedId = state.selectedThreadId;
       const isOpen = selectedId === payload.conversationId;
-      const isFromVendor = currentUserIds.includes(payload.senderUserId);
+
+      // Determine vendor IDs: auth IDs + any vendorChatId discovered from loaded threads
+      const thread = state.threads.find((t) => t.id === payload.conversationId);
+      const vendorIds = [
+        ...currentUserIds,
+        ...(thread?.vendorChatId ? [thread.vendorChatId] : []),
+      ];
+      const isFromVendor = vendorIds.includes(payload.senderUserId);
       const now = new Date().toISOString();
 
-      useChatStore.getState().mergeIncomingMessage({
+      state.mergeIncomingMessage({
         id: payload.id,
         threadId: payload.conversationId,
         authorRole: isFromVendor ? "vendor" : "customer",
@@ -80,7 +88,7 @@ export function RealtimeStoreBridge() {
 
       // Auto-mark read if the conversation is currently open and message is from customer
       if (isOpen && !isFromVendor) {
-        useChatStore.getState().markThreadRead(payload.conversationId);
+        state.markThreadRead(payload.conversationId);
       }
     };
 

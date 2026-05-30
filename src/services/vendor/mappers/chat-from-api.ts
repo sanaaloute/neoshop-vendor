@@ -1,6 +1,15 @@
 import type { ChatMessage, ChatThread } from "@/modules/chat/types";
 
+function extractParticipantId(
+  p: Record<string, unknown> | undefined
+): string {
+  if (!p) return "";
+  const usr = p.user as Record<string, unknown> | undefined;
+  return String(p.userId ?? usr?.id ?? "");
+}
+
 function isCurrentUser(senderId: string, currentUserIds: string[]): boolean {
+  if (!senderId) return false;
   return currentUserIds.some((id) => id.length > 0 && id === senderId);
 }
 
@@ -27,12 +36,26 @@ export function mapConversationToThread(
   const participants = Array.isArray(raw.participants)
     ? (raw.participants as Record<string, unknown>[])
     : [];
+
+  // Identify the vendor participant by role, then extract their chat ID
+  const vendorParticipant = participants.find((p) => {
+    const usr = p.user as Record<string, unknown> | undefined;
+    return String(usr?.role ?? "") === "vendor";
+  });
+  const vendorParticipantId = extractParticipantId(vendorParticipant);
+
+  // Build the full set of IDs that represent the current vendor user
+  const vendorIds = [
+    ...currentUserIds,
+    ...(vendorParticipantId ? [vendorParticipantId] : []),
+  ];
+
+  // Peer = the participant who is NOT the vendor
   const peer =
     participants.find((p) => {
-      const usr = p.user as Record<string, unknown> | undefined;
-      const uid = String(p.userId ?? usr?.id ?? "");
-      return !isCurrentUser(uid, currentUserIds);
+      return !isCurrentUser(extractParticipantId(p), vendorIds);
     }) ?? participants[0];
+
   const usr = peer?.user as Record<string, unknown> | undefined;
   const u = (usr ?? peer) as Record<string, unknown> | undefined;
   const email = String(u?.email ?? "");
@@ -55,7 +78,7 @@ export function mapConversationToThread(
                 createdAt: last.createdAt,
               },
               String(raw.id),
-              currentUserIds
+              vendorIds
             ),
           ]
         : [];
@@ -65,6 +88,7 @@ export function mapConversationToThread(
     customerName: name,
     customerEmail: email,
     customerPhone: phone || undefined,
+    vendorChatId: vendorParticipantId || undefined,
     orderRef: undefined,
     lastReadAt: new Date(0).toISOString(),
     messages: seedMsgs,

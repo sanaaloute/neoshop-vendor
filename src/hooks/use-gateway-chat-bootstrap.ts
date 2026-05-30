@@ -73,8 +73,14 @@ export function useGatewayChatMessages(conversationId: string | null) {
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const vendorId = useVendorProfileStore((s) => s.profile?.id ?? null);
   const mergeThreadMessages = useChatStore((s) => s.mergeThreadMessages);
+  const threads = useChatStore((s) => s.threads);
 
-  const currentUserIds = [userId, vendorId].filter((id): id is string => Boolean(id));
+  const baseIds = [userId, vendorId].filter((id): id is string => Boolean(id));
+  // Augment with vendorChatId discovered from the thread, if present
+  const threadVendorId = threads.find((t) => t.id === conversationId)?.vendorChatId;
+  const currentUserIds = threadVendorId
+    ? Array.from(new Set([...baseIds, threadVendorId]))
+    : baseIds;
 
   useEffect(() => {
     if (!getApiBaseUrl() || currentUserIds.length === 0 || !conversationId) return;

@@ -23,6 +23,8 @@ export type ChatThread = {
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
+  /** The vendor's participant ID in this conversation (for role detection) */
+  vendorChatId?: string;
   orderRef?: string;
   /** ISO — messages from customer at or after this count as unread for badge */
   lastReadAt: string;
