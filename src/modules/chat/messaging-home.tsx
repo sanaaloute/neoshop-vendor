@@ -623,11 +623,7 @@ function ConversationBody({
                 <div className="flex max-w-[min(100%,420px)] flex-col">
                   {!isVendor && (
                     <span className="text-muted-foreground mb-0.5 flex items-center gap-1.5 px-1 text-[11px]">
-                      <span>
-                        {sender?.surname
-                          ? `${sender.name} ${sender.surname}`
-                          : senderName}
-                      </span>
+                      <span>{senderName}</span>
                       {badge ? (
                         <Badge variant="outline" className="h-4 px-1 text-[9px]">
                           {badge}
