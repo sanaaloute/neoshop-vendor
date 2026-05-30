@@ -7,7 +7,11 @@ import { ArrowLeft, Eye, Package } from "lucide-react";
 
 import { VendorMuted } from "@/components/layout/typography";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getApiBaseUrl } from "@/config/auth";
 import { cn } from "@/lib/utils";
+import { mapApiProductRowToProduct } from "@/services/vendor/mappers/catalog-from-api";
+import { getProduct } from "@/services/vendor/products-api";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
 import { useProductEditorDraftStore } from "@/store/product-editor-draft-store";
 
@@ -32,7 +36,8 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
     }
   }, [catalogProductId]);
 
-  const defaultValues = useMemo(() => {
+  // Try to get from local store first
+  const storeValues = useMemo(() => {
     const d = useProductEditorDraftStore.getState().getDraft(editorKey);
     if (d) return d;
     if (catalogProductId) {
@@ -41,6 +46,34 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
     }
     return emptyProductFormValues();
   }, [editorKey, catalogProductId]);
+
+  // Fetch full product from API when editing (to get all images)
+  const [fetchedValues, setFetchedValues] = useState<ProductFormValues | null>(null);
+  const [fetching, setFetching] = useState(false);
+
+  useEffect(() => {
+    if (!catalogProductId || !getApiBaseUrl()) return;
+    let cancelled = false;
+    setFetching(true);
+    getProduct(catalogProductId)
+      .then((row) => {
+        if (cancelled) return;
+        const p = mapApiProductRowToProduct(row as Record<string, unknown>);
+        useProductCatalogStore.getState().upsertProduct(p);
+        setFetchedValues(productToFormValues(p));
+      })
+      .catch(() => {
+        // silently fail — local store is the fallback
+      })
+      .finally(() => {
+        if (!cancelled) setFetching(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [catalogProductId]);
+
+  const defaultValues = fetchedValues ?? storeValues;
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [snapshot, setSnapshot] = useState<ProductFormValues>(defaultValues);
@@ -114,34 +147,48 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
       </div>
 
       {/* Main Content */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <ProductForm
-          key={editorKey}
-          editorKey={editorKey}
-          catalogProductId={catalogProductId}
-          defaultValues={defaultValues}
-          onSuccess={(createdId, configureVariants) => {
-            if (createdId && configureVariants) {
-              router.push(`/variants?productId=${createdId}`);
-            } else {
-              router.push("/products");
-            }
-          }}
-          onValuesSnapshot={handleSnapshot}
-          onSavingChange={setSaving}
-        />
-
-        {/* Right Sidebar */}
-        <aside className="hidden lg:block">
-          <ProductStatusPanel
-            values={snapshot}
+      {fetching && !fetchedValues ? (
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+          <div className="flex flex-col gap-5">
+            <Skeleton className="h-48 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+          </div>
+          <div className="hidden lg:flex flex-col gap-5">
+            <Skeleton className="h-56 w-full rounded-2xl" />
+            <Skeleton className="h-48 w-full rounded-2xl" />
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+          <ProductForm
+            key={editorKey}
+            editorKey={editorKey}
             catalogProductId={catalogProductId}
-            savedAt={savedAt}
-            onPreview={() => setPreviewOpen(true)}
-            saving={saving}
+            defaultValues={defaultValues}
+            onSuccess={(createdId, configureVariants) => {
+              if (createdId && configureVariants) {
+                router.push(`/variants?productId=${createdId}`);
+              } else {
+                router.push("/products");
+              }
+            }}
+            onValuesSnapshot={handleSnapshot}
+            onSavingChange={setSaving}
           />
-        </aside>
-      </div>
+
+          {/* Right Sidebar */}
+          <aside className="hidden lg:block">
+            <ProductStatusPanel
+              values={snapshot}
+              catalogProductId={catalogProductId}
+              savedAt={savedAt}
+              onPreview={() => setPreviewOpen(true)}
+              saving={saving}
+            />
+          </aside>
+        </div>
+      )}
 
       <ProductPreviewSheet
         open={previewOpen}
