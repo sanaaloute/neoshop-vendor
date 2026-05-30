@@ -432,7 +432,7 @@ export function ProductForm({
                 name="price"
                 render={({ field, fieldState }) => (
                   <div className="grid gap-1.5">
-                    <Label htmlFor={field.name}>Price (CNY)</Label>
+                    <Label htmlFor={field.name}>Price</Label>
                     <Input
                       id={field.name}
                       type="number"

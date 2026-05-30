@@ -3,15 +3,15 @@ const NUMBER_LOCALE = "en-US";
 
 export function formatCurrency(
   value: number,
-  currency = "CNY",
+  _currency = "CNY",
   maximumFractionDigits = 0
 ) {
-  return new Intl.NumberFormat(NUMBER_LOCALE, {
-    style: "currency",
-    currency,
+  const formatted = new Intl.NumberFormat(NUMBER_LOCALE, {
+    style: "decimal",
     maximumFractionDigits,
     minimumFractionDigits: 0,
   }).format(value);
+  return `¥${formatted}`;
 }
 
 export function formatCompact(value: number) {

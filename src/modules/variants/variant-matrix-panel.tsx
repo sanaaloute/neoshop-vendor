@@ -109,7 +109,7 @@ export function VariantMatrixPanel() {
               step={1}
             />
             <DefaultNum
-              label="Price (CNY)"
+              label="Price"
               value={defaults.price}
               onChange={(price) => setDefaults((d) => ({ ...d, price }))}
               min={0.01}
