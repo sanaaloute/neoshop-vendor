@@ -428,7 +428,7 @@ export function MessagingHome() {
                   {selected.customerName}
                 </SheetTitle>
                 <SheetDescription className="truncate">
-                  {selected.customerEmail}
+                  {selected.customerEmail || selected.customerPhone || ""}
                   {selected.orderRef ? (
                     <span className="ml-2 font-mono text-xs">
                       {selected.orderRef}
@@ -526,7 +526,7 @@ function ConversationBody({
           {thread.customerName}
         </h2>
         <p className="text-muted-foreground text-xs">
-          {thread.customerEmail}
+          {thread.customerEmail || thread.customerPhone || ""}
           {thread.orderRef ? (
             <span className="ml-2 font-mono">· {thread.orderRef}</span>
           ) : null}

@@ -1,15 +1,19 @@
 import type { ChatMessage, ChatThread } from "@/modules/chat/types";
 
+function isCurrentUser(senderId: string, currentUserIds: string[]): boolean {
+  return currentUserIds.some((id) => id.length > 0 && id === senderId);
+}
+
 export function mapChatMessage(
   raw: Record<string, unknown>,
   threadId: string,
-  vendorUserId: string
+  currentUserIds: string[]
 ): ChatMessage {
   const sender = String(raw.senderUserId ?? "");
   return {
     id: String(raw.id),
     threadId,
-    authorRole: sender === vendorUserId ? "vendor" : "customer",
+    authorRole: isCurrentUser(sender, currentUserIds) ? "vendor" : "customer",
     body: String(raw.body ?? ""),
     sentAt: String(raw.createdAt ?? new Date().toISOString()),
   };
@@ -17,7 +21,7 @@ export function mapChatMessage(
 
 export function mapConversationToThread(
   raw: Record<string, unknown>,
-  vendorUserId: string,
+  currentUserIds: string[],
   messages: ChatMessage[] = []
 ): ChatThread {
   const participants = Array.isArray(raw.participants)
@@ -27,12 +31,15 @@ export function mapConversationToThread(
     participants.find((p) => {
       const usr = p.user as Record<string, unknown> | undefined;
       const uid = String(p.userId ?? usr?.id ?? "");
-      return uid !== vendorUserId;
+      return !isCurrentUser(uid, currentUserIds);
     }) ?? participants[0];
   const usr = peer?.user as Record<string, unknown> | undefined;
   const u = (usr ?? peer) as Record<string, unknown> | undefined;
   const email = String(u?.email ?? "");
-  const name = String(u?.name ?? u?.fullName ?? (email || "Customer"));
+  const phone = String(u?.phone ?? u?.phoneNumber ?? u?.mobile ?? "");
+  const name = String(
+    u?.name ?? u?.fullName ?? (email || phone || "Customer")
+  );
 
   const last = raw.lastMessage as Record<string, unknown> | undefined;
   const seedMsgs =
@@ -48,7 +55,7 @@ export function mapConversationToThread(
                 createdAt: last.createdAt,
               },
               String(raw.id),
-              vendorUserId
+              currentUserIds
             ),
           ]
         : [];
@@ -57,6 +64,7 @@ export function mapConversationToThread(
     id: String(raw.id),
     customerName: name,
     customerEmail: email,
+    customerPhone: phone || undefined,
     orderRef: undefined,
     lastReadAt: new Date(0).toISOString(),
     messages: seedMsgs,

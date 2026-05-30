@@ -11,13 +11,17 @@ import {
 import { listConversationMessages, listConversations } from "@/services/vendor/chat-api";
 import { useAuthStore } from "@/store/auth-store";
 import { useChatStore } from "@/store/chat-store";
+import { useVendorProfileStore } from "@/store/vendor-profile-store";
 
 /** Loads GET /chat/conversations when the gateway and vendor session are available. */
 export function useGatewayChatBootstrap() {
   const userId = useAuthStore((s) => s.user?.id ?? null);
+  const vendorId = useVendorProfileStore((s) => s.profile?.id ?? null);
   const replaceThreads = useChatStore((s) => s.replaceThreads);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const currentUserIds = [userId, vendorId].filter((id): id is string => Boolean(id));
 
   useEffect(() => {
     if (!getApiBaseUrl()) {
@@ -25,7 +29,7 @@ export function useGatewayChatBootstrap() {
       setError(null);
       return;
     }
-    if (!userId) {
+    if (currentUserIds.length === 0) {
       setLoading(false);
       setError(null);
       return;
@@ -40,9 +44,9 @@ export function useGatewayChatBootstrap() {
         const rawItems =
           (res as { items?: unknown[] })?.items ??
           (Array.isArray(res) ? res : []);
-        const threads = (
-          rawItems as Record<string, unknown>[]
-        ).map((row) => mapConversationToThread(row, userId));
+        const threads = (rawItems as Record<string, unknown>[]).map((row) =>
+          mapConversationToThread(row, currentUserIds)
+        );
         if (!cancelled) replaceThreads(threads);
       } catch (e) {
         if (!cancelled) {
@@ -59,18 +63,21 @@ export function useGatewayChatBootstrap() {
     return () => {
       cancelled = true;
     };
-  }, [userId, replaceThreads]);
+  }, [currentUserIds.join(","), replaceThreads]);
 
-  return { loading, error, enabled: Boolean(getApiBaseUrl() && userId) };
+  return { loading, error, enabled: Boolean(getApiBaseUrl() && currentUserIds.length > 0) };
 }
 
 /** Loads messages for the active conversation from GET …/messages. */
 export function useGatewayChatMessages(conversationId: string | null) {
   const userId = useAuthStore((s) => s.user?.id ?? null);
+  const vendorId = useVendorProfileStore((s) => s.profile?.id ?? null);
   const mergeThreadMessages = useChatStore((s) => s.mergeThreadMessages);
 
+  const currentUserIds = [userId, vendorId].filter((id): id is string => Boolean(id));
+
   useEffect(() => {
-    if (!getApiBaseUrl() || !userId || !conversationId) return;
+    if (!getApiBaseUrl() || currentUserIds.length === 0 || !conversationId) return;
 
     let cancelled = false;
     (async () => {
@@ -82,7 +89,7 @@ export function useGatewayChatMessages(conversationId: string | null) {
           (res as { items?: unknown[] })?.items ??
           (Array.isArray(res) ? res : []);
         const messages = (rawItems as Record<string, unknown>[])
-          .map((m) => mapChatMessage(m, conversationId, userId))
+          .map((m) => mapChatMessage(m, conversationId, currentUserIds))
           .sort((a, b) => +new Date(a.sentAt) - +new Date(b.sentAt));
         if (!cancelled) mergeThreadMessages(conversationId, messages);
       } catch {
@@ -93,5 +100,5 @@ export function useGatewayChatMessages(conversationId: string | null) {
     return () => {
       cancelled = true;
     };
-  }, [conversationId, userId, mergeThreadMessages]);
+  }, [conversationId, currentUserIds.join(","), mergeThreadMessages]);
 }

@@ -10,6 +10,7 @@ import { useOrdersStore } from "@/store/orders-store";
 import { useInventoryStore } from "@/store/inventory-store";
 import { useChatStore } from "@/store/chat-store";
 import { useAuthStore } from "@/store/auth-store";
+import { useVendorProfileStore } from "@/store/vendor-profile-store";
 
 import { REALTIME_EVENTS } from "./registry";
 import type {
@@ -23,7 +24,9 @@ import { useRealtimeContext } from "./context";
 /** Maps Socket.IO payloads into Zustand when the gateway is configured. */
 export function RealtimeStoreBridge() {
   const { socket } = useRealtimeContext();
-  const vendorUserId = useAuthStore((s) => s.user?.id ?? null);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
+  const vendorId = useVendorProfileStore((s) => s.profile?.id ?? null);
+  const currentUserIds = [userId, vendorId].filter((id): id is string => Boolean(id));
 
   useEffect(() => {
     if (!socket) return;
@@ -64,7 +67,7 @@ export function RealtimeStoreBridge() {
     const onChatMessage = (payload: ChatMessagePayload) => {
       const selectedId = useChatStore.getState().selectedThreadId;
       const isOpen = selectedId === payload.conversationId;
-      const isFromVendor = payload.senderUserId === vendorUserId;
+      const isFromVendor = currentUserIds.includes(payload.senderUserId);
       const now = new Date().toISOString();
 
       useChatStore.getState().mergeIncomingMessage({
@@ -92,7 +95,7 @@ export function RealtimeStoreBridge() {
       socket.off(REALTIME_EVENTS.INVENTORY_UPDATED, onInventory);
       socket.off(REALTIME_EVENTS.CHAT_MESSAGE, onChatMessage);
     };
-  }, [socket, vendorUserId]);
+  }, [socket, currentUserIds.join(",")]);
 
   return null;
 }
