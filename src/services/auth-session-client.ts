@@ -64,6 +64,7 @@ export async function refreshSessionRequest() {
   return (await res.json()) as {
     accessToken: string;
     refreshToken?: string;
+    sessionId?: string;
   };
 }
 

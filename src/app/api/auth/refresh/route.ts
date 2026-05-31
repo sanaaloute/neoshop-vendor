@@ -104,5 +104,6 @@ export async function POST(request: Request) {
   return NextResponse.json({
     accessToken: payload.accessToken,
     refreshToken: payload.refreshToken ?? refresh,
+    sessionId: payload.sessionId ?? sessionId,
   });
 }

@@ -20,18 +20,46 @@ export type LoginRequest = {
   password: string;
 };
 
-/** Vendor self-service signup — same response shape as login when tokens are issued immediately. */
-export type RegisterRequest = LoginRequest;
+export type RegisterRequest = {
+  email: string;
+  password: string;
+  name?: string;
+  surname?: string;
+};
+
+export type RegisterResponse = {
+  success: boolean;
+  message: string;
+  user?: {
+    userId: string;
+    supabaseUserId: string;
+    email: string;
+    role: string;
+  };
+};
+
+export type ForgotPasswordRequest = {
+  email: string;
+};
+
+export type ResetPasswordRequest = {
+  token: string;
+  newPassword: string;
+};
 
 /** Raw gateway response (supports both camelCase and Supabase snake_case). */
 export type LoginResponse = {
   // camelCase (gateway wrapper)
   accessToken?: string;
   refreshToken?: string;
+  sessionId?: string;
+  expiresIn?: number;
+  expiresAt?: number;
   // snake_case (Supabase native)
   access_token?: string;
   refresh_token?: string;
   expires_in?: number;
+  expires_at?: number;
   token_type?: string;
   user?: VendorUser;
 };
@@ -41,6 +69,9 @@ export function normalizeAuthResponse<T extends LoginResponse>(res: T) {
   return {
     accessToken: res.accessToken ?? res.access_token ?? "",
     refreshToken: res.refreshToken ?? res.refresh_token ?? "",
+    sessionId: res.sessionId ?? "",
+    expiresIn: res.expiresIn ?? res.expires_in ?? 0,
+    expiresAt: res.expiresAt ?? res.expires_at ?? 0,
     user: res.user,
   };
 }

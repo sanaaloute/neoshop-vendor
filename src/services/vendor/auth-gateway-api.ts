@@ -1,5 +1,5 @@
 import { vendorApiClient } from "@/services/api/client";
-import type { LoginResponse } from "@/types/auth";
+import type { LoginResponse, RegisterResponse } from "@/types/auth";
 
 import type { AuthMeResponse, AuthSessionResponse } from "./types";
 
@@ -10,7 +10,11 @@ export async function getAuthMe() {
 }
 
 /** POST /auth/login — email/password via gateway */
-export async function postAuthLogin(body: { email: string; password: string }) {
+export async function postAuthLogin(body: {
+  email: string;
+  password: string;
+  deviceId: string;
+}) {
   const { data } = await vendorApiClient.post<LoginResponse>("/api/v1/auth/login", body);
   return data;
 }
@@ -23,7 +27,7 @@ export async function postAuthRegister(body: {
   surname?: string;
   role: string;
 }) {
-  const { data } = await vendorApiClient.post<LoginResponse>("/api/v1/auth/register", body);
+  const { data } = await vendorApiClient.post<RegisterResponse>("/api/v1/auth/register", body);
   return data;
 }
 
@@ -37,14 +41,43 @@ export async function postAuthSessions(body: {
   return data;
 }
 
-/** POST /auth/logout — requires X-Session-ID */
+/** POST /auth/logout — requires x-session-id */
 export async function postAuthLogout(sessionId: string) {
-  const { data } = await vendorApiClient.post<{ revoked: boolean }>("/api/v1/auth/logout", {}, { headers: { "X-Session-ID": sessionId } });
+  const { data } = await vendorApiClient.post<{ revoked: boolean }>(
+    "/api/v1/auth/logout",
+    {},
+    { headers: { "x-session-id": sessionId } }
+  );
   return data;
 }
 
 /** POST /auth/logout/all */
-export async function postAuthLogoutAll() {
-  const { data } = await vendorApiClient.post<{ revoked: number }>("/api/v1/auth/logout/all", {});
+export async function postAuthLogoutAll(sessionId: string) {
+  const { data } = await vendorApiClient.post<{ revoked: number }>(
+    "/api/v1/auth/logout/all",
+    {},
+    { headers: { "x-session-id": sessionId } }
+  );
+  return data;
+}
+
+/** POST /auth/forgot-password */
+export async function postAuthForgotPassword(body: { email: string }) {
+  const { data } = await vendorApiClient.post<{ sent: boolean }>(
+    "/api/v1/auth/forgot-password",
+    body
+  );
+  return data;
+}
+
+/** POST /auth/reset-password */
+export async function postAuthResetPassword(body: {
+  token: string;
+  newPassword: string;
+}) {
+  const { data } = await vendorApiClient.post<{ success: boolean }>(
+    "/api/v1/auth/reset-password",
+    body
+  );
   return data;
 }

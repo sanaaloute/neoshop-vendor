@@ -18,10 +18,25 @@ function authRequestInterceptor(config: InternalAxiosRequestConfig) {
   return config;
 }
 
+function sessionRequestInterceptor(config: InternalAxiosRequestConfig) {
+  const sessionId = useAuthStore.getState().sessionId;
+  if (sessionId) {
+    config.headers["x-session-id"] = sessionId;
+  }
+  return config;
+}
+
 function shouldSkipRefresh(config: InternalAxiosRequestConfig | undefined): boolean {
   if (!config) return true;
   const url = config.url ?? "";
-  return url.includes("/auth/logout") || url.includes("/auth/login") || url.includes("/auth/register");
+  return (
+    url.includes("/auth/logout") ||
+    url.includes("/auth/login") ||
+    url.includes("/auth/register") ||
+    url.includes("/auth/forgot-password") ||
+    url.includes("/auth/reset-password") ||
+    url.includes("/auth/refresh")
+  );
 }
 
 function refreshOnUnauthorized(instance: AxiosInstance) {
@@ -64,6 +79,7 @@ function apiBaseRequestInterceptor(config: InternalAxiosRequestConfig) {
 export function attachVendorInterceptors(instance: AxiosInstance) {
   instance.interceptors.request.use(apiBaseRequestInterceptor);
   instance.interceptors.request.use(authRequestInterceptor);
+  instance.interceptors.request.use(sessionRequestInterceptor);
   instance.interceptors.response.use(
     (response) => response,
     refreshOnUnauthorized(instance)

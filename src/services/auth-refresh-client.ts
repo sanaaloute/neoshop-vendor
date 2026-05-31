@@ -9,7 +9,7 @@ export function refreshTokensClient(): Promise<string | null> {
   inFlight = (async () => {
     try {
       const data = await refreshSessionRequest();
-      useAuthStore.getState().applyRefreshedAccess(data.accessToken);
+      useAuthStore.getState().applyRefreshedAccess(data.accessToken, data.sessionId);
       return data.accessToken;
     } catch {
       return null;

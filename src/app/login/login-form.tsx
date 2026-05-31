@@ -20,16 +20,25 @@ import { useAuth } from "@/hooks/use-auth";
 import { refreshTokensClient } from "@/services/auth-refresh-client";
 import { useAuthStore } from "@/store/auth-store";
 
+const passwordSchema = z
+  .string()
+  .min(8, "Use at least 8 characters")
+  .regex(/[A-Z]/, "Include at least one uppercase letter")
+  .regex(/[a-z]/, "Include at least one lowercase letter")
+  .regex(/[0-9]/, "Include at least one digit");
+
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8, "Use at least 8 characters"),
+  password: z.string().min(1, "Enter your password"),
 });
 
 const signupSchema = z
   .object({
+    name: z.string().min(1, "Enter your first name"),
+    surname: z.string().min(1, "Enter your last name"),
     email: z.string().email(),
-    password: z.string().min(8, "Use at least 8 characters"),
-    confirmPassword: z.string().min(8, "Confirm your password"),
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Confirm your password"),
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: "Passwords must match",
@@ -46,9 +55,15 @@ function safePostLoginPath(next: string | null): string {
   return next;
 }
 
-function mapAuthError(e: unknown, mode: "login" | "signup"): string {
+function mapAuthError(e: unknown, mode: "login" | "signup" | "forgot"): string {
   if (!(e instanceof Error)) return "Something went wrong.";
-  switch (e.message) {
+  const m = e.message;
+
+  if (mode === "forgot") {
+    return m || "Could not send reset email. Try again.";
+  }
+
+  switch (m) {
     case "not_vendor":
       return mode === "signup"
         ? "Account was created, but this portal requires an active vendor role. Contact marketplace support if you believe this is a mistake."
@@ -60,12 +75,21 @@ function mapAuthError(e: unknown, mode: "login" | "signup"): string {
     case "signup_no_tokens":
       return "Sign-up succeeded but no session was returned. Check your email to verify your account, then sign in.";
     default: {
-      const m = e.message;
       if (
         m.includes("Invalid login credentials") ||
-        m.includes("invalid_credentials")
+        m.includes("invalid_credentials") ||
+        m.includes("Invalid credentials")
       ) {
         return "Invalid email or password.";
+      }
+      if (m.includes("Email not verified")) {
+        return "Email not verified. Please check your inbox and confirm your email before logging in.";
+      }
+      if (m.includes("Too many failed attempts")) {
+        return m;
+      }
+      if (m.includes("Too many requests")) {
+        return "Too many requests — slow down and retry.";
       }
       return (
         m || (mode === "signup" ? "Unable to create account." : "Unable to sign in.")
@@ -77,11 +101,12 @@ function mapAuthError(e: unknown, mode: "login" | "signup"): string {
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">(() =>
     searchParams.get("signup") === "1" ? "signup" : "login"
   );
   const [error, setError] = useState<string | null>(null);
+  const [signupSuccess, setSignupSuccess] = useState<string | null>(null);
   const resumeStarted = useRef(false);
 
   useEffect(() => {
@@ -97,6 +122,7 @@ export function LoginForm() {
 
   useEffect(() => {
     setError(null);
+    setSignupSuccess(null);
   }, [mode]);
 
   const isSignup = mode === "signup";
@@ -112,19 +138,39 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isSignup ? (
+        {signupSuccess ? (
+          <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-sm text-green-800 dark:text-green-200">
+            {signupSuccess}
+          </div>
+        ) : isSignup ? (
           <VendorForm<SignupValues>
             key="signup"
             schema={signupSchema}
-            defaultValues={{ email: "", password: "", confirmPassword: "" }}
+            defaultValues={{
+              name: "",
+              surname: "",
+              email: "",
+              password: "",
+              confirmPassword: "",
+            }}
             onSubmit={async (values) => {
               setError(null);
+              setSignupSuccess(null);
               try {
-                await register({
+                const res = await useAuthStore.getState().register({
                   email: values.email,
                   password: values.password,
+                  name: values.name,
+                  surname: values.surname,
                 });
-                router.replace(safePostLoginPath(searchParams.get("next")));
+                if (res.success) {
+                  setSignupSuccess(
+                    res.message ||
+                      "Account created. Please check your email to verify your account before logging in."
+                  );
+                } else {
+                  setError("Registration did not complete. Try again.");
+                }
               } catch (e) {
                 setError(mapAuthError(e, "signup"));
               }
@@ -133,6 +179,22 @@ export function LoginForm() {
           >
             {(form) => (
               <>
+                <div className="grid grid-cols-2 gap-4">
+                  <VendorTextField
+                    control={form.control}
+                    name="name"
+                    label="First name"
+                    placeholder="John"
+                    autoComplete="given-name"
+                  />
+                  <VendorTextField
+                    control={form.control}
+                    name="surname"
+                    label="Last name"
+                    placeholder="Doe"
+                    autoComplete="family-name"
+                  />
+                </div>
                 <VendorTextField
                   control={form.control}
                   name="email"
@@ -148,6 +210,9 @@ export function LoginForm() {
                   placeholder="••••••••"
                   autoComplete="new-password"
                 />
+                <p className="text-muted-foreground text-xs">
+                  Password must be at least 8 characters with one uppercase letter, one lowercase letter, and one digit.
+                </p>
                 <VendorPasswordField
                   control={form.control}
                   name="confirmPassword"
@@ -203,6 +268,15 @@ export function LoginForm() {
                   placeholder="••••••••"
                   autoComplete="current-password"
                 />
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    className="text-primary text-xs font-medium underline-offset-4 hover:underline"
+                    onClick={() => router.push("/login/forgot-password")}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 {error ? (
                   <VendorMuted className="text-destructive">{error}</VendorMuted>
                 ) : null}
@@ -218,31 +292,33 @@ export function LoginForm() {
           </VendorForm>
         )}
 
-        <div className="text-center text-sm">
-          {isSignup ? (
-            <p className="text-muted-foreground">
-              Already have an account?{" "}
-              <button
-                type="button"
-                className="text-primary font-medium underline-offset-4 hover:underline"
-                onClick={() => setMode("login")}
-              >
-                Sign in
-              </button>
-            </p>
-          ) : (
-            <p className="text-muted-foreground">
-              New vendor?{" "}
-              <button
-                type="button"
-                className="text-primary font-medium underline-offset-4 hover:underline"
-                onClick={() => setMode("signup")}
-              >
-                Create an account
-              </button>
-            </p>
-          )}
-        </div>
+        {!signupSuccess && (
+          <div className="text-center text-sm">
+            {isSignup ? (
+              <p className="text-muted-foreground">
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  className="text-primary font-medium underline-offset-4 hover:underline"
+                  onClick={() => setMode("login")}
+                >
+                  Sign in
+                </button>
+              </p>
+            ) : (
+              <p className="text-muted-foreground">
+                New vendor?{" "}
+                <button
+                  type="button"
+                  className="text-primary font-medium underline-offset-4 hover:underline"
+                  onClick={() => setMode("signup")}
+                >
+                  Create an account
+                </button>
+              </p>
+            )}
+          </div>
+        )}
 
         <VendorMuted className="text-center text-xs">
           After sign-up, complete vendor onboarding (business details and verification) from your dashboard when prompted.

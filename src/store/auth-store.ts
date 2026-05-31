@@ -17,7 +17,7 @@ import {
   syncHttpOnlySession,
 } from "@/services/auth-session-client";
 import { normalizeAuthResponse } from "@/types/auth";
-import type { LoginRequest, RegisterRequest, VendorUser } from "@/types/auth";
+import type { LoginRequest, RegisterRequest, RegisterResponse, VendorUser } from "@/types/auth";
 
 export type AuthStatus =
   | "idle"
@@ -27,12 +27,13 @@ export type AuthStatus =
 
 type AuthState = {
   accessToken: string | null;
+  sessionId: string | null;
   user: VendorUser | null;
   status: AuthStatus;
-  applyRefreshedAccess: (accessToken: string) => void;
+  applyRefreshedAccess: (accessToken: string, sessionId?: string) => void;
   bootstrap: () => Promise<void>;
   login: (payload: LoginRequest) => Promise<void>;
-  register: (payload: RegisterRequest) => Promise<void>;
+  register: (payload: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
 };
 
@@ -42,18 +43,20 @@ export const useAuthStore = create<AuthState>()(
       async function finalizeGatewayAuth(
         accessToken: string,
         refreshToken: string,
-        emailFallback: string
+        emailFallback: string,
+        sessionIdFromLogin?: string
       ) {
         const claims = decodeAccessToken(accessToken);
         if (!isVendorTokenClaims(claims)) {
-          set({ status: "unauthenticated", accessToken: null, user: null });
+          set({ status: "unauthenticated", accessToken: null, sessionId: null, user: null });
           throw new Error("not_vendor");
         }
 
         set({ accessToken, status: "loading" });
 
-        let sessionId: string | undefined;
-        if (getApiBaseUrl()) {
+        let sessionId: string | undefined = sessionIdFromLogin;
+
+        if (!sessionId && getApiBaseUrl()) {
           try {
             const { postAuthSessions } = await import(
               "@/services/vendor/auth-gateway-api"
@@ -88,6 +91,7 @@ export const useAuthStore = create<AuthState>()(
 
         set({
           accessToken,
+          sessionId: sessionId ?? null,
           user,
           status: "authenticated",
         });
@@ -106,11 +110,12 @@ export const useAuthStore = create<AuthState>()(
 
       return {
         accessToken: null,
+        sessionId: null,
         user: null,
         status: "idle",
 
-        applyRefreshedAccess: (accessToken) => {
-          set({ accessToken, status: "authenticated" });
+        applyRefreshedAccess: (accessToken, sessionId) => {
+          set({ accessToken, sessionId: sessionId ?? get().sessionId, status: "authenticated" });
         },
 
         bootstrap: async () => {
@@ -124,7 +129,7 @@ export const useAuthStore = create<AuthState>()(
           }
 
           if (!access) {
-            set({ accessToken: null, user: null, status: "unauthenticated" });
+            set({ accessToken: null, sessionId: null, user: null, status: "unauthenticated" });
             return;
           }
 
@@ -138,7 +143,7 @@ export const useAuthStore = create<AuthState>()(
               await import("@/services/auth-refresh-client");
             access = await refreshTokensClient();
             if (!access) {
-              set({ accessToken: null, user: null, status: "unauthenticated" });
+              set({ accessToken: null, sessionId: null, user: null, status: "unauthenticated" });
               return;
             }
             set({ accessToken: access });
@@ -146,7 +151,7 @@ export const useAuthStore = create<AuthState>()(
           }
 
           if (!remoteUser) {
-            set({ accessToken: null, user: null, status: "unauthenticated" });
+            set({ accessToken: null, sessionId: null, user: null, status: "unauthenticated" });
             return;
           }
 
@@ -170,19 +175,21 @@ export const useAuthStore = create<AuthState>()(
             const raw = await postAuthLogin({
               email: payload.email,
               password: payload.password,
+              deviceId: getOrCreateDeviceId(),
             });
             const res = normalizeAuthResponse(raw);
             if (!res.accessToken || !res.refreshToken) {
-              set({ status: "unauthenticated", accessToken: null, user: null });
+              set({ status: "unauthenticated", accessToken: null, sessionId: null, user: null });
               throw new Error("sign_in_no_session");
             }
             await finalizeGatewayAuth(
               res.accessToken,
               res.refreshToken,
-              payload.email
+              payload.email,
+              res.sessionId || undefined
             );
           } catch (e) {
-            set({ status: "unauthenticated", accessToken: null, user: null });
+            set({ status: "unauthenticated", accessToken: null, sessionId: null, user: null });
             throw e instanceof Error ? e : new Error("login_failed");
           }
         },
@@ -193,33 +200,28 @@ export const useAuthStore = create<AuthState>()(
             "@/services/vendor/auth-gateway-api"
           );
           try {
-            const raw = await postAuthRegister({
+            const res = await postAuthRegister({
               email: payload.email,
               password: payload.password,
+              name: payload.name,
+              surname: payload.surname,
               role: VENDOR_ROLE,
             });
-            const res = normalizeAuthResponse(raw);
-            if (!res.accessToken || !res.refreshToken) {
-              set({ status: "unauthenticated", accessToken: null, user: null });
-              throw new Error("signup_no_tokens");
-            }
-            await finalizeGatewayAuth(
-              res.accessToken,
-              res.refreshToken,
-              payload.email
-            );
+            set({ status: "unauthenticated", accessToken: null, sessionId: null, user: null });
+            return res;
           } catch (e) {
-            set({ status: "unauthenticated", accessToken: null, user: null });
+            set({ status: "unauthenticated", accessToken: null, sessionId: null, user: null });
             throw e instanceof Error ? e : new Error("register_failed");
           }
         },
 
         logout: async () => {
+          const sid = get().sessionId;
           try {
             const { postAuthLogoutAll } = await import(
               "@/services/vendor/auth-gateway-api"
             );
-            await postAuthLogoutAll();
+            await postAuthLogoutAll(sid ?? "");
           } catch {
             // Gateway logout failed — still clear local state.
           }
@@ -236,14 +238,14 @@ export const useAuthStore = create<AuthState>()(
             } catch {
               // ignore
             }
-            set({ accessToken: null, user: null, status: "unauthenticated" });
+            set({ accessToken: null, sessionId: null, user: null, status: "unauthenticated" });
           }
         },
       };
     },
     {
       name: "neoshop-vendor-auth",
-      partialize: (state) => ({ user: state.user }),
+      partialize: (state) => ({ user: state.user, sessionId: state.sessionId }),
     }
   )
 );
