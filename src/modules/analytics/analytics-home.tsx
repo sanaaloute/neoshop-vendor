@@ -146,7 +146,7 @@ export function AnalyticsHome() {
                 />
               ) : (
                 <div
-                  className="bg-muted/40 h-[260px] animate-pulse rounded-lg"
+                  className="shimmer h-[260px] rounded-lg"
                   aria-hidden
                 />
               )}
@@ -174,7 +174,7 @@ export function AnalyticsHome() {
                 />
               ) : (
                 <div
-                  className="bg-muted/40 h-[260px] animate-pulse rounded-lg"
+                  className="shimmer h-[260px] rounded-lg"
                   aria-hidden
                 />
               )}
@@ -202,7 +202,7 @@ export function AnalyticsHome() {
               />
             ) : (
               <div
-                className="bg-muted/40 h-[300px] animate-pulse rounded-lg"
+                className="shimmer h-[300px] rounded-lg"
                 aria-hidden
               />
             )}
@@ -256,7 +256,7 @@ export function AnalyticsHome() {
               <GeoPieChart data={report.geographic} height={280} />
             ) : (
               <div
-                className="bg-muted/40 h-[280px] animate-pulse rounded-lg"
+                className="shimmer h-[280px] rounded-lg"
                 aria-hidden
               />
             )}
@@ -285,7 +285,7 @@ export function AnalyticsHome() {
                 />
               ) : (
                 <div
-                  className="bg-muted/40 h-[240px] animate-pulse rounded-lg"
+                  className="shimmer h-[240px] rounded-lg"
                   aria-hidden
                 />
               )}
@@ -313,7 +313,7 @@ export function AnalyticsHome() {
                 />
               ) : (
                 <div
-                  className="bg-muted/40 h-[240px] animate-pulse rounded-lg"
+                  className="shimmer h-[240px] rounded-lg"
                   aria-hidden
                 />
               )}

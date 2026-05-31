@@ -139,7 +139,7 @@ export function DashboardHome() {
                   />
                 ) : (
                   <div
-                    className="bg-muted/40 h-[260px] w-full animate-pulse rounded-lg"
+                    className="shimmer h-[260px] w-full rounded-lg"
                     aria-hidden
                   />
                 )}
@@ -172,7 +172,7 @@ export function DashboardHome() {
                   />
                 ) : (
                   <div
-                    className="bg-muted/40 h-[180px] w-full animate-pulse rounded-lg"
+                    className="shimmer h-[180px] w-full rounded-lg"
                     aria-hidden
                   />
                 )}

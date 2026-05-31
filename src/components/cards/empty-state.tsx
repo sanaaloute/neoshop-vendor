@@ -1,6 +1,10 @@
+"use client";
+
 import type { ComponentProps, ReactNode } from "react";
+import { motion } from "framer-motion";
 
 import { cn } from "@/lib/utils";
+import { fadeUp, scaleIn } from "@/lib/motion";
 import { VendorHeading, VendorMuted } from "@/components/layout/typography";
 import { Button } from "@/components/ui/button";
 
@@ -22,6 +26,7 @@ type EmptyStateProps = {
   primaryAction?: ButtonAction;
   secondaryAction?: ButtonAction;
   className?: string;
+  animate?: boolean;
 };
 
 export function EmptyState({
@@ -31,18 +36,35 @@ export function EmptyState({
   primaryAction,
   secondaryAction,
   className,
+  animate = true,
 }: EmptyStateProps) {
+  const Wrapper = animate ? motion.div : "div";
+  const wrapperProps = animate
+    ? {
+        variants: fadeUp,
+        initial: "hidden",
+        animate: "show",
+      }
+    : {};
+
   return (
-    <div
+    <Wrapper
       className={cn(
         "border-border/70 bg-muted/20 flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-6 py-12 text-center shadow-inner",
         className
       )}
+      {...wrapperProps}
     >
       {icon ? (
-        <div className="border-border/60 bg-card/60 text-muted-foreground shadow-vendor-card flex size-12 items-center justify-center rounded-2xl border">
+        <motion.div
+          className="border-border/60 bg-card/60 text-muted-foreground shadow-vendor-card flex size-12 items-center justify-center rounded-2xl border"
+          variants={scaleIn}
+          initial={animate ? "hidden" : false}
+          animate="show"
+          transition={{ delay: 0.1 }}
+        >
           {icon}
-        </div>
+        </motion.div>
       ) : null}
       <div className="max-w-md space-y-2">
         <VendorHeading className="text-lg">{title}</VendorHeading>
@@ -62,6 +84,6 @@ export function EmptyState({
           ) : null}
         </div>
       )}
-    </div>
+    </Wrapper>
   );
 }

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { LogIn } from "lucide-react";
 
 import { VendorSidebarDesktop } from "@/components/navigation/vendor-sidebar";
@@ -17,17 +17,35 @@ import { useVendorProfileStore } from "@/store/vendor-profile-store";
 
 function VendorAuthOverlay({ onLogin }: { onLogin: () => void }) {
   return (
-    <div className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-      <div className="flex flex-col items-center gap-4">
-        <p className="text-foreground text-sm font-medium">
-          Your session has expired.
-        </p>
-        <Button onClick={onLogin}>
+    <motion.div
+      className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+    >
+      <motion.div
+        className="bg-card/90 shadow-vendor-card border-border/60 flex flex-col items-center gap-4 rounded-2xl border p-8 ring-1 ring-white/5 backdrop-blur-xl"
+        initial={{ opacity: 0, scale: 0.92, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: -8 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="bg-muted/50 flex size-12 items-center justify-center rounded-full">
+          <LogIn className="text-muted-foreground size-5" />
+        </div>
+        <div className="space-y-1 text-center">
+          <p className="text-sm font-semibold">Your session has expired</p>
+          <p className="text-muted-foreground text-xs">
+            Please sign in again to continue
+          </p>
+        </div>
+        <Button onClick={onLogin} className="mt-1">
           <LogIn className="size-4" />
           Log in again
         </Button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -42,7 +60,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
     void loadVendorProfile();
   }, [loadVendorProfile]);
 
-  // Delay showing the overlay slightly so transient loading states don’t flash.
+  // Delay showing the overlay slightly so transient loading states don't flash.
   useEffect(() => {
     if (status === "unauthenticated" || !user || !isVendor) {
       const id = window.setTimeout(() => setShowOverlay(true), 800);
@@ -98,13 +116,15 @@ export function VendorShell({ children }: { children: ReactNode }) {
           className="flex flex-1 flex-col overflow-auto"
           initial={false}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className="flex flex-1 flex-col">
             {children}
-            {showOverlay && status !== "loading" && status !== "idle" && (
-              <VendorAuthOverlay onLogin={handleLogin} />
-            )}
+            <AnimatePresence>
+              {showOverlay && status !== "loading" && status !== "idle" && (
+                <VendorAuthOverlay onLogin={handleLogin} />
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
       </div>

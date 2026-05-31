@@ -174,7 +174,10 @@ export function ProductStatusPanel({
               {statusLabel(values.status)}
             </Badge>
             {saving ? (
-              <span className="text-xs text-muted-foreground animate-pulse">
+              <span className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+                <span className="bg-muted-foreground/60 size-1.5 rounded-full animate-bounce-subtle" style={{ animationDelay: "0ms" }} />
+                <span className="bg-muted-foreground/60 size-1.5 rounded-full animate-bounce-subtle" style={{ animationDelay: "120ms" }} />
+                <span className="bg-muted-foreground/60 size-1.5 rounded-full animate-bounce-subtle" style={{ animationDelay: "240ms" }} />
                 Saving…
               </span>
             ) : savedAt ? (

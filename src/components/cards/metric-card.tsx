@@ -37,7 +37,8 @@ export function MetricCard({
       variants={fadeUp}
       initial={false}
       animate="show"
-      transition={{ delay: index * 0.05 }}
+      transition={{ delay: index * 0.06 }}
+      whileHover={{ y: -3, transition: { duration: 0.25 } }}
     >
       <DashboardCard className={cn("gap-0 py-0", className)} {...props}>
         <DashboardCardHeader className="border-border/50 border-b px-4 py-3">

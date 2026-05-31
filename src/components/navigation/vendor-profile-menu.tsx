@@ -34,7 +34,7 @@ export function VendorProfileMenu({ className }: { className?: string }) {
         aria-label="Account menu"
       >
         {isLoading ? (
-          <span className="bg-muted-foreground/40 size-3 animate-pulse rounded-full" />
+          <span className="bg-muted-foreground/40 size-3 rounded-full animate-pulse-soft" />
         ) : (
           initials
         )}

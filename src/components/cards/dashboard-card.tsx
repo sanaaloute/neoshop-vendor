@@ -1,4 +1,7 @@
+"use client";
+
 import type { ComponentProps } from "react";
+import { motion } from "framer-motion";
 
 import {
   Card,
@@ -11,7 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const shell =
-  "relative overflow-hidden rounded-xl border border-border/60 bg-card/80 shadow-vendor-card ring-1 ring-white/5 backdrop-blur-md dark:bg-card/60 dark:ring-white/10";
+  "relative overflow-hidden rounded-xl border border-border/60 bg-card/80 shadow-vendor-card ring-1 ring-white/5 backdrop-blur-md dark:bg-card/60 dark:ring-white/10 transition-premium hover-lift";
 
 export function DashboardCard({
   className,
@@ -62,5 +65,26 @@ export function DashboardCardFooter({
       className={cn("border-border/60 bg-muted/30", className)}
       {...props}
     />
+  );
+}
+
+/** Animated dashboard card with entrance animation */
+export function AnimatedDashboardCard({
+  className,
+  index = 0,
+  ...props
+}: ComponentProps<typeof DashboardCard> & { index?: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.35,
+        delay: index * 0.06,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+    >
+      <DashboardCard className={className} {...props} />
+    </motion.div>
   );
 }
