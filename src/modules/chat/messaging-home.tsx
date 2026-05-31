@@ -42,6 +42,7 @@ import {
 } from "@/realtime/hooks";
 import { useRealtimeContext } from "@/realtime/context";
 import { useAuthStore } from "@/store/auth-store";
+import { useVendorProfileStore } from "@/store/vendor-profile-store";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store/chat-store";
 
@@ -99,6 +100,7 @@ export function MessagingHome() {
   const markThreadRead = useChatStore((s) => s.markThreadRead);
   const deleteMessage = useChatStore((s) => s.deleteMessage);
   const vendorUserId = useAuthStore((s) => s.user?.id ?? null);
+  const vendorProfileId = useVendorProfileStore((s) => s.profile?.id ?? null);
   const [draft, setDraft] = useState("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [peerTyping, setPeerTyping] = useState(false);
@@ -170,6 +172,12 @@ export function MessagingHome() {
     () => threads.find((t) => t.id === selectedId) ?? null,
     [threads, selectedId]
   );
+
+  const currentUserIds = [
+    vendorUserId,
+    vendorProfileId,
+    selected?.vendorChatId,
+  ].filter((id): id is string => Boolean(id));
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -295,13 +303,23 @@ export function MessagingHome() {
   };
 
   const handleDeleteMessage = async (messageId: string) => {
-    if (!selectedId) return;
+    if (!selectedId || !selected) return;
+    const msg = selected.messages.find((m) => m.id === messageId);
+    if (!msg) return;
+
+    // Optimistic remove
     deleteMessage(selectedId, messageId);
+
     if (getApiBaseUrl()) {
       try {
         await deleteConversationMessage(selectedId, messageId);
-      } catch {
-        /* ignore - message already removed from UI */
+      } catch (e) {
+        const status = (e as { response?: { status?: number } })?.response
+          ?.status;
+        if (status === 403 || status === 404) {
+          // Restore message on auth/not-found errors
+          useChatStore.getState().appendVendorMessage(selectedId, msg);
+        }
       }
     }
   };
@@ -423,6 +441,7 @@ export function MessagingHome() {
               endRef={endRef}
               sendError={sendError}
               onDeleteMessage={handleDeleteMessage}
+              currentUserIds={currentUserIds}
             />
           ) : (
             <EmptyConversation />
@@ -501,6 +520,7 @@ export function MessagingHome() {
                   endRef={endRef}
                   sendError={sendError}
                   onDeleteMessage={handleDeleteMessage}
+                  currentUserIds={currentUserIds}
                 />
               </div>
             </>
@@ -543,6 +563,7 @@ function ConversationBody({
   endRef,
   sendError,
   onDeleteMessage,
+  currentUserIds,
 }: {
   thread: ChatThread;
   draft: string;
@@ -555,6 +576,7 @@ function ConversationBody({
   endRef: React.RefObject<HTMLDivElement | null>;
   sendError: string | null;
   onDeleteMessage: (messageId: string) => void;
+  currentUserIds: string[];
 }) {
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
 
@@ -639,17 +661,19 @@ function ConversationBody({
                         : "border-border bg-muted/40"
                     )}
                   >
-                    {/* Delete button - only on vendor's own messages */}
-                    {isVendor && hoveredMessageId === m.id && (
-                      <button
-                        type="button"
-                        onClick={() => onDeleteMessage(m.id)}
-                        className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-100"
-                        title="Delete message"
-                      >
-                        <Trash2 className="size-3" />
-                      </button>
-                    )}
+                    {/* Delete button - only on current user's own messages */}
+                    {m.senderUserId &&
+                      currentUserIds.includes(m.senderUserId) &&
+                      hoveredMessageId === m.id && (
+                        <button
+                          type="button"
+                          onClick={() => onDeleteMessage(m.id)}
+                          className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-100"
+                          title="Delete message"
+                        >
+                          <Trash2 className="size-3" />
+                        </button>
+                      )}
                     <p className="whitespace-pre-wrap">{m.body}</p>
                     {m.attachments?.length ? (
                       <ul className="border-border/50 mt-2 space-y-1 border-t pt-2">
