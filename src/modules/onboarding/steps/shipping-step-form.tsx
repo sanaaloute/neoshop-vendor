@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 
 import { VendorTextField } from "@/components/forms/vendor-text-field";
+import { VendorCountrySelect } from "@/components/forms/vendor-country-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
@@ -56,7 +57,7 @@ export function ShippingStepForm() {
           }
         })}
       >
-        <VendorTextField
+        <VendorCountrySelect
           control={form.control}
           name="originCountry"
           label="Ship-from country"

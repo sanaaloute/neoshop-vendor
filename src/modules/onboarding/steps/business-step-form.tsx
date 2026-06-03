@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { VendorTextField } from "@/components/forms/vendor-text-field";
+import { VendorCountrySelect } from "@/components/forms/vendor-country-select";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
 import { useAuthStore } from "@/store/auth-store";
 import { useOnboardingWizardStore } from "@/store/onboarding-wizard-store";
@@ -72,11 +73,10 @@ export function BusinessStepForm() {
           label="Registration / business ID"
           placeholder="1234567-8"
         />
-        <VendorTextField
+        <VendorCountrySelect
           control={form.control}
           name="country"
           label="Country"
-          placeholder="Finland"
         />
         <VendorTextField
           control={form.control}

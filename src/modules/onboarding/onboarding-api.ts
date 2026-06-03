@@ -39,24 +39,7 @@ export function onboardingApiMessage(e: unknown): string {
   return httpErrorMessageForUser(e, "Request failed");
 }
 
-const COUNTRY_NAME_TO_ISO: Record<string, string> = {
-  finland: "FI",
-  sweden: "SE",
-  norway: "NO",
-  denmark: "DK",
-  estonia: "EE",
-  latvia: "LV",
-  lithuania: "LT",
-  germany: "DE",
-  france: "FR",
-  spain: "ES",
-  italy: "IT",
-  poland: "PL",
-  "united kingdom": "GB",
-  uk: "GB",
-  "united states": "US",
-  usa: "US",
-};
+import { COUNTRY_NAME_TO_ISO } from "./countries";
 
 export function normalizeCountryCode(country: string): string | undefined {
   const t = country.trim();
