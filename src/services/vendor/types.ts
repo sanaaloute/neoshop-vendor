@@ -59,6 +59,7 @@ export type VendorMeResponse = {
   id: string;
   userId: string;
   status: VendorLifecycleStatus;
+  vendorType?: VendorType | null;
   legalBusinessName: string;
   tradeName?: string | null;
   taxId?: string | null;
@@ -69,6 +70,7 @@ export type VendorMeResponse = {
   city?: string | null;
   addressLine1?: string | null;
   postalCode?: string | null;
+  rejectionReason?: string | null;
   documents: VendorDocument[];
   shops: VendorShopSummary[];
   statusHistory: VendorStatusHistoryEntry[];
@@ -119,7 +121,10 @@ export type UpdateUserMeDto = {
 
 // --- Vendor + shop DTOs (OpenAPI: RegisterVendorDto, UpdateVendorOnboardingDto, …) ---
 
+export type VendorType = "INDIVIDUAL" | "COMPANY";
+
 export type RegisterVendorDto = {
+  vendorType: VendorType;
   legalBusinessName: string;
   tradeName?: string;
   taxId?: string;

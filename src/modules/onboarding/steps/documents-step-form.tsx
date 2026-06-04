@@ -1,327 +1,302 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Check, Loader2 } from "lucide-react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import { useRef, useState, useCallback } from "react";
+import {
+  UploadCloud,
+  FileText,
+  Trash2,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  XCircle,
+  ImageIcon,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { UI_LIMITS } from "@/config/ui";
-import { httpErrorMessageForUser } from "@/lib/http-error-message";
-import { cn } from "@/lib/utils";
 import { useOnboardingWizardStore } from "@/store/onboarding-wizard-store";
+import { ONBOARDING_STEP_FORM_ID } from "@/modules/onboarding/onboarding-step-forms";
+import { uploadDraftDocuments, removeVendorDocument } from "@/modules/onboarding/onboarding-api";
+import type { DraftDocument } from "@/modules/onboarding/types";
+import type { VendorDocumentType } from "@/services/vendor/types";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 
-import { syncDocumentsStep } from "../onboarding-api";
-import { uploadVendorOnboardingFiles } from "../upload-documents";
-import { documentsSchema } from "../schemas";
-import { useOnboardingAutosave } from "../use-onboarding-autosave";
-import type { DocumentInfo } from "../types";
+const DOCUMENT_TYPES: { value: VendorDocumentType; label: string; description: string }[] = [
+  { value: "IDENTITY", label: "Identity", description: "Passport, national ID, driver's licence" },
+  { value: "BUSINESS_REGISTRATION", label: "Business Registration", description: "Business licence, registration certificate" },
+  { value: "TAX_CERTIFICATE", label: "Tax Certificate", description: "Tax ID certificate, VAT registration" },
+  { value: "BANK_PROOF", label: "Bank Proof", description: "Bank statement, cancelled cheque" },
+  { value: "OTHER", label: "Other", description: "Any other supporting document" },
+];
 
-const FORM_ID = "vendor-onboarding-step-form";
-
-const DOC_OPTIONS = [
-  "Business registration",
-  "Government ID",
-  "Proof of address",
-  "Bank statement",
-] as const;
-
-type DocumentsUploadRow = {
-  name: string;
-  status: "queued" | "uploading" | "done" | "error";
-  errorMessage?: string;
+const UI_LIMITS = {
+  ONBOARDING_FILE_MAX_BYTES: 10 * 1024 * 1024, // 10MB
 };
 
-export function DocumentsStepForm() {
-  const draft = useOnboardingWizardStore((s) => s.draft.documents);
-  const setStep = useOnboardingWizardStore((s) => s.setStep);
-  const patchSection = useOnboardingWizardStore((s) => s.patchSection);
-  const setApiBusy = useOnboardingWizardStore((s) => s.setApiBusy);
-  const [stepError, setStepError] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploadRows, setUploadRows] = useState<DocumentsUploadRow[]>([]);
-  const apiBusy = useOnboardingWizardStore((s) => s.apiBusy);
-  const form = useForm<DocumentInfo>({
-    resolver: zodResolver(documentsSchema),
-    defaultValues: draft,
-    mode: "onChange",
-  });
-  useOnboardingAutosave(form.control, "documents");
-  const docTypes = useWatch({ control: form.control, name: "docTypes" }) ?? [];
-  const docTypesKey = docTypes.join("|");
-  const expectedFileCount = docTypes.length;
-  const fileInputDisabled = apiBusy || expectedFileCount === 0;
+function fileIconFromMime(mime: string) {
+  if (mime.startsWith("image/")) return ImageIcon;
+  return FileText;
+}
 
-  useEffect(() => {
-    setUploadRows([]);
-    setUploadError(null);
-  }, [docTypesKey]);
+
+export function DocumentsStepForm() {
+  const draft = useOnboardingWizardStore((s) => s.draft);
+  const documents = draft.documents;
+  const setStep = useOnboardingWizardStore((s) => s.setStep);
+  const setApiBusy = useOnboardingWizardStore((s) => s.setApiBusy);
+  const addDocument = useOnboardingWizardStore((s) => s.addDocument);
+  const updateDocument = useOnboardingWizardStore((s) => s.updateDocument);
+  const removeDocument = useOnboardingWizardStore((s) => s.removeDocument);
+
+  const [selectedType, setSelectedType] = useState<VendorDocumentType>("IDENTITY");
+  const [dragActive, setDragActive] = useState(false);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const doneDocs = documents.filter((d) => d.status === "done");
+  const uploadingDocs = documents.filter((d) => d.status === "uploading");
+
+  const handleFiles = useCallback(
+    async (files: FileList | null) => {
+      if (!files || files.length === 0) return;
+      setGlobalError(null);
+
+      const validFiles: File[] = [];
+      for (const file of Array.from(files)) {
+        if (file.size > UI_LIMITS.ONBOARDING_FILE_MAX_BYTES) {
+          setGlobalError(`"${file.name}" exceeds 10MB limit.`);
+          continue;
+        }
+        validFiles.push(file);
+      }
+
+      if (validFiles.length === 0) return;
+
+      setApiBusy(true);
+      try {
+        const result = await uploadDraftDocuments(
+          validFiles,
+          selectedType,
+          (id, status, progress) => {
+            updateDocument(id, { status, progress });
+          }
+        );
+
+        // Add successful docs to store
+        for (const doc of result.success) {
+          addDocument(doc);
+        }
+
+        if (result.failed.length > 0) {
+          setGlobalError(`${result.failed.length} file(s) failed to upload.`);
+        }
+      } catch {
+        setGlobalError("Upload failed. Please try again.");
+      } finally {
+        setApiBusy(false);
+      }
+    },
+    [selectedType, addDocument, updateDocument, setApiBusy]
+  );
+
+  const handleDelete = async (doc: DraftDocument) => {
+    if (doc.status === "done") {
+      try {
+        await removeVendorDocument(doc.id);
+      } catch {
+        // Continue to remove from local state even if API fails
+      }
+    }
+    removeDocument(doc.id);
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    void handleFiles(e.dataTransfer.files);
+  };
+
+  const canContinue = doneDocs.length > 0 && uploadingDocs.length === 0;
+
+  const onContinue = () => {
+    if (!canContinue) return;
+    setStep(3);
+  };
 
   return (
-    <FormProvider {...form}>
-      <form
-        id={FORM_ID}
-        className="grid gap-4"
-        onSubmit={form.handleSubmit(async (data) => {
-          setStepError(null);
-          setApiBusy(true);
-          try {
-            patchSection("documents", data);
-            await syncDocumentsStep(data);
-            setStep(3);
-          } catch (e) {
-            setStepError(
-              httpErrorMessageForUser(e, "Could not save this step. Try again.")
-            );
-          } finally {
-            setApiBusy(false);
-          }
-        })}
-      >
-        <div className="grid gap-2">
-          <Label>Document types</Label>
-          <p className="text-muted-foreground text-xs">
-            Select everything you will upload for verification.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {DOC_OPTIONS.map((opt) => {
-              const selected = docTypes.includes(opt);
-              return (
-                <Button
-                  key={opt}
-                  type="button"
-                  variant={selected ? "default" : "outline"}
-                  size="sm"
-                  className="rounded-full"
-                  onClick={() => {
-                    const next = selected
-                      ? docTypes.filter((d) => d !== opt)
-                      : [...docTypes, opt];
-                    form.setValue("docTypes", next, {
-                      shouldValidate: true,
-                      shouldDirty: true,
-                    });
-                  }}
-                >
-                  {opt}
-                </Button>
-              );
-            })}
-          </div>
-          {form.formState.errors.docTypes?.message ? (
-            <p className="text-destructive text-xs">
-              {form.formState.errors.docTypes.message}
-            </p>
-          ) : null}
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="onb-files">Upload files</Label>
-          <p className="text-muted-foreground text-xs">
-            Files upload securely and links are filled in automatically.{" "}
-            {expectedFileCount > 0 ? (
-              <>
-                Pick exactly {expectedFileCount} file
-                {expectedFileCount === 1 ? "" : "s"} in the same order as your
-                document types.
-              </>
-            ) : (
-              <>Pick one file per document type you select (same order).</>
-            )}{" "}
-            Max {UI_LIMITS.ONBOARDING_FILE_MAX_BYTES / (1024 * 1024)} MB each — PDF or images.
-          </p>
-          {expectedFileCount === 0 ? (
-            <p className="text-muted-foreground text-xs">
-              Select at least one document type above before choosing files.
-            </p>
-          ) : null}
-          <Input
-            id="onb-files"
-            type="file"
-            multiple
-            accept=".pdf,image/jpeg,image/png,image/webp,image/gif,application/pdf"
-            disabled={fileInputDisabled}
+    <div className="flex flex-col gap-5">
+      {/* Document type selector */}
+      <div className="flex flex-wrap gap-2">
+        {DOCUMENT_TYPES.map((dt) => (
+          <button
+            key={dt.value}
+            type="button"
+            onClick={() => setSelectedType(dt.value)}
             className={cn(
-              "cursor-pointer",
-              fileInputDisabled && "cursor-not-allowed opacity-60"
+              "relative rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
+              selectedType === dt.value
+                ? "border-primary bg-primary/15 text-primary"
+                : "border-border/60 bg-card/50 text-muted-foreground hover:border-primary/30 hover:text-foreground"
             )}
-            aria-busy={apiBusy}
-            onChange={(e) => {
-              const list = e.target.files;
-              if (!list?.length) return;
-              const files = Array.from(list);
-              if (files.length !== expectedFileCount) {
-                setUploadError(
-                  `You picked ${files.length} file${files.length === 1 ? "" : "s"} but ${expectedFileCount} document type${expectedFileCount === 1 ? "" : "s"} are selected. Use a multi-select that includes exactly ${expectedFileCount} file${expectedFileCount === 1 ? "" : "s"} (same order as types).`
-                );
-                e.target.value = "";
-                return;
-              }
-              setUploadError(null);
-              setUploadRows(
-                files.map((f) => ({ name: f.name, status: "queued" }))
-              );
-              setApiBusy(true);
-              void (async () => {
-                try {
-                  const { urls, names } = await uploadVendorOnboardingFiles(
-                    files,
-                    (p) => {
-                      setUploadRows((prev) => {
-                        const next = [...prev];
-                        const row = next[p.index];
-                        if (!row) return prev;
-                        if (p.phase === "start") {
-                          next[p.index] = { name: row.name, status: "uploading" };
-                        } else if (p.phase === "done") {
-                          next[p.index] = { name: row.name, status: "done" };
-                        } else {
-                          next[p.index] = {
-                            name: row.name,
-                            status: "error",
-                            errorMessage: p.errorMessage,
-                          };
-                        }
-                        return next;
-                      });
-                    }
-                  );
-                  form.setValue("fileUrls", urls, {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  });
-                  form.setValue("fileNames", names, {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  });
-                } catch (err) {
-                  setUploadError(
-                    err instanceof Error ? err.message : "Upload failed"
-                  );
-                } finally {
-                  setApiBusy(false);
-                  e.target.value = "";
-                }
-              })();
-            }}
-          />
-          {uploadRows.length > 0 ? (
-            <ul
-              className="text-muted-foreground border-border mt-2 space-y-1 border-t pt-2 text-xs"
-              aria-live="polite"
-            >
-              {uploadRows.map((row, i) => (
-                <li
-                  key={`${row.name}-${i}`}
-                  className="flex items-start gap-2"
-                >
-                  {row.status === "uploading" ? (
-                    <Loader2
-                      className="mt-0.5 size-3.5 shrink-0 animate-spin"
-                      aria-hidden
-                    />
-                  ) : row.status === "done" ? (
-                    <Check
-                      className="text-primary mt-0.5 size-3.5 shrink-0"
-                      aria-hidden
-                    />
-                  ) : row.status === "error" ? (
-                    <span
-                      className="text-destructive mt-0.5 inline-block w-3.5 shrink-0 text-center"
-                      aria-hidden
-                    >
-                      ×
-                    </span>
-                  ) : (
-                    <span
-                      className="border-border mt-1 inline-block size-2.5 shrink-0 rounded-full border"
-                      aria-hidden
-                    />
-                  )}
-                  <span
-                    className={
-                      row.status === "error" ? "text-destructive" : undefined
-                    }
-                  >
-                    {row.name}
-                    {row.errorMessage ? ` — ${row.errorMessage}` : null}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {uploadError ? (
-            <p className="text-destructive text-xs" role="alert">
-              {uploadError}
-            </p>
-          ) : null}
+          >
+            {dt.label}
+            {selectedType === dt.value && (
+              <motion.span
+                layoutId="doc-type-pill"
+                className="absolute inset-0 rounded-full border border-primary/40"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+              />
+            )}
+          </button>
+        ))}
+      </div>
+
+      <p className="text-muted-foreground text-xs">
+        {DOCUMENT_TYPES.find((d) => d.value === selectedType)?.description}
+      </p>
+
+      {/* Upload zone */}
+      <div
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+        onClick={() => inputRef.current?.click()}
+        className={cn(
+          "group relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 transition-all",
+          dragActive
+            ? "border-primary bg-primary/10"
+            : "border-border/60 bg-card/40 hover:border-primary/40 hover:bg-card/70"
+        )}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          multiple
+          accept="image/*,application/pdf"
+          className="hidden"
+          onChange={(e) => void handleFiles(e.target.files)}
+        />
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted group-hover:bg-primary/10">
+          <UploadCloud className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
         </div>
-        <Controller
-          control={form.control}
-          name="fileUrls"
-          render={({ field, fieldState }) => (
-            <div className="grid gap-1.5">
-              <Label htmlFor="onb-file-urls">Document URLs (optional)</Label>
-              <p className="text-muted-foreground text-xs">
-                Paste one HTTPS URL per line if you prefer not to upload here
-                (same order as document types). Uploading files above replaces
-                these values.
-              </p>
-              <Textarea
-                id="onb-file-urls"
-                rows={4}
-                placeholder={"https://…\nhttps://…"}
-                aria-invalid={fieldState.invalid}
-                value={field.value.join("\n")}
-                onChange={(e) => {
-                  const lines = e.target.value
-                    .split("\n")
-                    .map((l) => l.trim())
-                    .filter(Boolean);
-                  field.onChange(lines);
-                }}
-                onBlur={field.onBlur}
-                name={field.name}
-                ref={field.ref}
-              />
-              {fieldState.error?.message ? (
-                <p className="text-destructive text-xs">
-                  {fieldState.error.message}
-                </p>
-              ) : null}
-            </div>
-          )}
-        />
-        <Controller
-          control={form.control}
-          name="notes"
-          render={({ field, fieldState }) => (
-            <div className="grid gap-1.5">
-              <Label htmlFor={field.name}>Notes for reviewers (optional)</Label>
-              <Textarea
-                id={field.name}
-                rows={3}
-                maxLength={UI_LIMITS.MAX_NOTES_LENGTH}
-                placeholder="Anything we should know…"
-                aria-invalid={fieldState.invalid}
-                {...field}
-              />
-              {fieldState.error?.message ? (
-                <p className="text-destructive text-xs">
-                  {fieldState.error.message}
-                </p>
-              ) : null}
-            </div>
-          )}
-        />
-        {stepError ? (
-          <p className="text-destructive text-sm" role="alert">
-            {stepError}
-          </p>
-        ) : null}
-      </form>
-    </FormProvider>
+        <p className="text-sm font-medium">Click or drag files to upload</p>
+        <p className="text-muted-foreground text-xs">PDF, PNG, JPG up to 10MB</p>
+      </div>
+
+      {globalError && (
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive text-xs"
+        >
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {globalError}
+        </motion.div>
+      )}
+
+      {/* Document list */}
+      <div className="flex flex-col gap-2">
+        <AnimatePresence mode="popLayout">
+          {documents.map((doc) => {
+            const Icon = fileIconFromMime(doc.mimeType);
+            return (
+              <motion.div
+                key={doc.id}
+                layout
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.97 }}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg border p-3",
+                  doc.status === "error"
+                    ? "border-destructive/30 bg-destructive/5"
+                    : "border-border/60 bg-card/50"
+                )}
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                </div>
+
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-medium">{doc.fileName}</span>
+                    <Badge variant="outline" className="text-[10px]">
+                      {DOCUMENT_TYPES.find((d) => d.value === doc.type)?.label}
+                    </Badge>
+                  </div>
+                  {doc.status === "uploading" && (
+                    <div className="flex items-center gap-2">
+                      <Progress value={doc.progress ?? 0} className="h-1.5 flex-1" />
+                      <span className="text-muted-foreground text-[10px]">{doc.progress ?? 0}%</span>
+                    </div>
+                  )}
+                  {doc.status === "done" && (
+                    <span className="flex items-center gap-1 text-emerald-400 text-[10px]">
+                      <CheckCircle2 className="h-3 w-3" /> Uploaded
+                    </span>
+                  )}
+                  {doc.status === "error" && (
+                    <span className="flex items-center gap-1 text-destructive text-[10px]">
+                      <XCircle className="h-3 w-3" /> Failed
+                    </span>
+                  )}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={() => void handleDelete(doc)}
+                  className="shrink-0 text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+
+        {documents.length === 0 && (
+          <div className="flex flex-col items-center gap-1 rounded-lg border border-dashed border-border/40 py-6 text-muted-foreground text-xs">
+            <FileText className="h-5 w-5 opacity-40" />
+            <p>No documents uploaded yet</p>
+            <p className="text-[10px] opacity-60">At least one document is required</p>
+          </div>
+        )}
+      </div>
+
+      {/* Continue button override — we need a custom submit here since documents are not a form */}
+      <input type="hidden" form={ONBOARDING_STEP_FORM_ID} />
+      <Button
+        type="button"
+        form={ONBOARDING_STEP_FORM_ID}
+        disabled={!canContinue}
+        onClick={onContinue}
+        className="mt-2 w-full sm:w-auto sm:self-end"
+      >
+        {uploadingDocs.length > 0 ? (
+          <span className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Uploading…
+          </span>
+        ) : (
+          "Continue"
+        )}
+      </Button>
+    </div>
   );
 }

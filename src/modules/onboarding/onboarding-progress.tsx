@@ -1,62 +1,83 @@
 "use client";
 
-import {
-  Progress,
-  ProgressLabel,
-  ProgressValue,
-} from "@/components/ui/progress";
+import { motion } from "framer-motion";
+
+import { useOnboardingWizardStore } from "@/store/onboarding-wizard-store";
+import { ONBOARDING_STEP_LABELS, ONBOARDING_STEP_COUNT } from "./types";
 import { cn } from "@/lib/utils";
 
-import { ONBOARDING_STEP_COUNT, ONBOARDING_STEP_LABELS } from "./types";
-
-type OnboardingProgressProps = {
-  step: number;
-  className?: string;
-};
-
-export function OnboardingProgress({
-  step,
-  className,
-}: OnboardingProgressProps) {
-  const safeStep = Math.max(0, Math.min(ONBOARDING_STEP_COUNT - 1, step));
-  const pct = Math.round(((safeStep + 1) / ONBOARDING_STEP_COUNT) * 100);
+export function OnboardingProgress() {
+  const step = useOnboardingWizardStore((s) => s.step);
+  const progress = ((step + 1) / ONBOARDING_STEP_COUNT) * 100;
 
   return (
-    <div className={cn("space-y-4", className)}>
-      <ol className="flex flex-wrap gap-2">
-        {ONBOARDING_STEP_LABELS.map((label, i) => {
-          const done = i < safeStep;
-          const active = i === safeStep;
+    <div className="flex flex-col gap-4">
+      {/* Step chips */}
+      <div className="flex items-center justify-between">
+        {ONBOARDING_STEP_LABELS.map((label, idx) => {
+          const status =
+            idx < step ? "done" : idx === step ? "active" : "pending";
           return (
-            <li key={label}>
-              <div
-                className={cn(
-                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors md:text-sm",
-                  done && "border-primary/40 bg-primary/10 text-foreground",
-                  active &&
-                    "border-primary bg-primary/15 text-foreground ring-primary/30 ring-2",
-                  !done &&
-                    !active &&
-                    "border-border bg-muted/40 text-muted-foreground"
-                )}
-              >
-                <span className="text-muted-foreground tabular-nums">
-                  {i + 1}
+            <div key={label} className="flex flex-1 items-center">
+              <div className="flex flex-col items-center gap-1.5">
+                <motion.div
+                  initial={false}
+                  animate={{
+                    scale: status === "active" ? 1.1 : 1,
+                  }}
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold transition-colors duration-300",
+                    status === "done" &&
+                      "border-emerald-500/60 bg-emerald-500/15 text-emerald-300",
+                    status === "active" &&
+                      "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/25",
+                    status === "pending" &&
+                      "border-border/60 bg-card/50 text-muted-foreground"
+                  )}
+                >
+                  {idx + 1}
+                </motion.div>
+                <span
+                  className={cn(
+                    "hidden text-[10px] font-medium sm:block",
+                    status === "active"
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {label}
                 </span>
-                <span>{label}</span>
               </div>
-            </li>
+              {idx < ONBOARDING_STEP_COUNT - 1 && (
+                <div className="relative mx-2 h-0.5 flex-1 overflow-hidden rounded-full bg-muted sm:mx-3">
+                  <motion.div
+                    className="absolute inset-y-0 left-0 rounded-full bg-primary"
+                    initial={false}
+                    animate={{
+                      width: idx < step ? "100%" : "0%",
+                    }}
+                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  />
+                </div>
+              )}
+            </div>
           );
         })}
-      </ol>
-      <Progress value={pct}>
-        <div className="flex w-full items-center gap-2">
-          <ProgressLabel>
-            Step {safeStep + 1} of {ONBOARDING_STEP_COUNT}
-          </ProgressLabel>
-          <ProgressValue />
-        </div>
-      </Progress>
+      </div>
+
+      {/* Linear progress bar */}
+      <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+        <motion.div
+          className="h-full rounded-full bg-primary"
+          initial={false}
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        />
+      </div>
+
+      <p className="text-muted-foreground text-center text-xs">
+        Step {step + 1} of {ONBOARDING_STEP_COUNT}
+      </p>
     </div>
   );
 }

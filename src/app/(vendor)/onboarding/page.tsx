@@ -6,7 +6,7 @@ import { OnboardingActions } from "./onboarding-actions";
 
 export default function OnboardingRoutePage() {
   return (
-    <FeaturePageShell title="Onboarding">
+    <FeaturePageShell title="Vendor Onboarding">
       <OnboardingRedirectGate>
         <OnboardingWizard actionsSlot={<OnboardingActions />} />
       </OnboardingRedirectGate>

@@ -3,26 +3,28 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import type { OnboardingDraft } from "@/modules/onboarding/types";
+import type { VendorMeResponse, VendorType } from "@/services/vendor/types";
+import type { DraftDocument } from "@/modules/onboarding/types";
 import { emptyOnboardingDraft } from "@/modules/onboarding/types";
-
-export type OnboardingSection = keyof OnboardingDraft;
 
 type OnboardingWizardState = {
   step: number;
-  draft: OnboardingDraft;
-  /** Created shop id after Shop step (for PATCH shipping/payment). */
-  shopId: string | null;
+  draft: ReturnType<typeof emptyOnboardingDraft>;
   apiBusy: boolean;
+  registered: boolean; // true after first POST /vendors/me/register
   setStep: (step: number) => void;
-  setShopId: (id: string | null) => void;
   setApiBusy: (busy: boolean) => void;
-  patchSection: <K extends OnboardingSection>(
-    section: K,
-    partial: Partial<OnboardingDraft[K]>
-  ) => void;
-  replaceDraft: (draft: OnboardingDraft) => void;
+  setRegistered: (registered: boolean) => void;
+  patchBasicInfo: (partial: Partial<OnboardingWizardState["draft"]["basicInfo"]>) => void;
+  patchAddressInfo: (partial: Partial<OnboardingWizardState["draft"]["addressInfo"]>) => void;
+  setVendorType: (type: VendorType) => void;
+  addDocument: (doc: DraftDocument) => void;
+  updateDocument: (id: string, updates: Partial<DraftDocument>) => void;
+  removeDocument: (id: string) => void;
+  setAcceptedTerms: (accepted: boolean) => void;
+  replaceDraft: (draft: OnboardingWizardState["draft"]) => void;
   resetWizard: () => void;
+  hydrateFromProfile: (profile: VendorMeResponse) => void;
 };
 
 export const useOnboardingWizardStore = create<OnboardingWizardState>()(
@@ -30,24 +32,68 @@ export const useOnboardingWizardStore = create<OnboardingWizardState>()(
     (set) => ({
       step: 0,
       draft: emptyOnboardingDraft(),
-      shopId: null,
       apiBusy: false,
+      registered: false,
 
       setStep: (step) =>
         set(() => ({
-          step: Math.max(0, Math.min(6, step)),
+          step: Math.max(0, Math.min(3, step)),
         })),
-
-      setShopId: (shopId) => set({ shopId }),
 
       setApiBusy: (apiBusy) => set({ apiBusy }),
 
-      patchSection: (section, partial) =>
+      setRegistered: (registered) => set({ registered }),
+
+      patchBasicInfo: (partial) =>
         set((s) => ({
           draft: {
             ...s.draft,
-            [section]: { ...s.draft[section], ...partial },
+            basicInfo: { ...s.draft.basicInfo, ...partial },
           },
+        })),
+
+      patchAddressInfo: (partial) =>
+        set((s) => ({
+          draft: {
+            ...s.draft,
+            addressInfo: { ...s.draft.addressInfo, ...partial },
+          },
+        })),
+
+      setVendorType: (type) =>
+        set((s) => ({
+          draft: { ...s.draft, vendorType: type },
+        })),
+
+      addDocument: (doc) =>
+        set((s) => ({
+          draft: {
+            ...s.draft,
+            documents: [...s.draft.documents, doc],
+          },
+        })),
+
+      updateDocument: (id, updates) =>
+        set((s) => ({
+          draft: {
+            ...s.draft,
+            documents: s.draft.documents.map((d) =>
+              d.id === id ? { ...d, ...updates } : d
+            ),
+          },
+        })),
+
+      removeDocument: (id) =>
+        set((s) => ({
+          draft: {
+            ...s.draft,
+            documents: s.draft.documents.filter((d) => d.id !== id),
+          },
+        })),
+
+      setAcceptedTerms: (accepted) =>
+        set((s) => ({
+          draft: { ...s.draft, acceptedTerms: accepted },
         })),
 
       replaceDraft: (draft) => set({ draft }),
@@ -56,62 +102,55 @@ export const useOnboardingWizardStore = create<OnboardingWizardState>()(
         set({
           step: 0,
           draft: emptyOnboardingDraft(),
-          shopId: null,
           apiBusy: false,
+          registered: false,
+        }),
+
+      hydrateFromProfile: (profile) =>
+        set({
+          draft: {
+            vendorType: profile.vendorType ?? "",
+            basicInfo: {
+              legalBusinessName: profile.legalBusinessName ?? "",
+              tradeName: profile.tradeName ?? "",
+              businessEmail: profile.businessEmail ?? "",
+              businessPhone: profile.businessPhone ?? "",
+              countryCode: profile.countryCode ?? "",
+            },
+            addressInfo: {
+              region: profile.region ?? "",
+              city: profile.city ?? "",
+              addressLine1: profile.addressLine1 ?? "",
+              postalCode: profile.postalCode ?? "",
+            },
+            documents: profile.documents.map((d) => ({
+              id: d.id,
+              type: d.type,
+              fileUrl: d.fileUrl,
+              fileName: d.fileName ?? "document",
+              mimeType: d.mimeType ?? "application/pdf",
+              status: "done" as const,
+            })),
+            acceptedTerms: false,
+          },
+          registered: true,
+          step: 0,
         }),
     }),
     {
       name: "neoshop-vendor-onboarding-wizard",
-      version: 3,
-      partialize: (s) => ({ step: s.step, draft: s.draft, shopId: s.shopId }),
-      migrate: (persisted, fromVersion) => {
-        if (fromVersion < 2) {
-          const o = persisted as {
-            step?: number;
-            draft?: OnboardingDraft;
-            shopId?: string | null;
-          };
-          const draft = o.draft ?? emptyOnboardingDraft();
-          return {
-            step: o.step ?? 0,
-            draft: {
-              ...draft,
-              documents: {
-                ...draft.documents,
-                fileUrls: draft.documents.fileUrls ?? [],
-              },
-            },
-            shopId: o.shopId ?? null,
-          };
-        }
-        if (fromVersion < 3) {
-          const o = persisted as {
-            step?: number;
-            draft?: OnboardingDraft;
-            shopId?: string | null;
-          };
-          const draft = o.draft ?? emptyOnboardingDraft();
-          const business = draft.business as Partial<
-            OnboardingDraft["business"]
-          >;
-          return {
-            step: o.step ?? 0,
-            draft: {
-              ...draft,
-              business: {
-                ...emptyOnboardingDraft().business,
-                ...business,
-                businessEmail: business.businessEmail ?? "",
-                businessPhone: business.businessPhone ?? "",
-              },
-            },
-            shopId: o.shopId ?? null,
-          };
-        }
-        return persisted as {
-          step: number;
-          draft: OnboardingDraft;
-          shopId: string | null;
+      version: 4,
+      partialize: (s) => ({
+        step: s.step,
+        draft: s.draft,
+        registered: s.registered,
+      }),
+      migrate: () => {
+        // Version 4 is a clean break — old 7-step draft shapes are incompatible.
+        return {
+          step: 0,
+          draft: emptyOnboardingDraft(),
+          registered: false,
         };
       },
     }
