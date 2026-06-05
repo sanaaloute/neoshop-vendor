@@ -15,6 +15,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getAuthErrorMessage } from "@/lib/get-auth-error-message";
+import { useRateLimit } from "@/lib/rate-limit";
 import { postAuthForgotPassword } from "@/services/vendor/auth-gateway-api";
 
 const schema = z.object({
@@ -27,6 +29,8 @@ export default function ForgotPasswordPage() {
   const router = useRouter();
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const rateLimit = useRateLimit("auth:forgot-password", 3, 60_000);
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-background p-4">
@@ -59,14 +63,17 @@ export default function ForgotPasswordPage() {
               onSubmit={async (values) => {
                 setError(null);
                 setSuccess(null);
+                if (!rateLimit.tryRecord()) {
+                  setError("Too many requests — slow down and retry.");
+                  return;
+                }
                 try {
                   await postAuthForgotPassword({ email: values.email });
                   setSuccess(
                     "If an account exists with this email, you will receive a password reset link."
                   );
                 } catch (e) {
-                  const msg =
-                    e instanceof Error ? e.message : "Could not send reset email. Try again.";
+                  const msg = getAuthErrorMessage(e) || "Could not send reset email. Try again.";
                   if (msg.includes("Too many requests")) {
                     setError("Too many requests — slow down and retry.");
                   } else {
@@ -92,11 +99,13 @@ export default function ForgotPasswordPage() {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={form.formState.isSubmitting}
+                    disabled={form.formState.isSubmitting || !rateLimit.canRequest}
                   >
                     {form.formState.isSubmitting
                       ? "Sending…"
-                      : "Send reset link"}
+                      : !rateLimit.canRequest
+                        ? `Retry in ${rateLimit.remainingSeconds}s`
+                        : "Send reset link"}
                   </Button>
                   <Button
                     type="button"

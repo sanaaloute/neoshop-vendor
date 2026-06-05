@@ -17,6 +17,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
+import { getAuthErrorMessage } from "@/lib/get-auth-error-message";
+import { useRateLimit } from "@/lib/rate-limit";
 import { refreshTokensClient } from "@/services/auth-refresh-client";
 import { useAuthStore } from "@/store/auth-store";
 
@@ -56,8 +58,7 @@ function safePostLoginPath(next: string | null): string {
 }
 
 function mapAuthError(e: unknown, mode: "login" | "signup" | "forgot"): string {
-  if (!(e instanceof Error)) return "Something went wrong.";
-  const m = e.message;
+  const m = getAuthErrorMessage(e);
 
   if (mode === "forgot") {
     return m || "Could not send reset email. Try again.";
@@ -85,6 +86,22 @@ function mapAuthError(e: unknown, mode: "login" | "signup" | "forgot"): string {
       if (m.includes("Email not verified")) {
         return "Email not verified. Please check your inbox and confirm your email before logging in.";
       }
+      if (m.includes("Account is suspended")) {
+        return "Your account has been suspended. Contact marketplace support for assistance.";
+      }
+      if (m.includes("Account already exists")) {
+        return "An account with this email already exists. Try signing in instead.";
+      }
+      if (m.includes("Email address is already in use or invalid")) {
+        return "That email address is already in use or invalid.";
+      }
+      if (
+        m.includes("Session not found or revoked") ||
+        m.includes("Missing session header") ||
+        m.includes("Invalid or expired session")
+      ) {
+        return "Your session has expired. Please sign in again.";
+      }
       if (m.includes("Too many failed attempts")) {
         return m;
       }
@@ -98,6 +115,10 @@ function mapAuthError(e: unknown, mode: "login" | "signup" | "forgot"): string {
   }
 }
 
+function isEmailNotVerifiedError(e: unknown): boolean {
+  return getAuthErrorMessage(e).includes("Email not verified");
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -107,7 +128,13 @@ export function LoginForm() {
   );
   const [error, setError] = useState<string | null>(null);
   const [signupSuccess, setSignupSuccess] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [resendSuccess, setResendSuccess] = useState<string | null>(null);
   const resumeStarted = useRef(false);
+
+  const loginRateLimit = useRateLimit("auth:login", 10, 60_000);
+  const registerRateLimit = useRateLimit("auth:register", 5, 60_000);
+  const resendRateLimit = useRateLimit("auth:resend-verification", 3, 60_000);
 
   useEffect(() => {
     if (searchParams.get("resume") !== "1" || resumeStarted.current) return;
@@ -123,9 +150,26 @@ export function LoginForm() {
   useEffect(() => {
     setError(null);
     setSignupSuccess(null);
+    setUnverifiedEmail(null);
+    setResendSuccess(null);
   }, [mode]);
 
   const isSignup = mode === "signup";
+
+  async function handleResendVerification(email: string) {
+    setError(null);
+    setResendSuccess(null);
+    if (!resendRateLimit.tryRecord()) {
+      setError("Too many requests — slow down and retry.");
+      return;
+    }
+    try {
+      await useAuthStore.getState().resendVerification({ email });
+      setResendSuccess("If an account exists, a verification email has been sent.");
+    } catch (e) {
+      setError(mapAuthError(e, "forgot"));
+    }
+  }
 
   return (
     <Card className="w-full max-w-md">
@@ -156,6 +200,10 @@ export function LoginForm() {
             onSubmit={async (values) => {
               setError(null);
               setSignupSuccess(null);
+              if (!registerRateLimit.tryRecord()) {
+                setError("Too many requests — slow down and retry.");
+                return;
+              }
               try {
                 const res = await useAuthStore.getState().register({
                   email: values.email,
@@ -226,11 +274,13 @@ export function LoginForm() {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={form.formState.isSubmitting}
+                  disabled={form.formState.isSubmitting || !registerRateLimit.canRequest}
                 >
                   {form.formState.isSubmitting
                     ? "Creating account…"
-                    : "Create vendor account"}
+                    : !registerRateLimit.canRequest
+                      ? `Retry in ${registerRateLimit.remainingSeconds}s`
+                      : "Create vendor account"}
                 </Button>
               </>
             )}
@@ -242,10 +292,19 @@ export function LoginForm() {
             defaultValues={{ email: "", password: "" }}
             onSubmit={async (values) => {
               setError(null);
+              setUnverifiedEmail(null);
+              setResendSuccess(null);
+              if (!loginRateLimit.tryRecord()) {
+                setError("Too many requests — slow down and retry.");
+                return;
+              }
               try {
                 await login(values);
                 router.replace(safePostLoginPath(searchParams.get("next")));
               } catch (e) {
+                if (isEmailNotVerifiedError(e)) {
+                  setUnverifiedEmail(values.email);
+                }
                 setError(mapAuthError(e, "login"));
               }
             }}
@@ -280,12 +339,37 @@ export function LoginForm() {
                 {error ? (
                   <VendorMuted className="text-destructive">{error}</VendorMuted>
                 ) : null}
+                {unverifiedEmail && (
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
+                    <p className="text-amber-800 dark:text-amber-200">
+                      Your email is not verified.
+                    </p>
+                    {resendSuccess ? (
+                      <p className="mt-1 text-green-700 dark:text-green-300">{resendSuccess}</p>
+                    ) : (
+                      <button
+                        type="button"
+                        className="mt-1 text-xs font-medium underline-offset-4 hover:underline disabled:opacity-50"
+                        disabled={!resendRateLimit.canRequest}
+                        onClick={() => handleResendVerification(unverifiedEmail)}
+                      >
+                        {!resendRateLimit.canRequest
+                          ? `Resend available in ${resendRateLimit.remainingSeconds}s`
+                          : "Resend verification email"}
+                      </button>
+                    )}
+                  </div>
+                )}
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={form.formState.isSubmitting}
+                  disabled={form.formState.isSubmitting || !loginRateLimit.canRequest}
                 >
-                  {form.formState.isSubmitting ? "Signing in…" : "Sign in"}
+                  {form.formState.isSubmitting
+                    ? "Signing in…"
+                    : !loginRateLimit.canRequest
+                      ? `Retry in ${loginRateLimit.remainingSeconds}s`
+                      : "Sign in"}
                 </Button>
               </>
             )}

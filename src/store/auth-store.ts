@@ -17,7 +17,16 @@ import {
   syncHttpOnlySession,
 } from "@/services/auth-session-client";
 import { normalizeAuthResponse } from "@/types/auth";
-import type { LoginRequest, RegisterRequest, RegisterResponse, VendorUser } from "@/types/auth";
+import type {
+  ChangeEmailRequest,
+  LoginRequest,
+  PhoneLoginVerifyRequest,
+  PhoneRegisterVerifyRequest,
+  RegisterRequest,
+  RegisterResponse,
+  ResendVerificationRequest,
+  VendorUser,
+} from "@/types/auth";
 
 export type AuthStatus =
   | "idle"
@@ -35,6 +44,12 @@ type AuthState = {
   login: (payload: LoginRequest) => Promise<void>;
   register: (payload: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
+  resendVerification: (payload: ResendVerificationRequest) => Promise<{ sent: boolean }>;
+  changeEmail: (payload: ChangeEmailRequest) => Promise<{ sent: boolean; message: string }>;
+  registerPhoneInitiate: (phone: string) => Promise<{ success: boolean; message: string; expiresInSeconds: number }>;
+  registerPhoneVerify: (payload: PhoneRegisterVerifyRequest) => Promise<void>;
+  loginPhoneInitiate: (phone: string) => Promise<{ success: boolean; message: string; expiresInSeconds: number }>;
+  loginPhoneVerify: (payload: PhoneLoginVerifyRequest) => Promise<void>;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -239,6 +254,89 @@ export const useAuthStore = create<AuthState>()(
               // ignore
             }
             set({ accessToken: null, sessionId: null, user: null, status: "unauthenticated" });
+          }
+        },
+
+        resendVerification: async (payload) => {
+          const { postAuthResendVerification } = await import(
+            "@/services/vendor/auth-gateway-api"
+          );
+          const res = await postAuthResendVerification(payload);
+          return res;
+        },
+
+        changeEmail: async (payload) => {
+          const { postAuthChangeEmail } = await import(
+            "@/services/vendor/auth-gateway-api"
+          );
+          const res = await postAuthChangeEmail(payload);
+          return res;
+        },
+
+        registerPhoneInitiate: async (phone) => {
+          const { postAuthRegisterPhoneInitiate } = await import(
+            "@/services/vendor/auth-gateway-api"
+          );
+          const res = await postAuthRegisterPhoneInitiate({ phone });
+          return res;
+        },
+
+        registerPhoneVerify: async (payload) => {
+          set({ status: "loading" });
+          try {
+            const { postAuthRegisterPhoneVerify } = await import(
+              "@/services/vendor/auth-gateway-api"
+            );
+            const raw = await postAuthRegisterPhoneVerify({
+              ...payload,
+              role: VENDOR_ROLE,
+            });
+            const res = normalizeAuthResponse(raw);
+            if (!res.accessToken || !res.refreshToken) {
+              set({ status: "unauthenticated", accessToken: null, sessionId: null, user: null });
+              throw new Error("signup_no_tokens");
+            }
+            await finalizeGatewayAuth(
+              res.accessToken,
+              res.refreshToken,
+              "",
+              res.sessionId || undefined
+            );
+          } catch (e) {
+            set({ status: "unauthenticated", accessToken: null, sessionId: null, user: null });
+            throw e instanceof Error ? e : new Error("register_failed");
+          }
+        },
+
+        loginPhoneInitiate: async (phone) => {
+          const { postAuthLoginPhoneInitiate } = await import(
+            "@/services/vendor/auth-gateway-api"
+          );
+          const res = await postAuthLoginPhoneInitiate({ phone });
+          return res;
+        },
+
+        loginPhoneVerify: async (payload) => {
+          set({ status: "loading" });
+          try {
+            const { postAuthLoginPhoneVerify } = await import(
+              "@/services/vendor/auth-gateway-api"
+            );
+            const raw = await postAuthLoginPhoneVerify(payload);
+            const res = normalizeAuthResponse(raw);
+            if (!res.accessToken || !res.refreshToken) {
+              set({ status: "unauthenticated", accessToken: null, sessionId: null, user: null });
+              throw new Error("sign_in_no_session");
+            }
+            await finalizeGatewayAuth(
+              res.accessToken,
+              res.refreshToken,
+              payload.phone,
+              res.sessionId || undefined
+            );
+          } catch (e) {
+            set({ status: "unauthenticated", accessToken: null, sessionId: null, user: null });
+            throw e instanceof Error ? e : new Error("login_failed");
           }
         },
       };

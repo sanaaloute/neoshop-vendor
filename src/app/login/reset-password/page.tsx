@@ -15,6 +15,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getAuthErrorMessage } from "@/lib/get-auth-error-message";
+import { useRateLimit } from "@/lib/rate-limit";
 import { postAuthResetPassword } from "@/services/vendor/auth-gateway-api";
 
 const passwordSchema = z
@@ -42,6 +44,8 @@ export default function ResetPasswordPage() {
   const [token, setToken] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const rateLimit = useRateLimit("auth:reset-password", 5, 60_000);
 
   useEffect(() => {
     const t = searchParams.get("token");
@@ -93,6 +97,10 @@ export default function ResetPasswordPage() {
               onSubmit={async (values) => {
                 setError(null);
                 setSuccess(null);
+                if (!rateLimit.tryRecord()) {
+                  setError("Too many requests — slow down and retry.");
+                  return;
+                }
                 try {
                   await postAuthResetPassword({
                     token: token!,
@@ -102,10 +110,7 @@ export default function ResetPasswordPage() {
                     "Your password has been reset. Please sign in with your new password."
                   );
                 } catch (e) {
-                  const msg =
-                    e instanceof Error
-                      ? e.message
-                      : "Could not reset password. Try again.";
+                  const msg = getAuthErrorMessage(e) || "Could not reset password. Try again.";
                   if (msg.includes("Too many requests")) {
                     setError("Too many requests — slow down and retry.");
                   } else {
@@ -140,11 +145,13 @@ export default function ResetPasswordPage() {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={form.formState.isSubmitting}
+                    disabled={form.formState.isSubmitting || !rateLimit.canRequest}
                   >
                     {form.formState.isSubmitting
                       ? "Resetting…"
-                      : "Reset password"}
+                      : !rateLimit.canRequest
+                        ? `Retry in ${rateLimit.remainingSeconds}s`
+                        : "Reset password"}
                   </Button>
                   <Button
                     type="button"

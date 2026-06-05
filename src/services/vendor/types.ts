@@ -38,6 +38,7 @@ export type AuthMeResponse = {
   role: string;
   avatarUrl?: string | null;
   createdAt?: string;
+  emailVerifiedAt?: string | null;
 };
 
 export type AuthSessionResponse = {

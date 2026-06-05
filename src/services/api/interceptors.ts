@@ -35,7 +35,11 @@ function shouldSkipRefresh(config: InternalAxiosRequestConfig | undefined): bool
     url.includes("/auth/register") ||
     url.includes("/auth/forgot-password") ||
     url.includes("/auth/reset-password") ||
-    url.includes("/auth/refresh")
+    url.includes("/auth/refresh") ||
+    url.includes("/auth/resend-verification") ||
+    url.includes("/auth/change-email") ||
+    url.includes("/auth/register/phone") ||
+    url.includes("/auth/login/phone")
   );
 }
 

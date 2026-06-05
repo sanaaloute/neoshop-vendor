@@ -11,10 +11,19 @@ export function httpErrorMessageForUser(e: unknown, fallback: string): string {
     if (Array.isArray(m) && m.length) return m.join(", ");
     const status = e.response?.status;
     if (status === 401 || status === 403) {
-      return "You’re signed out or not allowed to do this. Sign in again or contact support.";
+      return "You're signed out or not allowed to do this. Sign in again or contact support.";
     }
     if (status === 404) {
-      return "We couldn’t find that. Refresh the page and try again.";
+      return "We couldn't find that. Refresh the page and try again.";
+    }
+    if (status === 409) {
+      return "This already exists. If you already have an account, try signing in.";
+    }
+    if (status === 422) {
+      return "The information you provided isn't valid. Check and try again.";
+    }
+    if (status === 429) {
+      return "Too many requests — slow down and retry.";
     }
     if (status === 408 || e.code === "ECONNABORTED") {
       return "The request took too long. Check your connection and try again.";

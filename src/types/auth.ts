@@ -13,6 +13,8 @@ export type VendorUser = {
   permissions?: VendorPermission[];
   /** Backend may omit until onboarding completes */
   onboardingComplete?: boolean;
+  /** ISO timestamp when the user confirmed their email; null until verified */
+  emailVerifiedAt?: string | null;
 };
 
 export type LoginRequest = {
@@ -77,3 +79,64 @@ export function normalizeAuthResponse<T extends LoginResponse>(res: T) {
 }
 
 export type RefreshResponse = LoginResponse;
+
+// ── Resend verification ──
+
+export type ResendVerificationRequest = {
+  email: string;
+};
+
+export type ResendVerificationResponse = {
+  sent: boolean;
+};
+
+// ── Phone registration ──
+
+export type PhoneRegisterInitiateRequest = {
+  phone: string;
+};
+
+export type PhoneRegisterInitiateResponse = {
+  success: boolean;
+  message: string;
+  expiresInSeconds: number;
+};
+
+export type PhoneRegisterVerifyRequest = {
+  phone: string;
+  code: string;
+  password?: string;
+  name?: string;
+  surname?: string;
+  role?: string;
+};
+
+// ── Phone login ──
+
+export type PhoneLoginInitiateRequest = {
+  phone: string;
+};
+
+export type PhoneLoginInitiateResponse = {
+  success: boolean;
+  message: string;
+  expiresInSeconds: number;
+};
+
+export type PhoneLoginVerifyRequest = {
+  phone: string;
+  code: string;
+  deviceId: string;
+};
+
+// ── Change email ──
+
+export type ChangeEmailRequest = {
+  newEmail: string;
+  password: string;
+};
+
+export type ChangeEmailResponse = {
+  sent: boolean;
+  message: string;
+};
