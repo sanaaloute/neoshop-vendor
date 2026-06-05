@@ -34,9 +34,9 @@ function assertVendorId(vendor: unknown): string {
 export async function uploadVendorOnboardingFiles(
   files: File[],
   onProgress?: (p: VendorOnboardingUploadProgress) => void
-): Promise<{ urls: string[]; names: string[] }> {
+): Promise<{ urls: string[]; names: string[]; items: { bucket: string; path: string }[] }> {
   if (files.length === 0) {
-    return { urls: [], names: [] };
+    return { urls: [], names: [], items: [] };
   }
 
   const vendor = await getVendorMe();
@@ -126,5 +126,5 @@ export async function uploadVendorOnboardingFiles(
     urls.push(url);
   }
 
-  return { urls, names };
+  return { urls, names, items: stored };
 }

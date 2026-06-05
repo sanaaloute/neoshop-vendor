@@ -58,7 +58,7 @@ export async function uploadDraftDocuments(
     onProgress?.(id, "uploading", 0);
 
     try {
-      const { urls } = await uploadVendorOnboardingFiles([file], (p) => {
+      const { urls, items } = await uploadVendorOnboardingFiles([file], (p) => {
         if (p.phase === "start") onProgress?.(id, "uploading", 10);
         else if (p.phase === "done") onProgress?.(id, "uploading", 90);
         else if (p.phase === "error") onProgress?.(id, "error");
@@ -67,11 +67,15 @@ export async function uploadDraftDocuments(
       const fileUrl = urls[0];
       if (!fileUrl) throw new Error("Upload succeeded but no URL returned");
 
+      const storageMeta = items[0];
+
       const docMeta = await postVendorDocument({
         type: docType,
         fileUrl,
         fileName: file.name,
         mimeType: file.type || "application/octet-stream",
+        storageBucket: storageMeta?.bucket,
+        storagePath: storageMeta?.path,
       });
 
       const doc: DraftDocument = {
@@ -81,6 +85,8 @@ export async function uploadDraftDocuments(
         fileName: file.name,
         mimeType: file.type || "application/octet-stream",
         status: "done",
+        storageBucket: storageMeta?.bucket,
+        storagePath: storageMeta?.path,
       };
 
       onProgress?.(doc.id, "done", 100);

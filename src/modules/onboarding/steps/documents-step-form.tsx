@@ -84,6 +84,8 @@ export function DocumentsStepForm() {
         mimeType: file.type || "application/octet-stream",
         status: "uploading",
         progress: 0,
+        storageBucket: undefined,
+        storagePath: undefined,
       }));
 
       for (const tempDoc of tempDocs) {

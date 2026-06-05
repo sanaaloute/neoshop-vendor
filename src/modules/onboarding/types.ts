@@ -23,6 +23,10 @@ export type DraftDocument = {
   mimeType: string;
   status: "uploading" | "done" | "error";
   progress?: number;
+  /** Storage bucket name (e.g. "vendor-documents") */
+  storageBucket?: string;
+  /** Storage object path (e.g. "vendor-uuid/filename.pdf") */
+  storagePath?: string;
 };
 
 export type OnboardingDraft = {

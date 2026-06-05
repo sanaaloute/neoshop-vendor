@@ -166,6 +166,10 @@ export type CreateVendorDocumentDto = {
   fileUrl: string;
   fileName?: string;
   mimeType?: string;
+  /** Storage bucket name (e.g. "vendor-documents") */
+  storageBucket?: string;
+  /** Storage object path (e.g. "vendor-uuid/filename.pdf") */
+  storagePath?: string;
 };
 
 export type CreateShopDto = {
