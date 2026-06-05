@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Eye, Loader2, Save } from "lucide-react";
 
@@ -40,6 +40,7 @@ export function VariantsHome() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     urlProductId ?? productId
   );
+
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewRows, setPreviewRows] = useState<VariantRow[]>([]);
   const [previewTitle, setPreviewTitle] = useState("Variant preview");
@@ -50,6 +51,16 @@ export function VariantsHome() {
 
   const catalogSync = useGatewayCatalogBootstrap();
   const variantSync = useGatewayVariantsBootstrap(selectedProductId);
+
+  useEffect(() => {
+    if (!selectedProductId) return;
+    if (catalogSync.loading) return;
+    if (products.length > 0 && !products.some((p) => p.id === selectedProductId)) {
+      setSelectedProductId(null);
+      setSelected(new Set());
+      resetWorkbench();
+    }
+  }, [selectedProductId, products, catalogSync.loading, resetWorkbench]);
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -182,7 +193,7 @@ export function VariantsHome() {
               const next = e.target.value || null;
               setSelectedProductId(next);
               setSelected(new Set());
-              if (!next) resetWorkbench();
+              resetWorkbench();
             }}
           >
             <option value="">Choose a product</option>
