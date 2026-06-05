@@ -20,6 +20,7 @@ type OnboardingWizardState = {
   setVendorType: (type: VendorType) => void;
   addDocument: (doc: DraftDocument) => void;
   updateDocument: (id: string, updates: Partial<DraftDocument>) => void;
+  replaceDocument: (oldId: string, newDoc: DraftDocument) => void;
   removeDocument: (id: string) => void;
   setAcceptedTerms: (accepted: boolean) => void;
   replaceDraft: (draft: OnboardingWizardState["draft"]) => void;
@@ -79,6 +80,16 @@ export const useOnboardingWizardStore = create<OnboardingWizardState>()(
             ...s.draft,
             documents: s.draft.documents.map((d) =>
               d.id === id ? { ...d, ...updates } : d
+            ),
+          },
+        })),
+
+      replaceDocument: (oldId, newDoc) =>
+        set((s) => ({
+          draft: {
+            ...s.draft,
+            documents: s.draft.documents.map((d) =>
+              d.id === oldId ? newDoc : d
             ),
           },
         })),

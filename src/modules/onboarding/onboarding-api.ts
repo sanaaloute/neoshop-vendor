@@ -42,18 +42,19 @@ export async function syncAddressStep(draft: OnboardingDraft) {
 
 export type UploadResult = {
   success: DraftDocument[];
-  failed: { file: File; error: Error }[];
+  failed: { id: string; file: File; error: Error }[];
 };
 
 export async function uploadDraftDocuments(
   files: File[],
   docType: VendorDocumentType,
+  tempIds?: string[],
   onProgress?: (id: string, status: DraftDocument["status"], progress?: number) => void
 ): Promise<UploadResult> {
   const result: UploadResult = { success: [], failed: [] };
 
-  const uploads = files.map(async (file) => {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const uploads = files.map(async (file, index) => {
+    const id = tempIds?.[index] ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     onProgress?.(id, "uploading", 0);
 
     try {
@@ -88,6 +89,7 @@ export async function uploadDraftDocuments(
     } catch (err) {
       onProgress?.(id, "error");
       result.failed.push({
+        id,
         file,
         error: err instanceof Error ? err : new Error("Upload failed"),
       });

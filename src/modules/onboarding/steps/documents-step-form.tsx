@@ -48,6 +48,7 @@ export function DocumentsStepForm() {
   const setApiBusy = useOnboardingWizardStore((s) => s.setApiBusy);
   const addDocument = useOnboardingWizardStore((s) => s.addDocument);
   const updateDocument = useOnboardingWizardStore((s) => s.updateDocument);
+  const replaceDocument = useOnboardingWizardStore((s) => s.replaceDocument);
   const removeDocument = useOnboardingWizardStore((s) => s.removeDocument);
 
   const [selectedType, setSelectedType] = useState<VendorDocumentType>("IDENTITY");
@@ -74,31 +75,61 @@ export function DocumentsStepForm() {
 
       if (validFiles.length === 0) return;
 
+      // Create temp docs immediately so UI shows upload progress
+      const tempDocs: DraftDocument[] = validFiles.map((file) => ({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        type: selectedType,
+        fileUrl: "",
+        fileName: file.name,
+        mimeType: file.type || "application/octet-stream",
+        status: "uploading",
+        progress: 0,
+      }));
+
+      for (const tempDoc of tempDocs) {
+        addDocument(tempDoc);
+      }
+
       setApiBusy(true);
       try {
         const result = await uploadDraftDocuments(
           validFiles,
           selectedType,
+          tempDocs.map((d) => d.id),
           (id, status, progress) => {
             updateDocument(id, { status, progress });
           }
         );
 
-        // Add successful docs to store
-        for (const doc of result.success) {
-          addDocument(doc);
+        // Replace temp docs with final docs (preserves list order & animations)
+        for (const finalDoc of result.success) {
+          const tempDoc = tempDocs.find((d) => d.fileName === finalDoc.fileName);
+          if (tempDoc) {
+            replaceDocument(tempDoc.id, finalDoc);
+          } else {
+            addDocument(finalDoc);
+          }
+        }
+
+        // Mark failed uploads
+        for (const failed of result.failed) {
+          updateDocument(failed.id, { status: "error" });
         }
 
         if (result.failed.length > 0) {
           setGlobalError(`${result.failed.length} file(s) failed to upload.`);
         }
       } catch {
+        // Mark all temp docs as error on unexpected failure
+        for (const tempDoc of tempDocs) {
+          updateDocument(tempDoc.id, { status: "error" });
+        }
         setGlobalError("Upload failed. Please try again.");
       } finally {
         setApiBusy(false);
       }
     },
-    [selectedType, addDocument, updateDocument, setApiBusy]
+    [selectedType, addDocument, updateDocument, replaceDocument, setApiBusy]
   );
 
   const handleDelete = async (doc: DraftDocument) => {
