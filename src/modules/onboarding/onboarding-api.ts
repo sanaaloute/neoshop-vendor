@@ -17,10 +17,6 @@ export async function syncRegisterStep(draft: OnboardingDraft) {
     businessEmail: draft.basicInfo.businessEmail,
     businessPhone: draft.basicInfo.businessPhone,
     countryCode: draft.basicInfo.countryCode,
-    region: draft.addressInfo.region || undefined,
-    city: draft.addressInfo.city || undefined,
-    addressLine1: draft.addressInfo.addressLine1,
-    postalCode: draft.addressInfo.postalCode || undefined,
   };
   return registerVendor(body);
 }
