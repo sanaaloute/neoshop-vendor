@@ -10,6 +10,7 @@ import { useVariantWorkbenchStore } from "@/store/variant-workbench-store";
 
 export function useGatewayVariantsBootstrap(productId: string | null) {
   const replaceWorkbench = useVariantWorkbenchStore((s) => s.replaceWorkbench);
+  const resetWorkbench = useVariantWorkbenchStore((s) => s.resetWorkbench);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,6 +18,7 @@ export function useGatewayVariantsBootstrap(productId: string | null) {
     if (!getApiBaseUrl() || !productId) {
       setLoading(false);
       setError(null);
+      resetWorkbench();
       return;
     }
 
@@ -37,6 +39,7 @@ export function useGatewayVariantsBootstrap(productId: string | null) {
           setError(
             httpErrorMessageForUser(e, "Could not load product variants.")
           );
+          resetWorkbench();
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -46,7 +49,7 @@ export function useGatewayVariantsBootstrap(productId: string | null) {
     return () => {
       cancelled = true;
     };
-  }, [productId, replaceWorkbench]);
+  }, [productId, replaceWorkbench, resetWorkbench]);
 
   return { loading, error, enabled: Boolean(getApiBaseUrl() && productId) };
 }

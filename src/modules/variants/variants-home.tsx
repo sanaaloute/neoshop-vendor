@@ -33,14 +33,12 @@ export function VariantsHome() {
   const products = useProductCatalogStore((s) => s.products);
   const variants = useVariantWorkbenchStore((s) => s.variants);
   const attributes = useVariantWorkbenchStore((s) => s.attributes);
-  const productId = useVariantWorkbenchStore((s) => s.productId);
   const resetWorkbench = useVariantWorkbenchStore((s) => s.resetWorkbench);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
-    urlProductId ?? productId
+    null
   );
-
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewRows, setPreviewRows] = useState<VariantRow[]>([]);
   const [previewTitle, setPreviewTitle] = useState("Variant preview");
@@ -48,19 +46,38 @@ export function VariantsHome() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const saveMessageTimerRef = useRef<number | undefined>(undefined);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const lastUrlProductId = useRef<string | null>(null);
 
   const catalogSync = useGatewayCatalogBootstrap();
   const variantSync = useGatewayVariantsBootstrap(selectedProductId);
 
+  /*
+   * Validate selectedProductId against the loaded catalog.
+   * - On first catalog load, honour ?productId= from the URL only if the
+   *   product actually exists in /products/me.
+   * - If the URL changes later, re-evaluate once.
+   * - If the currently selected product disappears from the catalog,
+   *   clear the workbench so we don't show stale rows or fire phantom
+   *   detail requests.
+   */
   useEffect(() => {
-    if (!selectedProductId) return;
     if (catalogSync.loading) return;
-    if (products.length > 0 && !products.some((p) => p.id === selectedProductId)) {
+
+    const urlChanged = urlProductId !== lastUrlProductId.current;
+    if (urlChanged) {
+      lastUrlProductId.current = urlProductId;
+      if (urlProductId && products.some((p) => p.id === urlProductId)) {
+        setSelectedProductId(urlProductId);
+        return;
+      }
+    }
+
+    if (selectedProductId && !products.some((p) => p.id === selectedProductId)) {
       setSelectedProductId(null);
       setSelected(new Set());
       resetWorkbench();
     }
-  }, [selectedProductId, products, catalogSync.loading, resetWorkbench]);
+  }, [products, urlProductId, catalogSync.loading, selectedProductId, resetWorkbench]);
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -137,7 +154,7 @@ export function VariantsHome() {
           const created = await createVariant(selectedProductId, {
             wholesalePrice: row.price,
             moq: row.moq,
-            attributeValueIds: row.attributeValueIds ?? [],
+            selectionIds: row.selectionIds ?? [],
             isActive: true,
           });
           const createdId = String(

@@ -239,7 +239,7 @@ export type CreateVariantDto = {
   sku?: string;
   wholesalePrice: number;
   moq?: number;
-  attributeValueIds: string[];
+  selectionIds: string[];
   bulkPricing?: BulkPricingTier[];
   isActive?: boolean;
 };
@@ -248,7 +248,7 @@ export type UpdateVariantDto = {
   sku?: string;
   wholesalePrice?: number;
   moq?: number;
-  attributeValueIds?: string[];
+  selectionIds?: string[];
   bulkPricing?: BulkPricingTier[];
   isActive?: boolean;
 };

@@ -26,8 +26,8 @@ export type VariantRow = {
   widthCm: number;
   heightCm: number;
   barcode: string;
-  /** Backend attribute value ids required when creating this variant on the server. */
-  attributeValueIds?: string[];
+  /** Backend selection ids required when creating this variant on the server. */
+  selectionIds?: string[];
   /** True when this row was created locally and does not yet exist on the backend. */
   isLocalOnly?: boolean;
 };

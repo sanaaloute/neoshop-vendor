@@ -90,7 +90,7 @@ export function mapApiProductDetailToVariantWorkbench(
     const row = v as Record<string, unknown>;
     const inventory = (row.inventory ?? {}) as Record<string, unknown>;
     const combo: Record<string, string> = {};
-    const attributeValueIds: string[] = [];
+    const selectionIds: string[] = [];
     for (const selection of readSelections(row)) {
       const valueRow = (selection.attributeValue ??
         selection.value ??
@@ -109,14 +109,14 @@ export function mapApiProductDetailToVariantWorkbench(
       // Primary: nested attributeValue.id
       const valueId = str(valueRow.id, "");
       if (valueId) {
-        attributeValueIds.push(valueId);
+        selectionIds.push(valueId);
       } else {
         // Fallback: flattened { attributeCode, value }
         const attrCode = str(selection.attributeCode, "");
         const selValue = str(selection.value, "");
         if (attrCode && selValue) {
           const fallbackId = valueIdByCode.get(`${attrCode}:${selValue}`);
-          if (fallbackId) attributeValueIds.push(fallbackId);
+          if (fallbackId) selectionIds.push(fallbackId);
         }
       }
     }
@@ -126,7 +126,7 @@ export function mapApiProductDetailToVariantWorkbench(
     return {
       id: hasRealId ? String(row.id) : crypto.randomUUID(),
       combo,
-      attributeValueIds,
+      selectionIds,
       isLocalOnly: !hasRealId,
       sku: str(row.sku, `SKU-${index + 1}`),
       moq: Math.max(1, Math.round(num(row.moq, num(product.moq, 1)))),

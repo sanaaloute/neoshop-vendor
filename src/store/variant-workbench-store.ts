@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 import {
   buildSku,
@@ -62,151 +61,145 @@ type VariantWorkbenchState = {
 };
 
 export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
-  persist(
-    (set, get) => ({
-      productId: null,
-      skuPrefix: "",
-      attributes: [],
-      variants: [],
+  (set, get) => ({
+    productId: null,
+    skuPrefix: "",
+    attributes: [],
+    variants: [],
 
-      replaceWorkbench: ({ productId, skuPrefix, attributes, variants }) =>
-        set({
-          productId,
-          skuPrefix: skuPrefix ?? "",
-          attributes,
-          variants,
+    replaceWorkbench: ({ productId, skuPrefix, attributes, variants }) =>
+      set({
+        productId,
+        skuPrefix: skuPrefix ?? "",
+        attributes,
+        variants,
+      }),
+
+    upsertVariant: (variant) =>
+      set((s) => {
+        const i = s.variants.findIndex((v) => v.id === variant.id);
+        if (i < 0) return { variants: [...s.variants, variant] };
+        const next = [...s.variants];
+        next[i] = variant;
+        return { variants: next };
+      }),
+
+    setSkuPrefix: (v) => set({ skuPrefix: v }),
+
+    addAttribute: (name, kind) =>
+      set((s) => ({
+        attributes: [
+          ...s.attributes,
+          {
+            id: genAttrId(),
+            name: name.trim() || "Attribute",
+            kind,
+            values: [],
+          },
+        ],
+      })),
+
+    removeAttribute: (id) =>
+      set((s) => ({
+        attributes: s.attributes.filter((a) => a.id !== id),
+      })),
+
+    renameAttribute: (id, name) =>
+      set((s) => ({
+        attributes: s.attributes.map((a) =>
+          a.id === id ? { ...a, name: name.trim() } : a
+        ),
+      })),
+
+    setAttributeKind: (id, kind) =>
+      set((s) => ({
+        attributes: s.attributes.map((a) =>
+          a.id === id ? { ...a, kind } : a
+        ),
+      })),
+
+    setAttributeValues: (id, values) =>
+      set((s) => ({
+        attributes: s.attributes.map((a) =>
+          a.id === id
+            ? {
+                ...a,
+                values: [
+                  ...new Set(values.map((v) => v.trim()).filter(Boolean)),
+                ],
+              }
+            : a
+        ),
+      })),
+
+    addValueToAttribute: (attrId, value) => {
+      const v = value.trim();
+      if (!v) return;
+      set((s) => ({
+        attributes: s.attributes.map((a) =>
+          a.id === attrId && !a.values.includes(v)
+            ? { ...a, values: [...a.values, v] }
+            : a
+        ),
+      }));
+    },
+
+    removeValueFromAttribute: (attrId, value) =>
+      set((s) => ({
+        attributes: s.attributes.map((a) =>
+          a.id === attrId
+            ? { ...a, values: a.values.filter((x) => x !== value) }
+            : a
+        ),
+      })),
+
+    generateMatrix: (defaults) => {
+      const { attributes, skuPrefix } = get();
+      const rows = buildVariantMatrix(attributes, skuPrefix, defaults);
+      set({ variants: rows });
+    },
+
+    updateVariant: (id, patch) =>
+      set((s) => ({
+        variants: s.variants.map((r) =>
+          r.id === id ? { ...r, ...patch } : r
+        ),
+      })),
+
+    removeVariant: (id) =>
+      set((s) => ({
+        variants: s.variants.filter((r) => r.id !== id),
+      })),
+
+    bulkUpdateVariants: (ids, patch) => {
+      const idSet = new Set(ids);
+      set((s) => ({
+        variants: s.variants.map((r) =>
+          idSet.has(r.id) ? { ...r, ...patch } : r
+        ),
+      }));
+    },
+
+    regenerateSkus: () => {
+      const { variants, skuPrefix, attributes } = get();
+      const order = attributes.map((a) => a.id);
+      set({
+        variants: variants.map((r, idx) => {
+          const tuple = order.map((id) => r.combo[id] ?? "").filter(Boolean);
+          return {
+            ...r,
+            sku: buildSku(skuPrefix, tuple, idx),
+          };
         }),
+      });
+    },
 
-      upsertVariant: (variant) =>
-        set((s) => {
-          const i = s.variants.findIndex((v) => v.id === variant.id);
-          if (i < 0) return { variants: [...s.variants, variant] };
-          const next = [...s.variants];
-          next[i] = variant;
-          return { variants: next };
-        }),
-
-      setSkuPrefix: (v) => set({ skuPrefix: v }),
-
-      addAttribute: (name, kind) =>
-        set((s) => ({
-          attributes: [
-            ...s.attributes,
-            {
-              id: genAttrId(),
-              name: name.trim() || "Attribute",
-              kind,
-              values: [],
-            },
-          ],
-        })),
-
-      removeAttribute: (id) =>
-        set((s) => ({
-          attributes: s.attributes.filter((a) => a.id !== id),
-        })),
-
-      renameAttribute: (id, name) =>
-        set((s) => ({
-          attributes: s.attributes.map((a) =>
-            a.id === id ? { ...a, name: name.trim() } : a
-          ),
-        })),
-
-      setAttributeKind: (id, kind) =>
-        set((s) => ({
-          attributes: s.attributes.map((a) =>
-            a.id === id ? { ...a, kind } : a
-          ),
-        })),
-
-      setAttributeValues: (id, values) =>
-        set((s) => ({
-          attributes: s.attributes.map((a) =>
-            a.id === id
-              ? {
-                  ...a,
-                  values: [
-                    ...new Set(values.map((v) => v.trim()).filter(Boolean)),
-                  ],
-                }
-              : a
-          ),
-        })),
-
-      addValueToAttribute: (attrId, value) => {
-        const v = value.trim();
-        if (!v) return;
-        set((s) => ({
-          attributes: s.attributes.map((a) =>
-            a.id === attrId && !a.values.includes(v)
-              ? { ...a, values: [...a.values, v] }
-              : a
-          ),
-        }));
-      },
-
-      removeValueFromAttribute: (attrId, value) =>
-        set((s) => ({
-          attributes: s.attributes.map((a) =>
-            a.id === attrId
-              ? { ...a, values: a.values.filter((x) => x !== value) }
-              : a
-          ),
-        })),
-
-      generateMatrix: (defaults) => {
-        const { attributes, skuPrefix } = get();
-        const rows = buildVariantMatrix(attributes, skuPrefix, defaults);
-        set({ variants: rows });
-      },
-
-      updateVariant: (id, patch) =>
-        set((s) => ({
-          variants: s.variants.map((r) =>
-            r.id === id ? { ...r, ...patch } : r
-          ),
-        })),
-
-      removeVariant: (id) =>
-        set((s) => ({
-          variants: s.variants.filter((r) => r.id !== id),
-        })),
-
-      bulkUpdateVariants: (ids, patch) => {
-        const idSet = new Set(ids);
-        set((s) => ({
-          variants: s.variants.map((r) =>
-            idSet.has(r.id) ? { ...r, ...patch } : r
-          ),
-        }));
-      },
-
-      regenerateSkus: () => {
-        const { variants, skuPrefix, attributes } = get();
-        const order = attributes.map((a) => a.id);
-        set({
-          variants: variants.map((r, idx) => {
-            const tuple = order.map((id) => r.combo[id] ?? "").filter(Boolean);
-            return {
-              ...r,
-              sku: buildSku(skuPrefix, tuple, idx),
-            };
-          }),
-        });
-      },
-
-      resetWorkbench: () =>
-        set({
-          productId: null,
-          skuPrefix: "",
-          attributes: [],
-          variants: [],
-        }),
-    }),
-    {
-      name: "neoshop-vendor-variant-workbench",
-      version: 1,
-    }
-  )
+    resetWorkbench: () =>
+      set({
+        productId: null,
+        skuPrefix: "",
+        attributes: [],
+        variants: [],
+      }),
+  })
 );
