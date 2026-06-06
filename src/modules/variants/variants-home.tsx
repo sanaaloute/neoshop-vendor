@@ -154,7 +154,7 @@ export function VariantsHome() {
           const created = await createVariant(selectedProductId, {
             wholesalePrice: row.price,
             moq: row.moq,
-            selectionIds: row.selectionIds ?? [],
+            attributeValueIds: row.selectionIds ?? [],
             isActive: true,
           });
           const createdId = String(

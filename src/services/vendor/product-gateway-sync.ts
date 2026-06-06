@@ -46,7 +46,7 @@ async function ensurePrimaryVariant(
     await updateVariant(productId, String(first.id), body);
   } else {
     await createVariant(productId, {
-      selectionIds: [],
+      attributeValueIds: [],
       wholesalePrice: values.price,
       moq: 1,
       isActive: true,
@@ -159,7 +159,7 @@ export async function duplicateProductOnGateway(
     await updateVariant(pid, String(firstNew.id), variantBody);
   } else {
     await createVariant(pid, {
-      selectionIds: [],
+      attributeValueIds: [],
       ...variantBody,
     });
   }
