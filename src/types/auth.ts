@@ -27,6 +27,7 @@ export type RegisterRequest = {
   password: string;
   name?: string;
   surname?: string;
+  phone?: string;
 };
 
 export type RegisterResponse = {

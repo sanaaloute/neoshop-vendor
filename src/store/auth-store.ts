@@ -220,6 +220,7 @@ export const useAuthStore = create<AuthState>()(
               password: payload.password,
               name: payload.name,
               surname: payload.surname,
+              phone: payload.phone,
               role: VENDOR_ROLE,
             });
             set({ status: "unauthenticated", accessToken: null, sessionId: null, user: null });

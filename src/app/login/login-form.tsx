@@ -39,6 +39,7 @@ const signupSchema = z
     name: z.string().min(1, "Enter your first name"),
     surname: z.string().min(1, "Enter your last name"),
     email: z.string().email(),
+    phone: z.string().min(1, "Enter your phone number"),
     password: passwordSchema,
     confirmPassword: z.string().min(1, "Confirm your password"),
   })
@@ -194,6 +195,7 @@ export function LoginForm() {
               name: "",
               surname: "",
               email: "",
+              phone: "",
               password: "",
               confirmPassword: "",
             }}
@@ -210,6 +212,7 @@ export function LoginForm() {
                   password: values.password,
                   name: values.name,
                   surname: values.surname,
+                  phone: values.phone,
                 });
                 if (res.success) {
                   setSignupSuccess(
@@ -251,16 +254,26 @@ export function LoginForm() {
                   type="email"
                   autoComplete="email"
                 />
-                <VendorPasswordField
+                <VendorTextField
                   control={form.control}
-                  name="password"
-                  label="Password"
-                  placeholder="••••••••"
-                  autoComplete="new-password"
+                  name="phone"
+                  label="Phone number"
+                  placeholder="+1 (555) 000-0000"
+                  type="tel"
+                  autoComplete="tel"
                 />
-                <p className="text-muted-foreground text-xs">
-                  Password must be at least 8 characters with one uppercase letter, one lowercase letter, and one digit.
-                </p>
+                <div className="space-y-1">
+                  <VendorPasswordField
+                    control={form.control}
+                    name="password"
+                    label="Password"
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    Password must be at least 8 characters with one uppercase letter, one lowercase letter, and one digit.
+                  </p>
+                </div>
                 <VendorPasswordField
                   control={form.control}
                   name="confirmPassword"

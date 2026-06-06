@@ -38,6 +38,7 @@ export async function postAuthRegister(body: {
   password: string;
   name?: string;
   surname?: string;
+  phone?: string;
   role: string;
 }) {
   const { data } = await vendorApiClient.post<RegisterResponse>("/api/v1/auth/register", body);
