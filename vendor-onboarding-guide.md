@@ -1,6 +1,6 @@
 # Vendor Onboarding Guide
 
-This document describes the complete vendor onboarding flow for the NeoShop platform, including the two vendor types, the step-by-step API workflow, and the admin review process.
+This document describes the complete vendor onboarding flow for the Barkosem platform, including the two vendor types, the step-by-step API workflow, and the admin review process.
 
 ---
 
@@ -20,7 +20,7 @@ This document describes the complete vendor onboarding flow for the NeoShop plat
 
 ## Overview
 
-NeoShop supports two vendor onboarding paths to accommodate both small individual sellers and established businesses:
+Barkosem supports two vendor onboarding paths to accommodate both small individual sellers and established businesses:
 
 | Type | Target User | Complexity |
 |------|------------|------------|

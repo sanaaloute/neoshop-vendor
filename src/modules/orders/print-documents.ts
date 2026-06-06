@@ -36,7 +36,7 @@ export function buildInvoiceHtml(order: VendorOrder) {
     <p>Shipping: ${money(order.shipping)}</p>
     <p>Tax: ${money(order.tax)}</p>
     <p><strong>Total: ${money(order.total)}</strong></p>
-    <p style="margin-top:24px;font-size:12px;color:#666">NeoShop vendor invoice (draft) — replace with PDF API.</p>
+    <p style="margin-top:24px;font-size:12px;color:#666">Barkosem vendor invoice (draft) — replace with PDF API.</p>
   `;
 }
 
@@ -60,7 +60,7 @@ export function buildPackingSlipHtml(order: VendorOrder) {
       <thead><tr><th>SKU</th><th>Item</th><th align="right">Qty</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <p style="margin-top:24px;font-size:12px;color:#666">Check contents before sealing. NeoShop vendor (draft).</p>
+    <p style="margin-top:24px;font-size:12px;color:#666">Check contents before sealing. Barkosem vendor (draft).</p>
   `;
 }
 

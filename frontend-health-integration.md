@@ -1,6 +1,6 @@
 # Frontend Health Monitoring Integration Guide
 
-This document explains how the **Admin Console**, **Vendor Panel**, and **Customer Mobile Apps** integrate with the NeoShop health monitoring livestream.
+This document explains how the **Admin Console**, **Vendor Panel**, and **Customer Mobile Apps** integrate with the Barkosem health monitoring livestream.
 
 ## Overview
 

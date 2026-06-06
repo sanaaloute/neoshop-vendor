@@ -1,4 +1,4 @@
-# NeoShop Vendor Panel API Reference
+# Barkosem Vendor Panel API Reference
 
 **Base URL:** `https://api.neoshop.com/api/v1`  
 **Target Client:** Next.js Vendor Panel  

@@ -18,7 +18,7 @@ export function VendorWriteGuardBanner({
   const title =
     status === "SUSPENDED"
       ? "Account suspended"
-      : "Awaiting NeoShop approval";
+      : "Awaiting Barkosem approval";
 
   const body =
     status === "SUSPENDED"

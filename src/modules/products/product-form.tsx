@@ -296,7 +296,7 @@ export function ProductForm({
     setSaveError(null);
     if (!canWriteCatalog) {
       setSaveError(
-        "Catalog changes unlock after NeoShop approves your vendor account."
+        "Catalog changes unlock after Barkosem approves your vendor account."
       );
       return;
     }
@@ -336,7 +336,7 @@ export function ProductForm({
     setSaveError(null);
     if (!canWriteCatalog) {
       setSaveError(
-        "Catalog changes unlock after NeoShop approves your vendor account."
+        "Catalog changes unlock after Barkosem approves your vendor account."
       );
       return;
     }

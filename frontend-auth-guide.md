@@ -1,4 +1,4 @@
-# NeoShop — Frontend Authentication Guide
+# Barkosem — Frontend Authentication Guide
 
 > **Target audience:** Frontend developers building the customer mobile app, vendor panel, and admin console.
 
@@ -352,7 +352,7 @@ Content-Type: application/json
 {
   "refreshToken": "<supabase_refresh_token>",
   "deviceId": "stable-device-uuid",
-  "userAgent": "NeoShopApp/1.0"
+  "userAgent": "BarkosemApp/1.0"
 }
 ```
 

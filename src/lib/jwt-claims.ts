@@ -31,7 +31,7 @@ function isKnownAppRole(value: string): value is (typeof APP_ROLES)[number] {
 }
 
 /**
- * NeoShop app role from JWT: the gateway stores role in
+ * Barkosem app role from JWT: the gateway stores role in
  * `user_metadata.role` / `app_metadata.role` or top-level `role`.
  * The top-level `role: "authenticated"` must not be treated as the app role.
  */

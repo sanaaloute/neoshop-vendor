@@ -93,21 +93,21 @@ export function useVendorMainNav(): VendorNavItem[] {
 export function labelForPathSegment(segment: string, t?: (key: string) => string) {
   // Try to map common segments to translation keys
   const keyMap: Record<string, string> = {
-    dashboard: "navigation.dashboard",
-    products: "navigation.products",
-    variants: "navigation.variants",
-    inventory: "navigation.inventory",
-    orders: "navigation.orders",
-    customers: "navigation.customers",
-    reviews: "navigation.reviews",
-    "product-qa": "navigation.qa",
-    analytics: "navigation.analytics",
-    disputes: "navigation.disputes",
-    payouts: "navigation.payouts",
-    chat: "navigation.messages",
-    shop: "navigation.shopSettings",
-    notifications: "navigation.notifications",
-    settings: "navigation.accountSettings",
+    dashboard: "dashboard",
+    products: "products",
+    variants: "variants",
+    inventory: "inventory",
+    orders: "orders",
+    customers: "customers",
+    reviews: "reviews",
+    "product-qa": "qa",
+    analytics: "analytics",
+    disputes: "disputes",
+    payouts: "payouts",
+    chat: "messages",
+    shop: "shopSettings",
+    notifications: "notifications",
+    settings: "accountSettings",
   };
 
   const key = keyMap[segment];

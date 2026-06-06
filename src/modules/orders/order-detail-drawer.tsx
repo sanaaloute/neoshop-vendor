@@ -113,7 +113,7 @@ export function OrderDetailDrawer({
 
   const runStatusPatch = async (o: VendorOrder, status: OrderStatus, note?: string) => {
     if (!canWriteOrders) {
-      setActionError("Order updates unlock after NeoShop approves your vendor account.");
+      setActionError("Order updates unlock after Barkosem approves your vendor account.");
       return;
     }
     if (!getApiBaseUrl()) {

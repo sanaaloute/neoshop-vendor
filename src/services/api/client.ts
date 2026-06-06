@@ -6,7 +6,7 @@ import { attachVendorInterceptors } from "./interceptors";
 import { attachRetryStrategy } from "./retry";
 
 /**
- * Shared Axios instance for NeoShop vendor REST API (`NEXT_PUBLIC_API_BASE_URL`).
+ * Shared Axios instance for Barkosem vendor REST API (`NEXT_PUBLIC_API_BASE_URL`).
  *
  * Order: retry plugin → interceptors (Bearer + refresh on 401).
  */

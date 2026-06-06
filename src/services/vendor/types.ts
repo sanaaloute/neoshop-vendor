@@ -1,5 +1,5 @@
 /**
- * Gateway-aligned shapes for NeoShop `/api/v1` vendor REST.
+ * Gateway-aligned shapes for Barkosem `/api/v1` vendor REST.
  * Cross-check with live OpenAPI: `{API_ORIGIN}/api/docs` and `{API_ORIGIN}/api/docs-json`.
  */
 
