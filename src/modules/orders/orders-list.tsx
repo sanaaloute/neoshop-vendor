@@ -86,8 +86,7 @@ export function OrdersList({
   const allSelected =
     filtered.length > 0 && filtered.every((o) => selected.has(o.id));
 
-  const hasFilters =
-    search.trim().length > 0 || statusFilter !== "all";
+  const hasFilters = search.trim().length > 0 || statusFilter !== "all";
 
   return (
     <div className="flex flex-col gap-4">
@@ -154,97 +153,106 @@ export function OrdersList({
           key={liveKey}
           className="border-border/80 shadow-vendor-card overflow-hidden"
         >
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10 pr-0">
-                  <input
-                    type="checkbox"
-                    className="accent-primary size-4"
-                    disabled={!allowBulkSelection}
-                    checked={allSelected}
-                    onChange={() =>
-                      onSelectAllVisible(
-                        !allSelected,
-                        filtered.map((o) => o.id)
-                      )
-                    }
-                    aria-label="Select all"
-                  />
-                </TableHead>
-                <TableHead>Reference</TableHead>
-                <TableHead className="hidden md:table-cell">Customer</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead className="hidden sm:table-cell">Updated</TableHead>
-                <TableHead className="text-right"> </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((o) => (
-                <TableRow
-                  key={o.id}
-                  data-state={selected.has(o.id) ? "selected" : undefined}
-                  className="cursor-pointer"
-                  onClick={() => onOpenOrder(o.id)}
-                >
-                  <TableCell
-                    className="pr-0"
-                    onClick={(e) => e.stopPropagation()}
-                  >
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10 pr-0">
                     <input
                       type="checkbox"
                       className="accent-primary size-4"
                       disabled={!allowBulkSelection}
-                      checked={selected.has(o.id)}
-                      onChange={() => onToggle(o.id)}
-                      aria-label={`Select ${o.reference}`}
+                      checked={allSelected}
+                      onChange={() =>
+                        onSelectAllVisible(
+                          !allSelected,
+                          filtered.map((o) => o.id)
+                        )
+                      }
+                      aria-label="Select all"
                     />
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">{o.reference}</div>
-                    <div className="text-muted-foreground font-mono text-[10px]">
-                      {o.id}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground hidden max-w-[200px] truncate md:table-cell">
-                    {o.customerName}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={rowBadge(o.status)} className="capitalize">
-                      {statusLabel(o.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">
-                    {formatCurrency(o.total)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground hidden text-xs sm:table-cell">
-                    {new Date(o.updatedAt).toLocaleString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </TableCell>
-                  <TableCell
-                    className="text-right"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      type="button"
-                      className={cn(
-                        buttonVariants({ variant: "ghost", size: "sm" }),
-                        "h-8"
-                      )}
-                      onClick={() => onOpenOrder(o.id)}
-                    >
-                      Details
-                    </button>
-                  </TableCell>
+                  </TableHead>
+                  <TableHead>Reference</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Customer
+                  </TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    Updated
+                  </TableHead>
+                  <TableHead className="text-right"> </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((o) => (
+                  <TableRow
+                    key={o.id}
+                    data-state={selected.has(o.id) ? "selected" : undefined}
+                    className="cursor-pointer"
+                    onClick={() => onOpenOrder(o.id)}
+                  >
+                    <TableCell
+                      className="pr-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        className="accent-primary size-4"
+                        disabled={!allowBulkSelection}
+                        checked={selected.has(o.id)}
+                        onChange={() => onToggle(o.id)}
+                        aria-label={`Select ${o.reference}`}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">{o.reference}</div>
+                      <div className="text-muted-foreground font-mono text-[10px]">
+                        {o.id}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground hidden max-w-[200px] truncate md:table-cell">
+                      {o.customerName}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={rowBadge(o.status)}
+                        className="capitalize"
+                      >
+                        {statusLabel(o.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-medium tabular-nums">
+                      {formatCurrency(o.total)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground hidden text-xs sm:table-cell">
+                      {new Date(o.updatedAt).toLocaleString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </TableCell>
+                    <TableCell
+                      className="text-right"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        className={cn(
+                          buttonVariants({ variant: "ghost", size: "sm" }),
+                          "h-8"
+                        )}
+                        onClick={() => onOpenOrder(o.id)}
+                      >
+                        Details
+                      </button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </Card>
       )}
     </div>

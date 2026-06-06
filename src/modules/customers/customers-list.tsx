@@ -106,7 +106,9 @@ export function CustomersList({
               <span>Loading…</span>
             </span>
           ) : syncError ? (
-            <span className="text-destructive">Could not load data. {syncError}</span>
+            <span className="text-destructive">
+              Could not load data. {syncError}
+            </span>
           ) : !syncLoading && customers.length === 0 && api ? (
             <span>No customers yet.</span>
           ) : !syncLoading && customers.length === 0 && !api ? (
@@ -117,85 +119,89 @@ export function CustomersList({
         </Card>
       ) : (
         <Card className="border-border/80 shadow-vendor-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Customer</TableHead>
-                <TableHead className="hidden md:table-cell">Company</TableHead>
-                <TableHead className="text-right">Orders</TableHead>
-                <TableHead className="text-right">Spend</TableHead>
-                <TableHead className="hidden sm:table-cell">
-                  Last seen
-                </TableHead>
-                <TableHead className="text-right"> </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((c) => (
-                <TableRow
-                  key={c.id}
-                  className="cursor-pointer"
-                  onClick={() => onOpenProfile(c.id)}
-                >
-                  <TableCell>
-                    <div className="font-medium">{c.name}</div>
-                    <div className="text-muted-foreground text-xs">
-                      {c.email}
-                    </div>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {isRepeatBuyer(c.tags) ? (
-                        <Badge variant="secondary" className="text-[10px]">
-                          Repeat
-                        </Badge>
-                      ) : null}
-                      {c.tags
-                        .filter((t) => !t.toLowerCase().includes("repeat"))
-                        .map((t) => (
-                          <Badge
-                            key={t}
-                            variant="outline"
-                            className="text-[10px] capitalize"
-                          >
-                            {t}
-                          </Badge>
-                        ))}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground hidden md:table-cell">
-                    {c.company ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {c.orderCount}
-                  </TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">
-                    {formatCurrency(c.totalSpend)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground hidden text-xs sm:table-cell">
-                    {new Date(c.lastSeen).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </TableCell>
-                  <TableCell
-                    className="text-right"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      type="button"
-                      className={cn(
-                        buttonVariants({ variant: "ghost", size: "sm" }),
-                        "h-8"
-                      )}
-                      onClick={() => onOpenProfile(c.id)}
-                    >
-                      Profile
-                    </button>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Company
+                  </TableHead>
+                  <TableHead className="text-right">Orders</TableHead>
+                  <TableHead className="text-right">Spend</TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    Last seen
+                  </TableHead>
+                  <TableHead className="text-right"> </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((c) => (
+                  <TableRow
+                    key={c.id}
+                    className="cursor-pointer"
+                    onClick={() => onOpenProfile(c.id)}
+                  >
+                    <TableCell>
+                      <div className="font-medium">{c.name}</div>
+                      <div className="text-muted-foreground text-xs">
+                        {c.email}
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {isRepeatBuyer(c.tags) ? (
+                          <Badge variant="secondary" className="text-[10px]">
+                            Repeat
+                          </Badge>
+                        ) : null}
+                        {c.tags
+                          .filter((t) => !t.toLowerCase().includes("repeat"))
+                          .map((t) => (
+                            <Badge
+                              key={t}
+                              variant="outline"
+                              className="text-[10px] capitalize"
+                            >
+                              {t}
+                            </Badge>
+                          ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground hidden md:table-cell">
+                      {c.company ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {c.orderCount}
+                    </TableCell>
+                    <TableCell className="text-right font-medium tabular-nums">
+                      {formatCurrency(c.totalSpend)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground hidden text-xs sm:table-cell">
+                      {new Date(c.lastSeen).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </TableCell>
+                    <TableCell
+                      className="text-right"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        className={cn(
+                          buttonVariants({ variant: "ghost", size: "sm" }),
+                          "h-8"
+                        )}
+                        onClick={() => onOpenProfile(c.id)}
+                      >
+                        Profile
+                      </button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </Card>
       )}
     </div>

@@ -97,10 +97,7 @@ export function PayoutsHome() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    Promise.all([
-      getWalletMe(),
-      listWalletTransactions({ limit: 50 }),
-    ])
+    Promise.all([getWalletMe(), listWalletTransactions({ limit: 50 })])
       .then(([wallet, txns]) => {
         if (cancelled) return;
         setBalance(wallet);
@@ -148,65 +145,67 @@ export function PayoutsHome() {
           </DashboardCardTitle>
         </DashboardCardHeader>
         <DashboardCardContent className="px-0 pt-0 pb-2">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="pl-4">Date</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="pr-4 text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="text-muted-foreground py-10 text-center"
-                  >
-                    Loading transactions…
-                  </TableCell>
+                  <TableHead className="pl-4">Date</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="pr-4 text-right">Amount</TableHead>
                 </TableRow>
-              ) : transactions.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="text-muted-foreground py-10 text-center"
-                  >
-                    No transactions yet.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                transactions.map((t) => (
-                  <TableRow key={t.id}>
-                    <TableCell className="text-muted-foreground pl-4 tabular-nums">
-                      {new Date(t.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="font-normal">
-                        {txnTypeLabel(t.type)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground max-w-[200px] truncate">
-                      {t.description ?? "—"}
-                    </TableCell>
-                    <TableCell>{statusBadge(t.status)}</TableCell>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
                     <TableCell
-                      className={cn(
-                        "pr-4 text-right font-medium tabular-nums",
-                        t.amount >= 0
-                          ? "text-green-600 dark:text-green-400"
-                          : ""
-                      )}
+                      colSpan={5}
+                      className="text-muted-foreground py-10 text-center"
                     >
-                      {signedCurrency(t.amount, t.currency)}
+                      Loading transactions…
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : transactions.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={5}
+                      className="text-muted-foreground py-10 text-center"
+                    >
+                      No transactions yet.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  transactions.map((t) => (
+                    <TableRow key={t.id}>
+                      <TableCell className="text-muted-foreground pl-4 tabular-nums">
+                        {new Date(t.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-normal">
+                          {txnTypeLabel(t.type)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground max-w-[200px] truncate">
+                        {t.description ?? "—"}
+                      </TableCell>
+                      <TableCell>{statusBadge(t.status)}</TableCell>
+                      <TableCell
+                        className={cn(
+                          "pr-4 text-right font-medium tabular-nums",
+                          t.amount >= 0
+                            ? "text-green-600 dark:text-green-400"
+                            : ""
+                        )}
+                      >
+                        {signedCurrency(t.amount, t.currency)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </DashboardCardContent>
       </DashboardCard>
     </div>

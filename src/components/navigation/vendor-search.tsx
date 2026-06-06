@@ -23,7 +23,7 @@ export const VendorSearch = forwardRef<HTMLInputElement, VendorSearchProps>(
           id="vendor-search"
           name="vendor-search"
           placeholder="Search orders, SKUs, buyers…"
-          className="h-9 pr-20 pl-9"
+          className="h-9 pr-3 pl-9 sm:pr-20"
           autoComplete="off"
           aria-label="Global search"
         />

@@ -5,7 +5,16 @@ import { useMemo, useState } from "react";
 import { useGatewayCatalogBootstrap } from "@/hooks/use-gateway-catalog-bootstrap";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Archive, Copy, Eye, Layers, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Archive,
+  Copy,
+  Eye,
+  Layers,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 
 import { EmptyState } from "@/components/cards/empty-state";
 import { VendorWriteGuardBanner } from "@/components/vendor/vendor-write-guard-banner";
@@ -52,7 +61,10 @@ function statusVariant(
   return "destructive";
 }
 
-function categorySummary(ids: string[], categories: { id: string; name: string }[]) {
+function categorySummary(
+  ids: string[],
+  categories: { id: string; name: string }[]
+) {
   if (!ids.length) return "—";
   return ids
     .map((id) => categories.find((c) => c.id === id)?.name ?? id)
@@ -97,8 +109,7 @@ export function ProductsList() {
       const q = filterSearch.trim().toLowerCase();
       result = result.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.sku.toLowerCase().includes(q)
+          p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
       );
     }
     return result;
@@ -213,7 +224,7 @@ export function ProductsList() {
 
       <Card className="border-border/80 shadow-vendor-card p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="grid gap-1 flex-1">
+          <div className="grid flex-1 gap-1">
             <Label className="text-xs">Search</Label>
             <input
               type="text"
@@ -330,219 +341,232 @@ export function ProductsList() {
       ) : null}
 
       <Card className="border-border/80 shadow-vendor-card overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">
-                <input
-                  type="checkbox"
-                  className="accent-primary size-4"
-                  disabled={!canWriteCatalog}
-                  checked={filtered.length > 0 && selected.size === filtered.length}
-                  onChange={toggleAll}
-                  aria-label="Select all"
-                />
-              </TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead className="hidden md:table-cell">Categories</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.length === 0 ? (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="text-muted-foreground text-center text-sm"
-                >
-                  No products match your filters.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filtered.map((p) => (
-              <TableRow
-                key={p.id}
-                data-state={selected.has(p.id) ? "selected" : undefined}
-                className={cn(p.status === "archived" && "opacity-60")}
-              >
-                <TableCell>
+                <TableHead className="w-10">
                   <input
                     type="checkbox"
                     className="accent-primary size-4"
                     disabled={!canWriteCatalog}
-                    checked={selected.has(p.id)}
-                    onChange={() => toggle(p.id)}
-                    aria-label={`Select ${p.name}`}
+                    checked={
+                      filtered.length > 0 && selected.size === filtered.length
+                    }
+                    onChange={toggleAll}
+                    aria-label="Select all"
                   />
-                </TableCell>
-                <TableCell className="max-w-[200px] truncate font-medium">
-                  <Link
-                    href={`/products/${p.id}/edit`}
-                    className="text-foreground underline-offset-4 hover:underline"
-                  >
-                    {p.name}
-                  </Link>
-                </TableCell>
-                <TableCell className="text-muted-foreground tabular-nums">
-                  {p.sku}
-                </TableCell>
-                <TableCell className="text-muted-foreground hidden max-w-[180px] truncate md:table-cell">
-                  {categorySummary(p.categoryIds, categories)}
-                </TableCell>
-                <TableCell className="tabular-nums">
-                  {formatCurrency(p.price)}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={statusVariant(p.status)}
-                    className="capitalize"
-                  >
-                    {p.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex flex-wrap justify-end gap-1">
-                    <Link
-                      href={`/products/${p.id}/edit`}
-                      title="Edit"
-                      className={buttonVariants({
-                        variant: "ghost",
-                        size: "icon-sm",
-                      })}
-                    >
-                      <Pencil className="size-4" aria-hidden />
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      title="Preview"
-                      onClick={() => openPreview(p)}
-                    >
-                      <Eye className="size-4" aria-hidden />
-                    </Button>
-                    <Link
-                      href={`/variants?productId=${p.id}`}
-                      title="Edit variants"
-                      className={buttonVariants({
-                        variant: "ghost",
-                        size: "icon-sm",
-                      })}
-                    >
-                      <Layers className="size-4" aria-hidden />
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      title="Duplicate"
-                      disabled={listBusy || !canWriteCatalog}
-                      onClick={() => {
-                        void (async () => {
-                          setListError(null);
-                          if (getApiBaseUrl()) {
-                            setListBusy(true);
-                            try {
-                              const copy = await duplicateProductOnGateway(p.id);
-                              if (!copy) return;
-                              replaceCatalog(
-                                [copy, ...products.filter((x) => x.id !== copy.id)]
-                              );
-                              router.push(`/products/${copy.id}/edit`);
-                            } catch (e) {
-                              setListError(
-                                httpErrorMessageForUser(
-                                  e,
-                                  "Could not duplicate this product."
-                                )
-                              );
-                            } finally {
-                              setListBusy(false);
-                            }
-                            return;
-                          }
-                          const nid = duplicateProduct(p.id);
-                          if (nid) router.push(`/products/${nid}/edit`);
-                        })();
-                      }}
-                    >
-                      <Copy className="size-4" aria-hidden />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      title="Archive"
-                      disabled={listBusy || !canWriteCatalog}
-                      onClick={() => {
-                        void (async () => {
-                          setListError(null);
-                          if (getApiBaseUrl()) {
-                            setListBusy(true);
-                            try {
-                              await archiveProductOnGateway(p.id);
-                              archiveProduct(p.id);
-                            } catch (e) {
-                              setListError(
-                                httpErrorMessageForUser(
-                                  e,
-                                  "Could not archive this product."
-                                )
-                              );
-                            } finally {
-                              setListBusy(false);
-                            }
-                            return;
-                          }
-                          archiveProduct(p.id);
-                        })();
-                      }}
-                    >
-                      <Archive className="size-4" aria-hidden />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      title="Delete"
-                      disabled={listBusy || !canWriteCatalog}
-                      onClick={() => {
-                        void (async () => {
-                          setListError(null);
-                          if (getApiBaseUrl()) {
-                            setListBusy(true);
-                            try {
-                              await deleteProductOnGateway(p.id);
-                              replaceCatalog(products.filter((x) => x.id !== p.id));
-                            } catch (e) {
-                              setListError(
-                                httpErrorMessageForUser(
-                                  e,
-                                  "Could not delete this product."
-                                )
-                              );
-                            } finally {
-                              setListBusy(false);
-                            }
-                          } else {
-                            deleteProduct(p.id);
-                          }
-                          const workbenchProductId =
-                            useVariantWorkbenchStore.getState().productId;
-                          if (workbenchProductId === p.id) {
-                            useVariantWorkbenchStore.getState().resetWorkbench();
-                          }
-                        })();
-                      }}
-                    >
-                      <Trash2 className="size-4" aria-hidden />
-                    </Button>
-                  </div>
-                </TableCell>
+                </TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>SKU</TableHead>
+                <TableHead className="hidden md:table-cell">
+                  Categories
+                </TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ))
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="text-muted-foreground text-center text-sm"
+                  >
+                    No products match your filters.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filtered.map((p) => (
+                  <TableRow
+                    key={p.id}
+                    data-state={selected.has(p.id) ? "selected" : undefined}
+                    className={cn(p.status === "archived" && "opacity-60")}
+                  >
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        className="accent-primary size-4"
+                        disabled={!canWriteCatalog}
+                        checked={selected.has(p.id)}
+                        onChange={() => toggle(p.id)}
+                        aria-label={`Select ${p.name}`}
+                      />
+                    </TableCell>
+                    <TableCell className="max-w-[200px] truncate font-medium">
+                      <Link
+                        href={`/products/${p.id}/edit`}
+                        className="text-foreground underline-offset-4 hover:underline"
+                      >
+                        {p.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground tabular-nums">
+                      {p.sku}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground hidden max-w-[180px] truncate md:table-cell">
+                      {categorySummary(p.categoryIds, categories)}
+                    </TableCell>
+                    <TableCell className="tabular-nums">
+                      {formatCurrency(p.price)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={statusVariant(p.status)}
+                        className="capitalize"
+                      >
+                        {p.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex flex-wrap justify-end gap-1">
+                        <Link
+                          href={`/products/${p.id}/edit`}
+                          title="Edit"
+                          className={buttonVariants({
+                            variant: "ghost",
+                            size: "icon-sm",
+                          })}
+                        >
+                          <Pencil className="size-4" aria-hidden />
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          title="Preview"
+                          onClick={() => openPreview(p)}
+                        >
+                          <Eye className="size-4" aria-hidden />
+                        </Button>
+                        <Link
+                          href={`/variants?productId=${p.id}`}
+                          title="Edit variants"
+                          className={buttonVariants({
+                            variant: "ghost",
+                            size: "icon-sm",
+                          })}
+                        >
+                          <Layers className="size-4" aria-hidden />
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          title="Duplicate"
+                          disabled={listBusy || !canWriteCatalog}
+                          onClick={() => {
+                            void (async () => {
+                              setListError(null);
+                              if (getApiBaseUrl()) {
+                                setListBusy(true);
+                                try {
+                                  const copy = await duplicateProductOnGateway(
+                                    p.id
+                                  );
+                                  if (!copy) return;
+                                  replaceCatalog([
+                                    copy,
+                                    ...products.filter((x) => x.id !== copy.id),
+                                  ]);
+                                  router.push(`/products/${copy.id}/edit`);
+                                } catch (e) {
+                                  setListError(
+                                    httpErrorMessageForUser(
+                                      e,
+                                      "Could not duplicate this product."
+                                    )
+                                  );
+                                } finally {
+                                  setListBusy(false);
+                                }
+                                return;
+                              }
+                              const nid = duplicateProduct(p.id);
+                              if (nid) router.push(`/products/${nid}/edit`);
+                            })();
+                          }}
+                        >
+                          <Copy className="size-4" aria-hidden />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          title="Archive"
+                          disabled={listBusy || !canWriteCatalog}
+                          onClick={() => {
+                            void (async () => {
+                              setListError(null);
+                              if (getApiBaseUrl()) {
+                                setListBusy(true);
+                                try {
+                                  await archiveProductOnGateway(p.id);
+                                  archiveProduct(p.id);
+                                } catch (e) {
+                                  setListError(
+                                    httpErrorMessageForUser(
+                                      e,
+                                      "Could not archive this product."
+                                    )
+                                  );
+                                } finally {
+                                  setListBusy(false);
+                                }
+                                return;
+                              }
+                              archiveProduct(p.id);
+                            })();
+                          }}
+                        >
+                          <Archive className="size-4" aria-hidden />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          title="Delete"
+                          disabled={listBusy || !canWriteCatalog}
+                          onClick={() => {
+                            void (async () => {
+                              setListError(null);
+                              if (getApiBaseUrl()) {
+                                setListBusy(true);
+                                try {
+                                  await deleteProductOnGateway(p.id);
+                                  replaceCatalog(
+                                    products.filter((x) => x.id !== p.id)
+                                  );
+                                } catch (e) {
+                                  setListError(
+                                    httpErrorMessageForUser(
+                                      e,
+                                      "Could not delete this product."
+                                    )
+                                  );
+                                } finally {
+                                  setListBusy(false);
+                                }
+                              } else {
+                                deleteProduct(p.id);
+                              }
+                              const workbenchProductId =
+                                useVariantWorkbenchStore.getState().productId;
+                              if (workbenchProductId === p.id) {
+                                useVariantWorkbenchStore
+                                  .getState()
+                                  .resetWorkbench();
+                              }
+                            })();
+                          }}
+                        >
+                          <Trash2 className="size-4" aria-hidden />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </Card>
 
       {preview ? (
