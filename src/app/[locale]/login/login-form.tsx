@@ -190,6 +190,13 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="text-center">
+        <div className="mb-2 flex justify-center">
+          <img
+            src="/logo.png"
+            alt="NeoShop Vendor"
+            className="h-12 w-auto select-none"
+          />
+        </div>
         <CardTitle>{isSignup ? t("createAccount") : t("signIn")}</CardTitle>
         <CardDescription>
           {isSignup ? t("registerDescription") : t("signInDescription")}

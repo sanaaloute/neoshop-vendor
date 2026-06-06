@@ -100,8 +100,12 @@ export function VendorShell({ children }: { children: ReactNode }) {
           className="w-[min(20rem,100vw)] p-0"
           showCloseButton
         >
-          <div className="border-border/60 flex h-14 items-center border-b px-4 text-sm font-semibold tracking-tight">
-            NeoShop Vendor
+          <div className="border-border/60 flex h-14 items-center border-b px-4">
+            <img
+              src="/logo-small.png"
+              alt="NeoShop Vendor"
+              className="h-6 w-auto select-none"
+            />
           </div>
           <VendorSidebarNav
             collapsed={false}

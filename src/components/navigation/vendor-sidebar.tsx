@@ -26,13 +26,17 @@ export function VendorSidebarDesktop({ className }: { className?: string }) {
     >
       <div className="border-border/50 flex h-14 shrink-0 items-center border-b px-3">
         {collapsed ? (
-          <span className="text-primary mx-auto text-xs font-bold tracking-tight select-none">
-            NS
-          </span>
+          <img
+            src="/logo.png"
+            alt="NeoShop"
+            className="mx-auto h-8 w-8 select-none"
+          />
         ) : (
-          <span className="text-sm font-semibold tracking-tight select-none">
-            NeoShop Vendor
-          </span>
+          <img
+            src="/logo-small.png"
+            alt="NeoShop Vendor"
+            className="h-6 w-auto select-none"
+          />
         )}
       </div>
       <VendorSidebarNav collapsed={collapsed} />
