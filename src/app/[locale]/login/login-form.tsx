@@ -193,7 +193,7 @@ export function LoginForm() {
         <div className="mb-2 flex justify-center">
           <img
             src="/logo.png"
-            alt="NeoShop Vendor"
+            alt="Barkosem Vendor Dashboard"
             className="h-12 w-auto select-none"
           />
         </div>

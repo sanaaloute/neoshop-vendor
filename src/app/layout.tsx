@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
-  title: "NeoShop Vendor",
+  title: "Barkosem Vendor Dashboard",
   description: "B2B marketplace vendor console",
 };
 

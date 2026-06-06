@@ -28,13 +28,13 @@ export function VendorSidebarDesktop({ className }: { className?: string }) {
         {collapsed ? (
           <img
             src="/logo.png"
-            alt="NeoShop"
+            alt="Barkosem"
             className="mx-auto h-8 w-8 select-none"
           />
         ) : (
           <img
             src="/logo-small.png"
-            alt="NeoShop Vendor"
+            alt="Barkosem Vendor Dashboard"
             className="h-6 w-auto select-none"
           />
         )}

@@ -103,7 +103,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
           <div className="border-border/60 flex h-14 items-center border-b px-4">
             <img
               src="/logo-small.png"
-              alt="NeoShop Vendor"
+              alt="Barkosem Vendor Dashboard"
               className="h-6 w-auto select-none"
             />
           </div>
