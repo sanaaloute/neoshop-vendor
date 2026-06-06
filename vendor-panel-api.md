@@ -1234,13 +1234,13 @@ const { payload } = await jwtVerify(token, keySet, {
 
 ## 16. Wallet
 
-### `GET /wallets/me`
+### `GET /wallet/me`
 **Auth:** Bearer  
 **Description:** Get current user's wallet balance.
 
 ---
 
-### `GET /wallets/me/transactions`
+### `GET /wallet/me/transactions`
 **Auth:** Bearer  
 **Description:** List wallet transactions.
 
