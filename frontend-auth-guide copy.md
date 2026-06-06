@@ -72,9 +72,14 @@ Content-Type: application/json
   "password": "SecurePass123",
   "name": "John",
   "surname": "Doe",
-  "role": "customer"
+  "role": "vendor",
+  "phone": "+22670123456"
 }
 ```
+
+- `phone` is **optional**. If omitted, behavior is unchanged.
+- When provided, it must be in **E.164 format** (e.g. `+22670123456`).
+- Duplicate phones will return `409 Conflict`.
 
 **Response (200):**
 ```json
@@ -85,7 +90,7 @@ Content-Type: application/json
     "userId": "uuid",
     "supabaseUserId": "uuid",
     "email": "user@example.com",
-    "role": "customer",
+    "role": "vendor",
     "emailVerifiedAt": null
   }
 }
@@ -147,7 +152,7 @@ Content-Type: application/json
 **Response (200):**
 ```json
 {
-  "user": { "userId": "...", "supabaseUserId": "...", "email": "...", "role": "customer" },
+  "user": { "userId": "...", "supabaseUserId": "...", "email": "...", "role": "vendor" },
   "accessToken": "eyJhbGc...",
   "refreshToken": " opaque-or-jwt-refresh-token ",
   "expiresIn": 3600,
@@ -169,7 +174,9 @@ Content-Type: application/json
 
 ### 1.4 Phone Registration
 
-Phone registration uses Supabase's native OTP — no custom SMS handling needed.
+Phone registration supports **two modes**: OTP verification or password-only registration.
+
+#### Option A — OTP Flow
 
 **Step 1 — Request OTP:**
 ```http
@@ -202,8 +209,32 @@ Content-Type: application/json
 **Response (200):** Same as email login — returns tokens and session.
 
 **Notes:**
+- `code` is **required** for OTP mode.
 - `password` is optional. If omitted, the user can only log in via phone OTP (passwordless).
 - If provided, the password is set so the user can also log in with email/password later.
+
+#### Option B — Password Flow (no OTP)
+
+Skip the initiate step entirely. The account is created immediately with the phone marked as verified.
+
+```http
+POST /api/v1/auth/register/phone/verify
+Content-Type: application/json
+
+{
+  "phone": "+22670123456",
+  "password": "SecurePass123",
+  "name": "John",
+  "surname": "Doe",
+  "role": "vendor"
+}
+```
+
+**Validation rules:**
+- At least one of `code` or `password` must be provided. Otherwise: `400 Bad Request`.
+- If `code` is provided → OTP flow runs.
+- If `code` is omitted and `password` is provided → Password flow runs.
+- If both are provided → OTP flow runs, then password is also saved.
 
 ---
 
@@ -382,7 +413,7 @@ Authorization: Bearer <accessToken>
   "userId": "uuid",
   "supabaseUserId": "uuid",
   "email": "user@example.com",
-  "role": "customer",
+  "role": "vendor",
   "emailVerifiedAt": "2026-06-04T12:00:00.000Z"
 }
 ```

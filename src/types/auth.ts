@@ -105,7 +105,7 @@ export type PhoneRegisterInitiateResponse = {
 
 export type PhoneRegisterVerifyRequest = {
   phone: string;
-  code: string;
+  code?: string;
   password?: string;
   name?: string;
   surname?: string;

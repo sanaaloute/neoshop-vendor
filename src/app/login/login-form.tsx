@@ -39,7 +39,11 @@ const signupSchema = z
     name: z.string().min(1, "Enter your first name"),
     surname: z.string().min(1, "Enter your last name"),
     email: z.string().email(),
-    phone: z.string().min(1, "Enter your phone number"),
+    phone: z
+      .string()
+      .refine((val) => val === "" || /^\+[1-9]\d{1,14}$/.test(val), {
+        message: "Phone must be in E.164 format (e.g. +22670123456)",
+      }),
     password: passwordSchema,
     confirmPassword: z.string().min(1, "Confirm your password"),
   })
@@ -212,7 +216,7 @@ export function LoginForm() {
                   password: values.password,
                   name: values.name,
                   surname: values.surname,
-                  phone: values.phone,
+                  phone: values.phone || undefined,
                 });
                 if (res.success) {
                   setSignupSuccess(
