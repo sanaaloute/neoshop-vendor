@@ -1,7 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import { ClipboardList, Plus, Upload } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,7 @@ import { useVendorPermissions } from "@/hooks/use-vendor-permissions";
 export function VendorQuickActions({ className }: { className?: string }) {
   const router = useRouter();
   const { can } = useVendorPermissions();
+  const t = useTranslations("navigation");
 
   return (
     <DropdownMenu>
@@ -25,31 +27,31 @@ export function VendorQuickActions({ className }: { className?: string }) {
         render={
           <Button size="sm" className={cn("gap-1.5", className)}>
             <Plus className="size-4" />
-            <span className="hidden sm:inline">Quick actions</span>
+            <span className="hidden sm:inline">{t("quickActions")}</span>
           </Button>
         }
       />
       <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuLabel className="text-xs">
-          Create & import
+          {t("createAndImport")}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {can("products") ? (
           <>
             <DropdownMenuItem onClick={() => router.push("/products")}>
               <Plus className="size-4" />
-              New product
+              {t("newProduct")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push("/products")}>
               <Upload className="size-4" />
-              Bulk import
+              {t("bulkImport")}
             </DropdownMenuItem>
           </>
         ) : null}
         {can("orders") ? (
           <DropdownMenuItem onClick={() => router.push("/orders")}>
             <ClipboardList className="size-4" />
-            Review orders
+            {t("reviewOrders")}
           </DropdownMenuItem>
         ) : null}
       </DropdownMenuContent>

@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import type { VendorPermission } from "@/lib/vendor-permissions";
 import {
@@ -27,73 +28,94 @@ export type VendorNavItem = {
   permission?: VendorPermission;
 };
 
-export const VENDOR_MAIN_NAV: VendorNavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  {
-    href: "/products",
-    label: "Products",
-    icon: Package,
-    permission: "products",
-  },
-  {
-    href: "/variants",
-    label: "Variants",
-    icon: Layers,
-    permission: "products",
-  },
-  {
-    href: "/inventory",
-    label: "Inventory",
-    icon: Warehouse,
-    permission: "products",
-  },
-  {
-    href: "/orders",
-    label: "Orders",
-    icon: ShoppingCart,
-    permission: "orders",
-  },
-  { href: "/customers", label: "Customers", icon: Users },
-  { href: "/reviews", label: "Reviews", icon: Star },
-  { href: "/product-qa", label: "Q&A", icon: HelpCircle },
-  {
-    href: "/analytics",
-    label: "Analytics",
-    icon: LineChart,
-    permission: "analytics",
-  },
-  {
-    href: "/disputes",
-    label: "Disputes",
-    icon: Scale,
-    permission: "orders",
-  },
-  {
-    href: "/payouts",
-    label: "Payouts",
-    icon: Wallet,
-    permission: "payouts",
-  },
-  {
-    href: "/chat",
-    label: "Messages",
-    icon: MessageSquare,
-    permission: "chat",
-  },
-  { href: "/shop", label: "Shop Settings", icon: Store },
-  { href: "/notifications", label: "Notifications", icon: Bell },
-  { href: "/settings", label: "Account Settings", icon: UserCog },
-];
+export function useVendorMainNav(): VendorNavItem[] {
+  const t = useTranslations("navigation");
 
-const NAV_LABEL_BY_SEGMENT: Record<string, string> = Object.fromEntries(
-  VENDOR_MAIN_NAV.map((item) => {
-    const seg = item.href.replace(/^\//, "").split("/")[0] ?? "";
-    return [seg, item.label];
-  })
-);
+  return [
+    { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
+    {
+      href: "/products",
+      label: t("products"),
+      icon: Package,
+      permission: "products",
+    },
+    {
+      href: "/variants",
+      label: t("variants"),
+      icon: Layers,
+      permission: "products",
+    },
+    {
+      href: "/inventory",
+      label: t("inventory"),
+      icon: Warehouse,
+      permission: "products",
+    },
+    {
+      href: "/orders",
+      label: t("orders"),
+      icon: ShoppingCart,
+      permission: "orders",
+    },
+    { href: "/customers", label: t("customers"), icon: Users },
+    { href: "/reviews", label: t("reviews"), icon: Star },
+    { href: "/product-qa", label: t("qa"), icon: HelpCircle },
+    {
+      href: "/analytics",
+      label: t("analytics"),
+      icon: LineChart,
+      permission: "analytics",
+    },
+    {
+      href: "/disputes",
+      label: t("disputes"),
+      icon: Scale,
+      permission: "orders",
+    },
+    {
+      href: "/payouts",
+      label: t("payouts"),
+      icon: Wallet,
+      permission: "payouts",
+    },
+    {
+      href: "/chat",
+      label: t("messages"),
+      icon: MessageSquare,
+      permission: "chat",
+    },
+    { href: "/shop", label: t("shopSettings"), icon: Store },
+    { href: "/notifications", label: t("notifications"), icon: Bell },
+    { href: "/settings", label: t("accountSettings"), icon: UserCog },
+  ];
+}
 
-export function labelForPathSegment(segment: string) {
-  return NAV_LABEL_BY_SEGMENT[segment] ?? formatSegment(segment);
+export function labelForPathSegment(segment: string, t?: (key: string) => string) {
+  // Try to map common segments to translation keys
+  const keyMap: Record<string, string> = {
+    dashboard: "navigation.dashboard",
+    products: "navigation.products",
+    variants: "navigation.variants",
+    inventory: "navigation.inventory",
+    orders: "navigation.orders",
+    customers: "navigation.customers",
+    reviews: "navigation.reviews",
+    "product-qa": "navigation.qa",
+    analytics: "navigation.analytics",
+    disputes: "navigation.disputes",
+    payouts: "navigation.payouts",
+    chat: "navigation.messages",
+    shop: "navigation.shopSettings",
+    notifications: "navigation.notifications",
+    settings: "navigation.accountSettings",
+  };
+
+  const key = keyMap[segment];
+  if (key && t) {
+    return t(key);
+  }
+
+  return formatSegment(segment);
 }
 
 function formatSegment(segment: string) {

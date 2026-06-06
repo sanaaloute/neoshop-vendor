@@ -1,14 +1,15 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, Link } from "@/i18n/routing";
 import { Fragment } from "react";
 import { ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { labelForPathSegment } from "@/constants/navigation";
 import { cn } from "@/lib/utils";
 
 export function VendorBreadcrumbs({ className }: { className?: string }) {
+  const t = useTranslations("navigation");
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
 
@@ -28,12 +29,12 @@ export function VendorBreadcrumbs({ className }: { className?: string }) {
         href="/dashboard"
         className="text-muted-foreground hover:text-foreground font-medium transition-colors"
       >
-        Home
+        {t("home")}
       </Link>
       {segments.map((segment, index) => {
         const href = `/${segments.slice(0, index + 1).join("/")}`;
         const isLast = index === segments.length - 1;
-        const label = labelForPathSegment(segment);
+        const label = labelForPathSegment(segment, t as (key: string) => string);
 
         return (
           <Fragment key={href}>
@@ -45,7 +46,7 @@ export function VendorBreadcrumbs({ className }: { className?: string }) {
               <span className="text-foreground font-medium">{label}</span>
             ) : (
               <Link
-                href={href}
+                href={href as string}
                 className="text-muted-foreground hover:text-foreground font-medium transition-colors"
               >
                 {label}

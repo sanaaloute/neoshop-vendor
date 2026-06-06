@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, MessageSquare, Radio, Wallet } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { GatewaySyncBanner } from "@/components/feedback/gateway-sync-banner";
 import { AnalyticsWidget } from "@/components/charts/analytics-widget";
@@ -28,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { useDashboardMetrics } from "@/modules/dashboard/use-dashboard-metrics";
 
 function LivePulse() {
+  const t = useTranslations("dashboard");
   return (
     <span className="border-border/60 bg-card/50 text-muted-foreground inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[11px] font-medium">
       <span className="relative flex size-2">
@@ -42,12 +44,13 @@ function LivePulse() {
         />
       </span>
       <Radio className="size-3.5 opacity-70" aria-hidden />
-      Live metrics
+      {t("liveMetrics")}
     </span>
   );
 }
 
 export function DashboardHome() {
+  const t = useTranslations("dashboard");
   const { loading: ordersLoading, error: ordersError } =
     useGatewayOrdersBootstrap();
   const { loading: catalogLoading, error: catalogError } =
@@ -88,29 +91,29 @@ export function DashboardHome() {
     >
       <GatewaySyncBanner loading={syncLoading} error={syncError} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <VendorSubheading className="text-lg">Overview</VendorSubheading>
+        <VendorSubheading className="text-lg">{t("overview")}</VendorSubheading>
         <LivePulse />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           index={0}
-          label="Total revenue"
+          label={t("totalRevenue")}
           value={formatCurrency(metrics.revenueTotal)}
         />
         <MetricCard
           index={1}
-          label="Monthly sales"
+          label={t("monthlySales")}
           value={formatCurrency(metrics.monthlySales)}
         />
         <MetricCard
           index={2}
-          label="Pending orders"
+          label={t("pendingOrders")}
           value={metrics.pendingOrders}
         />
         <MetricCard
           index={3}
-          label="Conversion rate"
+          label={t("conversionRate")}
           value={formatPercent(metrics.conversionRate, 2)}
         />
       </div>
@@ -120,10 +123,10 @@ export function DashboardHome() {
           <DashboardCard className="h-full gap-0 py-0">
             <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
               <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                Performance
+                {t("performance")}
               </DashboardCardDescription>
               <DashboardCardTitle className="text-base">
-                Revenue trend
+                {t("revenueTrend")}
               </DashboardCardTitle>
             </DashboardCardHeader>
             <DashboardCardContent className="px-2 pt-4 pb-2 sm:px-4">
@@ -152,10 +155,10 @@ export function DashboardHome() {
           <DashboardCard className="gap-0 py-0">
             <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
               <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                Sales rhythm
+                {t("salesRhythm")}
               </DashboardCardDescription>
               <DashboardCardTitle className="text-base">
-                This week
+                {t("thisWeek")}
               </DashboardCardTitle>
             </DashboardCardHeader>
             <DashboardCardContent className="px-2 pt-4 pb-2 sm:px-4">
@@ -181,8 +184,8 @@ export function DashboardHome() {
           </DashboardCard>
           <AnalyticsWidget
             index={0}
-            title="Session → purchase"
-            subtitle="Conversion"
+            title={t("sessionToPurchase")}
+            subtitle={t("conversion")}
             primaryProgress={conversionProgress}
           />
         </div>
@@ -193,10 +196,10 @@ export function DashboardHome() {
           <DashboardCardHeader className="border-border/50 flex flex-row items-center justify-between border-b px-4 py-3">
             <div>
               <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                Catalog
+                {t("catalog")}
               </DashboardCardDescription>
               <DashboardCardTitle className="text-base">
-                Best products
+                {t("bestProducts")}
               </DashboardCardTitle>
             </div>
             <Link
@@ -206,7 +209,7 @@ export function DashboardHome() {
                 "gap-1"
               )}
             >
-              View
+              {t("view")}
               <ArrowRight className="size-4" />
             </Link>
           </DashboardCardHeader>
@@ -219,10 +222,10 @@ export function DashboardHome() {
           <DashboardCardHeader className="border-border/50 flex flex-row items-center justify-between border-b px-4 py-3">
             <div>
               <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                Variants
+                {t("variants")}
               </DashboardCardDescription>
               <DashboardCardTitle className="text-base">
-                Top movers
+                {t("topMovers")}
               </DashboardCardTitle>
             </div>
             <Link
@@ -232,7 +235,7 @@ export function DashboardHome() {
                 "gap-1"
               )}
             >
-              View
+              {t("view")}
               <ArrowRight className="size-4" />
             </Link>
           </DashboardCardHeader>
@@ -246,10 +249,10 @@ export function DashboardHome() {
         <DashboardCard className="h-full gap-0 py-0">
           <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
             <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-              Stock
+              {t("stock")}
             </DashboardCardDescription>
             <DashboardCardTitle className="text-base">
-              Inventory alerts
+              {t("inventoryAlerts")}
             </DashboardCardTitle>
           </DashboardCardHeader>
           <DashboardCardContent className="space-y-3 px-4 py-4">
@@ -277,7 +280,7 @@ export function DashboardHome() {
                     {row.severity}
                   </StatusBadge>
                   <span className="text-muted-foreground text-xs tabular-nums">
-                    {row.qty} left
+                    {row.qty} {t("left")}
                   </span>
                 </div>
               </div>
@@ -289,7 +292,7 @@ export function DashboardHome() {
                 "w-full"
               )}
             >
-              Open inventory
+              {t("openInventory")}
             </Link>
           </DashboardCardContent>
         </DashboardCard>
@@ -298,10 +301,10 @@ export function DashboardHome() {
           <DashboardCardHeader className="border-border/50 flex flex-row items-center justify-between border-b px-4 py-3">
             <div>
               <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                Inbox
+                {t("inbox")}
               </DashboardCardDescription>
               <DashboardCardTitle className="text-base">
-                Customer messages
+                {t("customerMessages")}
               </DashboardCardTitle>
             </div>
             <Link
@@ -311,7 +314,7 @@ export function DashboardHome() {
                 "gap-1"
               )}
             >
-              Open
+              {t("open")}
               <MessageSquare className="size-4" />
             </Link>
           </DashboardCardHeader>
@@ -343,14 +346,14 @@ export function DashboardHome() {
           <DashboardCardHeader className="border-border/50 flex flex-row items-center justify-between border-b px-4 py-3">
             <div>
               <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                Risk
+                {t("risk")}
               </DashboardCardDescription>
               <DashboardCardTitle className="text-base">
-                Dispute alerts
+                {t("disputeAlerts")}
               </DashboardCardTitle>
             </div>
             <StatusBadge status="warning">
-              {metrics.disputesOpen} open
+              {t("openDisputes", { count: metrics.disputesOpen })}
             </StatusBadge>
           </DashboardCardHeader>
           <DashboardCardContent className="space-y-3 px-4 py-4">
@@ -371,7 +374,7 @@ export function DashboardHome() {
                     buttonVariants({ variant: "outline", size: "xs" })
                   )}
                 >
-                  Review
+                  {t("review")}
                 </Link>
               </div>
             ))}
@@ -386,31 +389,31 @@ export function DashboardHome() {
               <Wallet className="text-muted-foreground size-4" />
               <div>
                 <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                  Treasury
+                  {t("treasury")}
                 </DashboardCardDescription>
                 <DashboardCardTitle className="text-base">
-                  Payout summary
+                  {t("payoutSummary")}
                 </DashboardCardTitle>
               </div>
             </div>
           </DashboardCardHeader>
           <DashboardCardContent className="space-y-3 px-4 py-4">
             <div>
-              <VendorMuted className="text-xs">Available now</VendorMuted>
+              <VendorMuted className="text-xs">{t("availableNow")}</VendorMuted>
               <p className="text-2xl font-semibold tabular-nums">
                 {formatCurrency(metrics.payoutReady)}
               </p>
             </div>
             <Separator />
             <div className="flex items-center justify-between text-sm">
-              <VendorMuted>Next transfer</VendorMuted>
+              <VendorMuted>{t("nextTransfer")}</VendorMuted>
               <span className="font-medium">{metrics.payoutNextDate}</span>
             </div>
             <Link
               href="/payouts"
               className={cn(buttonVariants({ size: "sm" }), "w-full")}
             >
-              Payouts
+              {t("payouts")}
             </Link>
           </DashboardCardContent>
         </DashboardCard>
@@ -418,10 +421,10 @@ export function DashboardHome() {
         <DashboardCard className="gap-0 py-0 lg:col-span-8">
           <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
             <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-              Activity
+              {t("activity")}
             </DashboardCardDescription>
             <DashboardCardTitle className="text-base">
-              Recent activity
+              {t("recentActivity")}
             </DashboardCardTitle>
           </DashboardCardHeader>
           <DashboardCardContent className="max-h-[min(420px,55vh)] space-y-0 overflow-y-auto px-0 py-0">

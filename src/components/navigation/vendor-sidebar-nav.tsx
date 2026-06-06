@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, Link } from "@/i18n/routing";
 import { motion } from "framer-motion";
 
 import { Badge } from "@/components/ui/badge";
-import { VENDOR_MAIN_NAV } from "@/constants/navigation";
+import { useVendorMainNav } from "@/constants/navigation";
 import {
   selectUnreadCount,
   useNotificationsStore,
@@ -28,16 +27,17 @@ export function VendorSidebarNav({
   onNavigate,
 }: VendorSidebarNavProps) {
   const pathname = usePathname();
+  const navItems = useVendorMainNav();
   const notifUnread = useNotificationsStore(selectUnreadCount);
   const { can } = useVendorPermissions();
 
-  const navItems = VENDOR_MAIN_NAV.filter(
+  const visibleItems = navItems.filter(
     (item) => !item.permission || can(item.permission)
   );
 
   return (
     <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-3">
-      {navItems.map((item, index) => {
+      {visibleItems.map((item, index) => {
         const active =
           pathname === item.href ||
           (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
@@ -45,7 +45,7 @@ export function VendorSidebarNav({
 
         const link = (
           <Link
-            href={item.href}
+            href={item.href as string}
             title={collapsed ? item.label : undefined}
             onClick={onNavigate}
             className={cn(

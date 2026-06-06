@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   FileText,
   Loader2,
@@ -12,6 +12,7 @@ import {
   Bell,
   FileStack,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import {
   DashboardCard,
@@ -53,27 +54,37 @@ import type {
 } from "@/services/vendor/types";
 import type { UserSettingsResponse } from "@/services/vendor/users-api";
 
-const DOCUMENT_TYPE_LABELS: Record<VendorDocumentType, string> = {
-  BUSINESS_REGISTRATION: "Business Registration",
-  TAX_CERTIFICATE: "Tax Certificate",
-  BANK_PROOF: "Bank Proof",
-  IDENTITY: "Identity",
-  OTHER: "Other",
-};
-
-const STATUS_VARIANTS: Record<
-  VendorLifecycleStatus,
-  { label: string; variant: React.ComponentProps<typeof Badge>["variant"] }
-> = {
-  PENDING_ONBOARDING: { label: "Pending Onboarding", variant: "secondary" },
-  PENDING_VERIFICATION: { label: "Pending Verification", variant: "outline" },
-  UNDER_REVIEW: { label: "Under Review", variant: "default" },
-  APPROVED: { label: "Approved", variant: "default" },
-  REJECTED: { label: "Rejected", variant: "destructive" },
-  SUSPENDED: { label: "Suspended", variant: "destructive" },
-};
-
 export function SettingsHome() {
+  const t = useTranslations("settings");
+  const ts = useTranslations("status");
+  const td = useTranslations("documentTypes");
+
+  const DOCUMENT_TYPE_LABELS: Record<VendorDocumentType, string> = useMemo(
+    () => ({
+      BUSINESS_REGISTRATION: td("businessRegistration"),
+      TAX_CERTIFICATE: td("taxCertificate"),
+      BANK_PROOF: td("bankProof"),
+      IDENTITY: td("identity"),
+      OTHER: td("other"),
+    }),
+    [td]
+  );
+
+  const STATUS_VARIANTS: Record<
+    VendorLifecycleStatus,
+    { label: string; variant: React.ComponentProps<typeof Badge>["variant"] }
+  > = useMemo(
+    () => ({
+      PENDING_ONBOARDING: { label: ts("pendingOnboarding"), variant: "secondary" },
+      PENDING_VERIFICATION: { label: ts("pendingVerification"), variant: "outline" },
+      UNDER_REVIEW: { label: ts("underReview"), variant: "default" },
+      APPROVED: { label: ts("approved"), variant: "default" },
+      REJECTED: { label: ts("rejected"), variant: "destructive" },
+      SUSPENDED: { label: ts("suspended"), variant: "destructive" },
+    }),
+    [ts]
+  );
+
   // ── Loading ──
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,7 +130,7 @@ export function SettingsHome() {
         const p = await getUserMe();
         if (!cancelled) setProfile(p);
       } catch (e) {
-        if (!cancelled) setProfileError(httpErrorMessageForUser(e, "Could not load profile."));
+        if (!cancelled) setProfileError(httpErrorMessageForUser(e, t("couldNotLoadProfile")));
       }
 
       // Load user settings independently
@@ -127,7 +138,7 @@ export function SettingsHome() {
         const s = await getUserSettings();
         if (!cancelled) setSettings(s ?? {});
       } catch (e) {
-        if (!cancelled) setSettingsError(httpErrorMessageForUser(e, "Could not load preferences."));
+        if (!cancelled) setSettingsError(httpErrorMessageForUser(e, t("couldNotLoadPreferences")));
       }
 
       // Load vendor profile independently (may 403 if not registered yet)
@@ -136,10 +147,10 @@ export function SettingsHome() {
         if (!cancelled) setVendor(v);
       } catch (e) {
         if (!cancelled) {
-          const msg = httpErrorMessageForUser(e, "Could not load business profile.");
+          const msg = httpErrorMessageForUser(e, t("couldNotLoadBusinessProfile"));
           // Don't block the page — vendor profile is optional until onboarding
           if ((e as { response?: { status?: number } })?.response?.status === 403) {
-            setVendorError("Business profile not available yet. Complete onboarding to unlock this section.");
+            setVendorError(t("businessProfileNotAvailable"));
           } else {
             setVendorError(msg);
           }
@@ -151,7 +162,7 @@ export function SettingsHome() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   // ── Save handlers ──
 
@@ -170,7 +181,7 @@ export function SettingsHome() {
       setProfileSuccess(true);
       setTimeout(() => setProfileSuccess(false), 2000);
     } catch (e) {
-      setProfileError(httpErrorMessageForUser(e, "Could not update profile."));
+      setProfileError(httpErrorMessageForUser(e, t("couldNotUpdateProfile")));
     } finally {
       setProfileSaving(false);
     }
@@ -193,7 +204,7 @@ export function SettingsHome() {
       setTimeout(() => setSettingsSuccess(false), 2000);
     } catch (e) {
       setSettingsError(
-        httpErrorMessageForUser(e, "Could not update preferences.")
+        httpErrorMessageForUser(e, t("couldNotUpdatePreferences"))
       );
     } finally {
       setSettingsSaving(false);
@@ -223,7 +234,7 @@ export function SettingsHome() {
       setTimeout(() => setVendorSuccess(false), 2000);
     } catch (e) {
       setVendorError(
-        httpErrorMessageForUser(e, "Could not update business profile.")
+        httpErrorMessageForUser(e, t("couldNotUpdateBusinessProfile"))
       );
     } finally {
       setVendorSaving(false);
@@ -232,7 +243,7 @@ export function SettingsHome() {
 
   const addDocument = async () => {
     if (!docUrl.trim()) {
-      setDocError("Document URL is required.");
+      setDocError(t("documentUrlRequired"));
       return;
     }
     setDocSaving(true);
@@ -249,7 +260,7 @@ export function SettingsHome() {
       setDocName("");
       setDocType("OTHER");
     } catch (e) {
-      setDocError(httpErrorMessageForUser(e, "Could not add document."));
+      setDocError(httpErrorMessageForUser(e, t("couldNotAddDocument")));
     } finally {
       setDocSaving(false);
     }
@@ -261,7 +272,7 @@ export function SettingsHome() {
       const refreshed = await getVendorMe();
       setVendor(refreshed);
     } catch (e) {
-      setDocError(httpErrorMessageForUser(e, "Could not remove document."));
+      setDocError(httpErrorMessageForUser(e, t("couldNotRemoveDocument")));
     }
   };
 
@@ -277,7 +288,7 @@ export function SettingsHome() {
       setTimeout(() => setSubmitSuccess(false), 3000);
     } catch (e) {
       setSubmitError(
-        httpErrorMessageForUser(e, "Could not submit verification.")
+        httpErrorMessageForUser(e, t("couldNotSubmitVerification"))
       );
     } finally {
       setSubmitting(false);
@@ -294,7 +305,7 @@ export function SettingsHome() {
     return (
       <div className="text-muted-foreground flex items-center gap-2 py-10 text-sm">
         <Loader2 className="size-4 animate-spin" />
-        Loading settings…
+        {t("loadingSettings")}
       </div>
     );
   }
@@ -305,7 +316,7 @@ export function SettingsHome() {
 
   const statusInfo = vendor
     ? STATUS_VARIANTS[vendor.status]
-    : { label: "Unknown", variant: "ghost" as const };
+    : { label: ts("unknown"), variant: "ghost" as const };
 
   const canSubmitVerification =
     vendor &&
@@ -316,19 +327,19 @@ export function SettingsHome() {
       <TabsList variant="line" className="w-full flex-wrap">
         <TabsTrigger value="profile" className="gap-1.5">
           <User className="size-3.5" />
-          Profile
+          {t("profile")}
         </TabsTrigger>
         <TabsTrigger value="business" className="gap-1.5">
           <Building2 className="size-3.5" />
-          Business
+          {t("business")}
         </TabsTrigger>
         <TabsTrigger value="documents" className="gap-1.5">
           <FileStack className="size-3.5" />
-          Documents
+          {t("documents")}
         </TabsTrigger>
         <TabsTrigger value="preferences" className="gap-1.5">
           <Bell className="size-3.5" />
-          Preferences
+          {t("preferences")}
         </TabsTrigger>
       </TabsList>
 
@@ -337,16 +348,16 @@ export function SettingsHome() {
         <DashboardCard className="gap-0 py-0">
           <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
             <DashboardCardTitle className="text-base">
-              Personal Profile
+              {t("personalProfile")}
             </DashboardCardTitle>
             <DashboardCardDescription>
-              Update your public profile information.
+              {t("updatePublicProfile")}
             </DashboardCardDescription>
           </DashboardCardHeader>
           <DashboardCardContent className="space-y-4 px-4 py-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="name">First name</Label>
+                <Label htmlFor="name">{t("firstName")}</Label>
                 <Input
                   id="name"
                   value={profile?.name ?? ""}
@@ -358,7 +369,7 @@ export function SettingsHome() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="surname">Last name</Label>
+                <Label htmlFor="surname">{t("lastName")}</Label>
                 <Input
                   id="surname"
                   value={profile?.surname ?? ""}
@@ -371,7 +382,7 @@ export function SettingsHome() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="avatarUrl">Avatar URL</Label>
+              <Label htmlFor="avatarUrl">{t("avatarUrl")}</Label>
               <Input
                 id="avatarUrl"
                 value={profile?.avatarUrl ?? ""}
@@ -380,18 +391,18 @@ export function SettingsHome() {
                     prev ? { ...prev, avatarUrl: e.target.value } : prev
                   )
                 }
-                placeholder="https://…"
+                placeholder={t("avatarPlaceholder")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("email")}</Label>
               <Input id="email" value={profile?.email ?? ""} disabled />
             </div>
             {profileError ? (
               <p className="text-destructive text-sm">{profileError}</p>
             ) : null}
             {profileSuccess ? (
-              <p className="text-green-600 text-sm">Profile saved.</p>
+              <p className="text-green-600 text-sm">{t("profileSaved")}</p>
             ) : null}
             <div className="flex justify-end">
               <Button
@@ -402,10 +413,10 @@ export function SettingsHome() {
                 {profileSaving ? (
                   <>
                     <Loader2 className="mr-1 size-3.5 animate-spin" />
-                    Saving…
+                    {t("saving")}
                   </>
                 ) : (
-                  "Save profile"
+                  t("saveProfile")
                 )}
               </Button>
             </div>
@@ -422,10 +433,10 @@ export function SettingsHome() {
                 <div className="flex items-center justify-between">
                   <div>
                     <DashboardCardTitle className="text-base">
-                      Business Profile
+                      {t("businessProfile")}
                     </DashboardCardTitle>
                     <DashboardCardDescription>
-                      Legal and contact information for your vendor account.
+                      {t("legalAndContact")}
                     </DashboardCardDescription>
                   </div>
                   <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
@@ -435,7 +446,7 @@ export function SettingsHome() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="legalBusinessName">
-                      Legal Business Name
+                      {t("legalBusinessName")}
                     </Label>
                     <Input
                       id="legalBusinessName"
@@ -446,7 +457,7 @@ export function SettingsHome() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="tradeName">Trade Name</Label>
+                    <Label htmlFor="tradeName">{t("tradeName")}</Label>
                     <Input
                       id="tradeName"
                       value={vendor.tradeName ?? ""}
@@ -456,7 +467,7 @@ export function SettingsHome() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="taxId">Tax ID</Label>
+                    <Label htmlFor="taxId">{t("taxId")}</Label>
                     <Input
                       id="taxId"
                       value={vendor.taxId ?? ""}
@@ -466,7 +477,7 @@ export function SettingsHome() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="businessEmail">Business Email</Label>
+                    <Label htmlFor="businessEmail">{t("businessEmail")}</Label>
                     <Input
                       id="businessEmail"
                       type="email"
@@ -477,7 +488,7 @@ export function SettingsHome() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="businessPhone">Business Phone</Label>
+                    <Label htmlFor="businessPhone">{t("businessPhone")}</Label>
                     <Input
                       id="businessPhone"
                       value={vendor.businessPhone ?? ""}
@@ -487,18 +498,18 @@ export function SettingsHome() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="countryCode">Country Code</Label>
+                    <Label htmlFor="countryCode">{t("countryCode")}</Label>
                     <Input
                       id="countryCode"
                       value={vendor.countryCode ?? ""}
                       onChange={(e) =>
                         updateVendorField("countryCode", e.target.value)
                       }
-                      placeholder="e.g. BF"
+                      placeholder={t("countryPlaceholder")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="region">Region / State</Label>
+                    <Label htmlFor="region">{t("region")}</Label>
                     <Input
                       id="region"
                       value={vendor.region ?? ""}
@@ -508,7 +519,7 @@ export function SettingsHome() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="city">City</Label>
+                    <Label htmlFor="city">{t("city")}</Label>
                     <Input
                       id="city"
                       value={vendor.city ?? ""}
@@ -518,7 +529,7 @@ export function SettingsHome() {
                     />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="addressLine1">Address Line 1</Label>
+                    <Label htmlFor="addressLine1">{t("addressLine1")}</Label>
                     <Input
                       id="addressLine1"
                       value={vendor.addressLine1 ?? ""}
@@ -528,7 +539,7 @@ export function SettingsHome() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="postalCode">Postal Code</Label>
+                    <Label htmlFor="postalCode">{t("postalCode")}</Label>
                     <Input
                       id="postalCode"
                       value={vendor.postalCode ?? ""}
@@ -543,7 +554,7 @@ export function SettingsHome() {
                 ) : null}
                 {vendorSuccess ? (
                   <p className="text-green-600 text-sm">
-                    Business profile saved.
+                    {t("businessProfileSaved")}
                   </p>
                 ) : null}
                 <div className="flex justify-end">
@@ -555,10 +566,10 @@ export function SettingsHome() {
                     {vendorSaving ? (
                       <>
                         <Loader2 className="mr-1 size-3.5 animate-spin" />
-                        Saving…
+                        {t("saving")}
                       </>
                     ) : (
-                      "Save business profile"
+                      t("saveBusinessProfile")
                     )}
                   </Button>
                 </div>
@@ -571,10 +582,10 @@ export function SettingsHome() {
                 <div className="flex items-center justify-between">
                   <div>
                     <DashboardCardTitle className="text-base">
-                      Verification
+                      {t("verification")}
                     </DashboardCardTitle>
                     <DashboardCardDescription>
-                      Track your vendor verification status.
+                      {t("trackStatus")}
                     </DashboardCardDescription>
                   </div>
                   <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
@@ -584,7 +595,7 @@ export function SettingsHome() {
                 {vendor.statusHistory.length > 0 ? (
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-muted-foreground">
-                      Status History
+                      {t("statusHistory")}
                     </p>
                     <ul className="space-y-2">
                       {vendor.statusHistory.map((entry, i) => (
@@ -592,7 +603,7 @@ export function SettingsHome() {
                           key={i}
                           className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2 text-sm"
                         >
-                          <span className="font-medium">{entry.status}</span>
+                          <span className="font-medium">{STATUS_VARIANTS[entry.status]?.label ?? entry.status}</span>
                           <span className="text-muted-foreground text-xs">
                             {new Date(entry.createdAt).toLocaleDateString()}
                             {entry.note ? ` — ${entry.note}` : ""}
@@ -603,7 +614,7 @@ export function SettingsHome() {
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-sm">
-                    No status history yet.
+                    {t("noStatusHistory")}
                   </p>
                 )}
 
@@ -617,12 +628,12 @@ export function SettingsHome() {
                       {submitting ? (
                         <>
                           <Loader2 className="mr-1 size-3.5 animate-spin" />
-                          Submitting…
+                          {t("submitting")}
                         </>
                       ) : (
                         <>
                           <ShieldCheck className="mr-1 size-4" />
-                          Submit for verification
+                          {t("submitForVerification")}
                         </>
                       )}
                     </Button>
@@ -631,13 +642,13 @@ export function SettingsHome() {
                     ) : null}
                     {submitSuccess ? (
                       <p className="text-green-600 text-sm">
-                        Submitted for verification successfully.
+                        {t("submittedSuccessfully")}
                       </p>
                     ) : null}
                   </div>
                 ) : vendorIsApprovedForOperations(vendor.status) ? (
                   <p className="text-green-600 text-sm">
-                    Your vendor account is approved and active.
+                    {t("approvedAndActive")}
                   </p>
                 ) : null}
               </DashboardCardContent>
@@ -649,7 +660,7 @@ export function SettingsHome() {
               <p className="text-destructive">{vendorError}</p>
             ) : (
               <p className="text-muted-foreground">
-                No vendor profile found. Complete onboarding first.
+                {t("noVendorProfile")}
               </p>
             )}
           </div>
@@ -663,20 +674,19 @@ export function SettingsHome() {
             <DashboardCard className="gap-0 py-0">
               <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
                 <DashboardCardTitle className="text-base">
-                  Documents
+                  {t("documentsTitle")}
                 </DashboardCardTitle>
                 <DashboardCardDescription>
-                  Upload verification documents. Files must be uploaded to
-                  storage first — paste the URL here.
+                  {t("uploadDocuments")}
                 </DashboardCardDescription>
               </DashboardCardHeader>
               <DashboardCardContent className="space-y-4 px-4 py-4">
                 {/* Add document form */}
                 <div className="grid gap-3 rounded-lg border border-border/60 p-3">
-                  <p className="text-xs font-medium">Add new document</p>
+                  <p className="text-xs font-medium">{t("addNewDocument")}</p>
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Type</Label>
+                      <Label className="text-xs">{t("type")}</Label>
                       <select
                         className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
                         value={docType}
@@ -694,22 +704,22 @@ export function SettingsHome() {
                       </select>
                     </div>
                     <div className="space-y-1.5 sm:col-span-2">
-                      <Label className="text-xs">File URL</Label>
+                      <Label className="text-xs">{t("fileUrl")}</Label>
                       <Input
                         className="h-9"
                         value={docUrl}
                         onChange={(e) => setDocUrl(e.target.value)}
-                        placeholder="https://storage.example.com/doc.pdf"
+                        placeholder={t("fileUrlPlaceholder")}
                       />
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">File Name (optional)</Label>
+                    <Label className="text-xs">{t("fileNameOptional")}</Label>
                     <Input
                       className="h-9"
                       value={docName}
                       onChange={(e) => setDocName(e.target.value)}
-                      placeholder="business_registration.pdf"
+                      placeholder={t("fileNamePlaceholder")}
                     />
                   </div>
                   {docError ? (
@@ -725,12 +735,12 @@ export function SettingsHome() {
                       {docSaving ? (
                         <>
                           <Loader2 className="mr-1 size-3.5 animate-spin" />
-                          Adding…
+                          {t("adding")}
                         </>
                       ) : (
                         <>
                           <Upload className="mr-1 size-3.5" />
-                          Add document
+                          {t("addDocument")}
                         </>
                       )}
                     </Button>
@@ -741,7 +751,7 @@ export function SettingsHome() {
                 {vendor.documents.length > 0 ? (
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-muted-foreground">
-                      Uploaded documents
+                      {t("uploadedDocuments")}
                     </p>
                     <ul className="space-y-2">
                       {vendor.documents.map((doc) => (
@@ -763,10 +773,10 @@ export function SettingsHome() {
                                   doc.createdAt
                                 ).toLocaleDateString()}
                                 {doc.verifiedAt
-                                  ? ` · Verified ${new Date(
+                                  ? ` · ${t("verified")} ${new Date(
                                       doc.verifiedAt
                                     ).toLocaleDateString()}`
-                                  : " · Pending verification"}
+                                  : ` · ${t("pendingVerification")}`}
                               </p>
                             </div>
                           </div>
@@ -777,7 +787,7 @@ export function SettingsHome() {
                               size="icon-sm"
                               className="text-destructive"
                               onClick={() => removeDocument(doc.id)}
-                              title="Remove document"
+                              title={t("removeDocument")}
                             >
                               <Trash2 className="size-4" />
                             </Button>
@@ -788,7 +798,7 @@ export function SettingsHome() {
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-sm">
-                    No documents uploaded yet.
+                    {t("noDocuments")}
                   </p>
                 )}
               </DashboardCardContent>
@@ -800,7 +810,7 @@ export function SettingsHome() {
               <p className="text-destructive">{vendorError}</p>
             ) : (
               <p className="text-muted-foreground">
-                No vendor profile found. Complete onboarding first.
+                {t("noVendorProfile")}
               </p>
             )}
           </div>
@@ -812,19 +822,19 @@ export function SettingsHome() {
         <DashboardCard className="gap-0 py-0">
           <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
             <DashboardCardTitle className="text-base">
-              Preferences
+              {t("preferencesTitle")}
             </DashboardCardTitle>
             <DashboardCardDescription>
-              Control what notifications and messages you receive.
+              {t("controlNotifications")}
             </DashboardCardDescription>
           </DashboardCardHeader>
           <DashboardCardContent className="space-y-4 px-4 py-4">
             {(
               [
-                { key: "orderUpdates", label: "Order updates" },
-                { key: "promoMessages", label: "Promotional messages" },
-                { key: "emailNewsletter", label: "Email newsletter" },
-                { key: "pushEnabled", label: "Push notifications" },
+                { key: "orderUpdates", label: t("orderUpdates") },
+                { key: "promoMessages", label: t("promoMessages") },
+                { key: "emailNewsletter", label: t("emailNewsletter") },
+                { key: "pushEnabled", label: t("pushNotifications") },
               ] as const
             ).map(({ key, label }) => (
               <label
@@ -848,7 +858,7 @@ export function SettingsHome() {
               <p className="text-destructive text-sm">{settingsError}</p>
             ) : null}
             {settingsSuccess ? (
-              <p className="text-green-600 text-sm">Preferences saved.</p>
+              <p className="text-green-600 text-sm">{t("preferencesSaved")}</p>
             ) : null}
             <div className="flex justify-end">
               <Button
@@ -859,10 +869,10 @@ export function SettingsHome() {
                 {settingsSaving ? (
                   <>
                     <Loader2 className="mr-1 size-3.5 animate-spin" />
-                    Saving…
+                    {t("saving")}
                   </>
                 ) : (
-                  "Save preferences"
+                  t("savePreferences")
                 )}
               </Button>
             </div>

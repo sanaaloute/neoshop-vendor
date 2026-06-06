@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
 import { vendorShouldUseOnboardingWizard } from "@/lib/vendor-lifecycle";

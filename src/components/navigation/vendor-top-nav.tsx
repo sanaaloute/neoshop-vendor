@@ -7,6 +7,7 @@ import { Menu } from "lucide-react";
 import { VendorBreadcrumbs } from "@/components/navigation/vendor-breadcrumbs";
 import { VendorNotificationsMenu } from "@/components/navigation/vendor-notifications-menu";
 import { VendorProfileMenu } from "@/components/navigation/vendor-profile-menu";
+import { LanguageSwitcher } from "@/components/navigation/language-switcher";
 import { VendorQuickActions } from "@/components/navigation/vendor-quick-actions";
 import { VendorRealtimeStatus } from "@/components/navigation/vendor-realtime-status";
 import { useRealtimeVendorStatus } from "@/realtime/hooks";
@@ -63,6 +64,7 @@ export function VendorTopNav({
           />
           <VendorQuickActions className="hidden md:inline-flex" />
           <VendorNotificationsMenu />
+          <LanguageSwitcher />
           <VendorProfileMenu />
         </div>
       </div>

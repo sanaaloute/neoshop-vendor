@@ -1,7 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import { LogOut, Settings, Store } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { VendorMuted } from "@/components/layout/typography";
 import {
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 export function VendorProfileMenu({ className }: { className?: string }) {
   const router = useRouter();
   const { user, logout, isLoading, isAuthenticated } = useAuth();
+  const t = useTranslations("navigation");
 
   const initials =
     user?.email?.slice(0, 2).toUpperCase() ??
@@ -31,7 +33,7 @@ export function VendorProfileMenu({ className }: { className?: string }) {
           "border-border/80 from-primary/25 to-chart-2/20 text-foreground focus-visible:border-ring focus-visible:ring-ring/50 inline-flex size-9 items-center justify-center rounded-full border bg-gradient-to-br text-xs font-semibold transition-transform outline-none hover:scale-[1.02] focus-visible:ring-[3px]",
           className
         )}
-        aria-label="Account menu"
+        aria-label={t("accountSettings")}
       >
         {isLoading ? (
           <span className="bg-muted-foreground/40 size-3 rounded-full animate-pulse-soft" />
@@ -42,7 +44,7 @@ export function VendorProfileMenu({ className }: { className?: string }) {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="flex flex-col gap-0.5">
           <span className="text-foreground text-sm font-medium">
-            Vendor account
+            {t("vendorAccount")}
           </span>
           {user?.email ? (
             <VendorMuted className="truncate text-xs font-normal">
@@ -55,11 +57,11 @@ export function VendorProfileMenu({ className }: { className?: string }) {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/settings")}>
               <Settings className="size-4" />
-              Account settings
+              {t("accountSettings")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push("/shop")}>
               <Store className="size-4" />
-              Shop profile
+              {t("shopProfile")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -70,7 +72,7 @@ export function VendorProfileMenu({ className }: { className?: string }) {
               }}
             >
               <LogOut className="size-4" />
-              Log out
+              {t("logOut")}
             </DropdownMenuItem>
           </>
         ) : (
@@ -78,7 +80,7 @@ export function VendorProfileMenu({ className }: { className?: string }) {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.replace("/login")}>
               <LogOut className="size-4" />
-              Log in
+              {t("logIn")}
             </DropdownMenuItem>
           </>
         )}

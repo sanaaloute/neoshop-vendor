@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import { z } from "zod";
+import { useTranslations } from "next-intl";
 
 import { VendorForm } from "@/components/forms/vendor-form";
 import { VendorPasswordField } from "@/components/forms/vendor-password-field";
@@ -19,28 +21,11 @@ import { getAuthErrorMessage } from "@/lib/get-auth-error-message";
 import { useRateLimit } from "@/lib/rate-limit";
 import { postAuthResetPassword } from "@/services/vendor/auth-gateway-api";
 
-const passwordSchema = z
-  .string()
-  .min(8, "Use at least 8 characters")
-  .regex(/[A-Z]/, "Include at least one uppercase letter")
-  .regex(/[a-z]/, "Include at least one lowercase letter")
-  .regex(/[0-9]/, "Include at least one digit");
-
-const schema = z
-  .object({
-    password: passwordSchema,
-    confirmPassword: z.string().min(1, "Confirm your password"),
-  })
-  .refine((d) => d.password === d.confirmPassword, {
-    message: "Passwords must match",
-    path: ["confirmPassword"],
-  });
-
-type Values = z.infer<typeof schema>;
-
 export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations("auth");
+  const te = useTranslations("errors");
   const [token, setToken] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +36,25 @@ export default function ResetPasswordPage() {
     const t = searchParams.get("token");
     if (t) setToken(t);
   }, [searchParams]);
+
+  const passwordSchema = z
+    .string()
+    .min(8, t("passwordHint"))
+    .regex(/[A-Z]/, t("passwordHint"))
+    .regex(/[a-z]/, t("passwordHint"))
+    .regex(/[0-9]/, t("passwordHint"));
+
+  const schema = z
+    .object({
+      password: passwordSchema,
+      confirmPassword: z.string().min(1, t("confirmPassword")),
+    })
+    .refine((d) => d.password === d.confirmPassword, {
+      message: t("confirmPassword"),
+      path: ["confirmPassword"],
+    });
+
+  type Values = z.infer<typeof schema>;
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-background p-4">
@@ -87,7 +91,7 @@ export default function ResetPasswordPage() {
                 className="w-full"
                 onClick={() => router.push("/login")}
               >
-                Sign in
+                {t("signInLink")}
               </Button>
             </div>
           ) : (
@@ -98,7 +102,7 @@ export default function ResetPasswordPage() {
                 setError(null);
                 setSuccess(null);
                 if (!rateLimit.tryRecord()) {
-                  setError("Too many requests — slow down and retry.");
+                  setError(te("tooManyRequests"));
                   return;
                 }
                 try {
@@ -112,7 +116,7 @@ export default function ResetPasswordPage() {
                 } catch (e) {
                   const msg = getAuthErrorMessage(e) || "Could not reset password. Try again.";
                   if (msg.includes("Too many requests")) {
-                    setError("Too many requests — slow down and retry.");
+                    setError(te("tooManyRequests"));
                   } else {
                     setError(msg);
                   }
@@ -125,17 +129,17 @@ export default function ResetPasswordPage() {
                   <VendorPasswordField
                     control={form.control}
                     name="password"
-                    label="New password"
+                    label={t("password")}
                     placeholder="••••••••"
                     autoComplete="new-password"
                   />
                   <p className="text-muted-foreground text-xs">
-                    Password must be at least 8 characters with one uppercase letter, one lowercase letter, and one digit.
+                    {t("passwordHint")}
                   </p>
                   <VendorPasswordField
                     control={form.control}
                     name="confirmPassword"
-                    label="Confirm new password"
+                    label={t("confirmPassword")}
                     placeholder="••••••••"
                     autoComplete="new-password"
                   />
@@ -148,9 +152,9 @@ export default function ResetPasswordPage() {
                     disabled={form.formState.isSubmitting || !rateLimit.canRequest}
                   >
                     {form.formState.isSubmitting
-                      ? "Resetting…"
+                      ? t("saving")
                       : !rateLimit.canRequest
-                        ? `Retry in ${rateLimit.remainingSeconds}s`
+                        ? t("retryIn", { seconds: rateLimit.remainingSeconds })
                         : "Reset password"}
                   </Button>
                   <Button
@@ -159,7 +163,7 @@ export default function ResetPasswordPage() {
                     className="w-full"
                     onClick={() => router.push("/login")}
                   >
-                    Back to sign in
+                    {t("signInLink")}
                   </Button>
                 </>
               )}

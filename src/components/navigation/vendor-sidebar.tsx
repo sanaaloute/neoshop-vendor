@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { PanelLeft, PanelLeftClose } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { VendorSidebarNav } from "@/components/navigation/vendor-sidebar-nav";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
 export function VendorSidebarDesktop({ className }: { className?: string }) {
   const collapsed = useUiShellStore((s) => s.sidebarCollapsed);
   const toggle = useUiShellStore((s) => s.toggleSidebarCollapsed);
+  const t = useTranslations("navigation");
 
   return (
     <motion.aside
@@ -41,11 +43,11 @@ export function VendorSidebarDesktop({ className }: { className?: string }) {
           size="icon-sm"
           className={cn("w-full", collapsed && "mx-auto")}
           onClick={toggle}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
           title={
             collapsed
-              ? "Expand sidebar (⌘B / Ctrl+B)"
-              : "Collapse sidebar (⌘B / Ctrl+B)"
+              ? t("expandSidebarShortcut")
+              : t("collapseSidebarShortcut")
           }
         >
           {collapsed ? (

@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import { z } from "zod";
+import { useTranslations } from "next-intl";
 
 import { VendorForm } from "@/components/forms/vendor-form";
 import { VendorTextField } from "@/components/forms/vendor-text-field";
@@ -22,102 +24,11 @@ import { useRateLimit } from "@/lib/rate-limit";
 import { refreshTokensClient } from "@/services/auth-refresh-client";
 import { useAuthStore } from "@/store/auth-store";
 
-const passwordSchema = z
-  .string()
-  .min(8, "Use at least 8 characters")
-  .regex(/[A-Z]/, "Include at least one uppercase letter")
-  .regex(/[a-z]/, "Include at least one lowercase letter")
-  .regex(/[0-9]/, "Include at least one digit");
-
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1, "Enter your password"),
-});
-
-const signupSchema = z
-  .object({
-    name: z.string().min(1, "Enter your first name"),
-    surname: z.string().min(1, "Enter your last name"),
-    email: z.string().email(),
-    phone: z
-      .string()
-      .refine((val) => val === "" || /^\+[1-9]\d{1,14}$/.test(val), {
-        message: "Phone must be in E.164 format (e.g. +22670123456)",
-      }),
-    password: passwordSchema,
-    confirmPassword: z.string().min(1, "Confirm your password"),
-  })
-  .refine((d) => d.password === d.confirmPassword, {
-    message: "Passwords must match",
-    path: ["confirmPassword"],
-  });
-
-type LoginValues = z.infer<typeof loginSchema>;
-type SignupValues = z.infer<typeof signupSchema>;
-
 /** Reject absolute and protocol-relative URLs from `?next=` (open-redirect hardening). */
 function safePostLoginPath(next: string | null): string {
   if (!next) return "/dashboard";
   if (!next.startsWith("/") || next.startsWith("//")) return "/dashboard";
   return next;
-}
-
-function mapAuthError(e: unknown, mode: "login" | "signup" | "forgot"): string {
-  const m = getAuthErrorMessage(e);
-
-  if (mode === "forgot") {
-    return m || "Could not send reset email. Try again.";
-  }
-
-  switch (m) {
-    case "not_vendor":
-      return mode === "signup"
-        ? "Account was created, but this portal requires an active vendor role. Contact marketplace support if you believe this is a mistake."
-        : "This portal is restricted to vendor accounts.";
-    case "signup_confirm_email":
-      return "Check your email to confirm your address, then sign in.";
-    case "sign_in_no_session":
-      return "Sign-in did not return a session. Try again or confirm your email.";
-    case "signup_no_tokens":
-      return "Sign-up succeeded but no session was returned. Check your email to verify your account, then sign in.";
-    default: {
-      if (
-        m.includes("Invalid login credentials") ||
-        m.includes("invalid_credentials") ||
-        m.includes("Invalid credentials")
-      ) {
-        return "Invalid email or password.";
-      }
-      if (m.includes("Email not verified")) {
-        return "Email not verified. Please check your inbox and confirm your email before logging in.";
-      }
-      if (m.includes("Account is suspended")) {
-        return "Your account has been suspended. Contact marketplace support for assistance.";
-      }
-      if (m.includes("Account already exists")) {
-        return "An account with this email already exists. Try signing in instead.";
-      }
-      if (m.includes("Email address is already in use or invalid")) {
-        return "That email address is already in use or invalid.";
-      }
-      if (
-        m.includes("Session not found or revoked") ||
-        m.includes("Missing session header") ||
-        m.includes("Invalid or expired session")
-      ) {
-        return "Your session has expired. Please sign in again.";
-      }
-      if (m.includes("Too many failed attempts")) {
-        return m;
-      }
-      if (m.includes("Too many requests")) {
-        return "Too many requests — slow down and retry.";
-      }
-      return (
-        m || (mode === "signup" ? "Unable to create account." : "Unable to sign in.")
-      );
-    }
-  }
 }
 
 function isEmailNotVerifiedError(e: unknown): boolean {
@@ -128,6 +39,9 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
+  const t = useTranslations("auth");
+  const te = useTranslations("errors");
+
   const [mode, setMode] = useState<"login" | "signup">(() =>
     searchParams.get("signup") === "1" ? "signup" : "login"
   );
@@ -140,6 +54,49 @@ export function LoginForm() {
   const loginRateLimit = useRateLimit("auth:login", 10, 60_000);
   const registerRateLimit = useRateLimit("auth:register", 5, 60_000);
   const resendRateLimit = useRateLimit("auth:resend-verification", 3, 60_000);
+
+  const passwordSchema = useMemo(
+    () =>
+      z
+        .string()
+        .min(8, t("passwordHint"))
+        .regex(/[A-Z]/, t("passwordHint"))
+        .regex(/[a-z]/, t("passwordHint"))
+        .regex(/[0-9]/, t("passwordHint")),
+    [t]
+  );
+
+  const loginSchema = useMemo(
+    () =>
+      z.object({
+        email: z.string().email(),
+        password: z.string().min(1, t("password")),
+      }),
+    [t]
+  );
+
+  const signupSchema = useMemo(
+    () =>
+      z
+        .object({
+          name: z.string().min(1, t("firstName")),
+          surname: z.string().min(1, t("lastName")),
+          email: z.string().email(),
+          phone: z.string().refine(
+            (val) => val === "" || /^\+[1-9]\d{1,14}$/.test(val),
+            {
+              message: t("phone"),
+            }
+          ),
+          password: passwordSchema,
+          confirmPassword: z.string().min(1, t("confirmPassword")),
+        })
+        .refine((d) => d.password === d.confirmPassword, {
+          message: t("confirmPassword"),
+          path: ["confirmPassword"],
+        }),
+    [t, passwordSchema]
+  );
 
   useEffect(() => {
     if (searchParams.get("resume") !== "1" || resumeStarted.current) return;
@@ -161,16 +118,70 @@ export function LoginForm() {
 
   const isSignup = mode === "signup";
 
+  function mapAuthError(e: unknown, mode: "login" | "signup" | "forgot"): string {
+    const m = getAuthErrorMessage(e);
+
+    if (mode === "forgot") {
+      return m || te("couldNotSendReset");
+    }
+
+    switch (m) {
+      case "not_vendor":
+        return mode === "signup" ? te("notVendorSignup") : te("notVendorLogin");
+      case "signup_confirm_email":
+        return te("checkEmailConfirm");
+      case "sign_in_no_session":
+        return te("signInNoSession");
+      case "signup_no_tokens":
+        return te("signupNoTokens");
+      default: {
+        if (
+          m.includes("Invalid login credentials") ||
+          m.includes("invalid_credentials") ||
+          m.includes("Invalid credentials")
+        ) {
+          return te("invalidEmailOrPassword");
+        }
+        if (m.includes("Email not verified")) {
+          return te("emailNotVerified");
+        }
+        if (m.includes("Account is suspended")) {
+          return te("accountSuspended");
+        }
+        if (m.includes("Account already exists")) {
+          return te("accountAlreadyExists");
+        }
+        if (m.includes("Email address is already in use or invalid")) {
+          return te("emailInUseOrInvalid");
+        }
+        if (
+          m.includes("Session not found or revoked") ||
+          m.includes("Missing session header") ||
+          m.includes("Invalid or expired session")
+        ) {
+          return te("sessionNotFound");
+        }
+        if (m.includes("Too many failed attempts")) {
+          return m;
+        }
+        if (m.includes("Too many requests")) {
+          return te("tooManyRequests");
+        }
+        return m || (mode === "signup" ? te("unableToCreateAccount") : te("unableToSignIn"));
+      }
+    }
+  }
+
   async function handleResendVerification(email: string) {
     setError(null);
     setResendSuccess(null);
     if (!resendRateLimit.tryRecord()) {
-      setError("Too many requests — slow down and retry.");
+      setError(te("tooManyRequests"));
       return;
     }
     try {
       await useAuthStore.getState().resendVerification({ email });
-      setResendSuccess("If an account exists, a verification email has been sent.");
+      setResendSuccess(t("resendSuccess"));
     } catch (e) {
       setError(mapAuthError(e, "forgot"));
     }
@@ -179,11 +190,9 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="text-center">
-        <CardTitle>{isSignup ? "Create vendor account" : "Vendor sign in"}</CardTitle>
+        <CardTitle>{isSignup ? t("createAccount") : t("signIn")}</CardTitle>
         <CardDescription>
-          {isSignup
-            ? "Register to access the vendor dashboard."
-            : "Sign in with your vendor account."}
+          {isSignup ? t("registerDescription") : t("signInDescription")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -192,7 +201,7 @@ export function LoginForm() {
             {signupSuccess}
           </div>
         ) : isSignup ? (
-          <VendorForm<SignupValues>
+          <VendorForm<z.infer<typeof signupSchema>>
             key="signup"
             schema={signupSchema}
             defaultValues={{
@@ -207,7 +216,7 @@ export function LoginForm() {
               setError(null);
               setSignupSuccess(null);
               if (!registerRateLimit.tryRecord()) {
-                setError("Too many requests — slow down and retry.");
+                setError(te("tooManyRequests"));
                 return;
               }
               try {
@@ -220,11 +229,10 @@ export function LoginForm() {
                 });
                 if (res.success) {
                   setSignupSuccess(
-                    res.message ||
-                      "Account created. Please check your email to verify your account before logging in."
+                    res.message || t("accountCreatedCheckEmail")
                   );
                 } else {
-                  setError("Registration did not complete. Try again.");
+                  setError(t("registrationIncomplete"));
                 }
               } catch (e) {
                 setError(mapAuthError(e, "signup"));
@@ -238,31 +246,31 @@ export function LoginForm() {
                   <VendorTextField
                     control={form.control}
                     name="name"
-                    label="First name"
-                    placeholder="John"
+                    label={t("firstName")}
+                    placeholder={t("firstNamePlaceholder")}
                     autoComplete="given-name"
                   />
                   <VendorTextField
                     control={form.control}
                     name="surname"
-                    label="Last name"
-                    placeholder="Doe"
+                    label={t("lastName")}
+                    placeholder={t("lastNamePlaceholder")}
                     autoComplete="family-name"
                   />
                 </div>
                 <VendorTextField
                   control={form.control}
                   name="email"
-                  label="Work email"
-                  placeholder="you@company.com"
+                  label={t("email")}
+                  placeholder={t("emailPlaceholder")}
                   type="email"
                   autoComplete="email"
                 />
                 <VendorTextField
                   control={form.control}
                   name="phone"
-                  label="Phone number"
-                  placeholder="+1 (555) 000-0000"
+                  label={t("phone")}
+                  placeholder={t("phonePlaceholder")}
                   type="tel"
                   autoComplete="tel"
                 />
@@ -270,18 +278,18 @@ export function LoginForm() {
                   <VendorPasswordField
                     control={form.control}
                     name="password"
-                    label="Password"
+                    label={t("password")}
                     placeholder="••••••••"
                     autoComplete="new-password"
                   />
                   <p className="text-muted-foreground text-xs">
-                    Password must be at least 8 characters with one uppercase letter, one lowercase letter, and one digit.
+                    {t("passwordHint")}
                   </p>
                 </div>
                 <VendorPasswordField
                   control={form.control}
                   name="confirmPassword"
-                  label="Confirm password"
+                  label={t("confirmPassword")}
                   placeholder="••••••••"
                   autoComplete="new-password"
                 />
@@ -294,16 +302,16 @@ export function LoginForm() {
                   disabled={form.formState.isSubmitting || !registerRateLimit.canRequest}
                 >
                   {form.formState.isSubmitting
-                    ? "Creating account…"
+                    ? t("creatingAccount")
                     : !registerRateLimit.canRequest
-                      ? `Retry in ${registerRateLimit.remainingSeconds}s`
-                      : "Create vendor account"}
+                      ? t("retryIn", { seconds: registerRateLimit.remainingSeconds })
+                      : t("createVendorAccount")}
                 </Button>
               </>
             )}
           </VendorForm>
         ) : (
-          <VendorForm<LoginValues>
+          <VendorForm<z.infer<typeof loginSchema>>
             key="login"
             schema={loginSchema}
             defaultValues={{ email: "", password: "" }}
@@ -312,7 +320,7 @@ export function LoginForm() {
               setUnverifiedEmail(null);
               setResendSuccess(null);
               if (!loginRateLimit.tryRecord()) {
-                setError("Too many requests — slow down and retry.");
+                setError(te("tooManyRequests"));
                 return;
               }
               try {
@@ -332,15 +340,15 @@ export function LoginForm() {
                 <VendorTextField
                   control={form.control}
                   name="email"
-                  label="Work email"
-                  placeholder="you@company.com"
+                  label={t("email")}
+                  placeholder={t("emailPlaceholder")}
                   type="email"
                   autoComplete="email"
                 />
                 <VendorPasswordField
                   control={form.control}
                   name="password"
-                  label="Password"
+                  label={t("password")}
                   placeholder="••••••••"
                   autoComplete="current-password"
                 />
@@ -350,7 +358,7 @@ export function LoginForm() {
                     className="text-primary text-xs font-medium underline-offset-4 hover:underline"
                     onClick={() => router.push("/login/forgot-password")}
                   >
-                    Forgot password?
+                    {t("forgotPassword")}
                   </button>
                 </div>
                 {error ? (
@@ -359,7 +367,7 @@ export function LoginForm() {
                 {unverifiedEmail && (
                   <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
                     <p className="text-amber-800 dark:text-amber-200">
-                      Your email is not verified.
+                      {t("emailNotVerified")}
                     </p>
                     {resendSuccess ? (
                       <p className="mt-1 text-green-700 dark:text-green-300">{resendSuccess}</p>
@@ -371,8 +379,8 @@ export function LoginForm() {
                         onClick={() => handleResendVerification(unverifiedEmail)}
                       >
                         {!resendRateLimit.canRequest
-                          ? `Resend available in ${resendRateLimit.remainingSeconds}s`
-                          : "Resend verification email"}
+                          ? t("resendAvailableIn", { seconds: resendRateLimit.remainingSeconds })
+                          : t("resendVerification")}
                       </button>
                     )}
                   </div>
@@ -383,10 +391,10 @@ export function LoginForm() {
                   disabled={form.formState.isSubmitting || !loginRateLimit.canRequest}
                 >
                   {form.formState.isSubmitting
-                    ? "Signing in…"
+                    ? t("signingIn")
                     : !loginRateLimit.canRequest
-                      ? `Retry in ${loginRateLimit.remainingSeconds}s`
-                      : "Sign in"}
+                      ? t("retryIn", { seconds: loginRateLimit.remainingSeconds })
+                      : t("signInLink")}
                 </Button>
               </>
             )}
@@ -397,24 +405,24 @@ export function LoginForm() {
           <div className="text-center text-sm">
             {isSignup ? (
               <p className="text-muted-foreground">
-                Already have an account?{" "}
+                {t("alreadyHaveAccount")}{" "}
                 <button
                   type="button"
                   className="text-primary font-medium underline-offset-4 hover:underline"
                   onClick={() => setMode("login")}
                 >
-                  Sign in
+                  {t("signInLink")}
                 </button>
               </p>
             ) : (
               <p className="text-muted-foreground">
-                New vendor?{" "}
+                {t("newVendor")}{" "}
                 <button
                   type="button"
                   className="text-primary font-medium underline-offset-4 hover:underline"
                   onClick={() => setMode("signup")}
                 >
-                  Create an account
+                  {t("createAccountLink")}
                 </button>
               </p>
             )}
@@ -422,7 +430,7 @@ export function LoginForm() {
         )}
 
         <VendorMuted className="text-center text-xs">
-          After sign-up, complete vendor onboarding (business details and verification) from your dashboard when prompted.
+          {t("onboardingHint")}
         </VendorMuted>
       </CardContent>
     </Card>

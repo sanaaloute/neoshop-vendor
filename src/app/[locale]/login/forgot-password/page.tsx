@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import { z } from "zod";
+import { useTranslations } from "next-intl";
 
 import { VendorForm } from "@/components/forms/vendor-form";
 import { VendorTextField } from "@/components/forms/vendor-text-field";
@@ -27,6 +28,8 @@ type Values = z.infer<typeof schema>;
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
+  const t = useTranslations("auth");
+  const te = useTranslations("errors");
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,7 +56,7 @@ export default function ForgotPasswordPage() {
                 className="w-full"
                 onClick={() => router.push("/login")}
               >
-                Back to sign in
+                {t("signInLink")}
               </Button>
             </div>
           ) : (
@@ -64,7 +67,7 @@ export default function ForgotPasswordPage() {
                 setError(null);
                 setSuccess(null);
                 if (!rateLimit.tryRecord()) {
-                  setError("Too many requests — slow down and retry.");
+                  setError(te("tooManyRequests"));
                   return;
                 }
                 try {
@@ -73,9 +76,9 @@ export default function ForgotPasswordPage() {
                     "If an account exists with this email, you will receive a password reset link."
                   );
                 } catch (e) {
-                  const msg = getAuthErrorMessage(e) || "Could not send reset email. Try again.";
+                  const msg = getAuthErrorMessage(e) || te("couldNotSendReset");
                   if (msg.includes("Too many requests")) {
-                    setError("Too many requests — slow down and retry.");
+                    setError(te("tooManyRequests"));
                   } else {
                     setError(msg);
                   }
@@ -88,8 +91,8 @@ export default function ForgotPasswordPage() {
                   <VendorTextField
                     control={form.control}
                     name="email"
-                    label="Work email"
-                    placeholder="you@company.com"
+                    label={t("email")}
+                    placeholder={t("emailPlaceholder")}
                     type="email"
                     autoComplete="email"
                   />
@@ -102,9 +105,9 @@ export default function ForgotPasswordPage() {
                     disabled={form.formState.isSubmitting || !rateLimit.canRequest}
                   >
                     {form.formState.isSubmitting
-                      ? "Sending…"
+                      ? t("saving")
                       : !rateLimit.canRequest
-                        ? `Retry in ${rateLimit.remainingSeconds}s`
+                        ? t("retryIn", { seconds: rateLimit.remainingSeconds })
                         : "Send reset link"}
                   </Button>
                   <Button
@@ -113,7 +116,7 @@ export default function ForgotPasswordPage() {
                     className="w-full"
                     onClick={() => router.push("/login")}
                   >
-                    Back to sign in
+                    {t("signInLink")}
                   </Button>
                 </>
               )}

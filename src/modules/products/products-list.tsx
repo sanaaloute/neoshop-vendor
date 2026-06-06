@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { useGatewayCatalogBootstrap } from "@/hooks/use-gateway-catalog-bootstrap";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import {
   Archive,
   Copy,

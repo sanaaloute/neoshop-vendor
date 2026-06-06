@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import { ArrowLeft, Eye, Package } from "lucide-react";
 
 import { VendorMuted } from "@/components/layout/typography";

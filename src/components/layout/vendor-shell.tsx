@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogIn } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/routing";
 
 import { VendorSidebarDesktop } from "@/components/navigation/vendor-sidebar";
 import { VendorSidebarNav } from "@/components/navigation/vendor-sidebar-nav";
@@ -16,6 +18,8 @@ import { useUiShellStore } from "@/store/sidebar-store";
 import { useVendorProfileStore } from "@/store/vendor-profile-store";
 
 function VendorAuthOverlay({ onLogin }: { onLogin: () => void }) {
+  const t = useTranslations("auth");
+
   return (
     <motion.div
       className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md"
@@ -35,14 +39,12 @@ function VendorAuthOverlay({ onLogin }: { onLogin: () => void }) {
           <LogIn className="text-muted-foreground size-5" />
         </div>
         <div className="space-y-1 text-center">
-          <p className="text-sm font-semibold">Your session has expired</p>
-          <p className="text-muted-foreground text-xs">
-            Please sign in again to continue
-          </p>
+          <p className="text-sm font-semibold">{t("sessionExpired")}</p>
+          <p className="text-muted-foreground text-xs">{t("signInAgain")}</p>
         </div>
         <Button onClick={onLogin} className="mt-1">
           <LogIn className="size-4" />
-          Log in again
+          {t("logInAgain")}
         </Button>
       </motion.div>
     </motion.div>
@@ -55,6 +57,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
   const loadVendorProfile = useVendorProfileStore((s) => s.load);
   const { status, user, isVendor, logout } = useAuth();
   const [showOverlay, setShowOverlay] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     void loadVendorProfile();
@@ -71,9 +74,9 @@ export function VendorShell({ children }: { children: ReactNode }) {
 
   const handleLogin = useCallback(() => {
     void logout().then(() => {
-      window.location.href = "/login";
+      router.push("/login");
     });
-  }, [logout]);
+  }, [logout, router]);
 
   const onToggleSidebar = useCallback(() => {
     useUiShellStore.getState().toggleSidebarCollapsed();
