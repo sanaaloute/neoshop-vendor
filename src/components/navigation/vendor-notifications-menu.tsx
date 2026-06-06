@@ -12,7 +12,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { NotificationsPanel } from "@/modules/notifications/notifications-panel";
-import { useNotificationsRealtime } from "@/modules/notifications/use-notifications-ws";
 import {
   selectUnreadCount,
   useNotificationsStore,
@@ -21,7 +20,6 @@ import { cn } from "@/lib/utils";
 
 export function VendorNotificationsMenu({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
-  useNotificationsRealtime();
 
   const unread = useNotificationsStore(selectUnreadCount);
 

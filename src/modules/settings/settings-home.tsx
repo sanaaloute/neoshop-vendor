@@ -32,8 +32,8 @@ import {
 } from "@/components/ui/tabs";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
 import { vendorIsApprovedForOperations } from "@/lib/vendor-lifecycle";
-import { getAuthMe } from "@/services/vendor/auth-gateway-api";
 import {
+  getUserMe,
   patchUserMe,
   getUserSettings,
   patchUserSettings,
@@ -46,7 +46,7 @@ import {
   submitVendorVerification,
 } from "@/services/vendor/vendors-api";
 import type {
-  AuthMeResponse,
+  UserMeResponse,
   VendorDocumentType,
   VendorLifecycleStatus,
   VendorMeResponse,
@@ -79,7 +79,7 @@ export function SettingsHome() {
   const [error, setError] = useState<string | null>(null);
 
   // ── User profile ──
-  const [profile, setProfile] = useState<AuthMeResponse | null>(null);
+  const [profile, setProfile] = useState<UserMeResponse | null>(null);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState(false);
@@ -114,9 +114,9 @@ export function SettingsHome() {
       setLoading(true);
       setError(null);
 
-      // Load user profile via /auth/me (works for all authenticated users)
+      // Load user profile via /users/me (full profile including name/surname)
       try {
-        const p = await getAuthMe();
+        const p = await getUserMe();
         if (!cancelled) setProfile(p);
       } catch (e) {
         if (!cancelled) setProfileError(httpErrorMessageForUser(e, "Could not load profile."));
@@ -162,11 +162,11 @@ export function SettingsHome() {
     setProfileSuccess(false);
     try {
       const updated = await patchUserMe({
-        name: profile.name ?? profile.user_metadata?.name ?? undefined,
-        surname: profile.surname ?? profile.user_metadata?.surname ?? undefined,
-        avatarUrl: profile.avatarUrl ?? profile.user_metadata?.avatarUrl ?? undefined,
+        name: profile.name ?? undefined,
+        surname: profile.surname ?? undefined,
+        avatarUrl: profile.avatarUrl ?? undefined,
       });
-      setProfile(updated as AuthMeResponse);
+      setProfile(updated);
       setProfileSuccess(true);
       setTimeout(() => setProfileSuccess(false), 2000);
     } catch (e) {
@@ -349,7 +349,7 @@ export function SettingsHome() {
                 <Label htmlFor="name">First name</Label>
                 <Input
                   id="name"
-                  value={profile?.name ?? profile?.user_metadata?.name ?? ""}
+                  value={profile?.name ?? ""}
                   onChange={(e) =>
                     setProfile((prev) =>
                       prev ? { ...prev, name: e.target.value } : prev
@@ -361,7 +361,7 @@ export function SettingsHome() {
                 <Label htmlFor="surname">Last name</Label>
                 <Input
                   id="surname"
-                  value={profile?.surname ?? profile?.user_metadata?.surname ?? ""}
+                  value={profile?.surname ?? ""}
                   onChange={(e) =>
                     setProfile((prev) =>
                       prev ? { ...prev, surname: e.target.value } : prev
@@ -374,7 +374,7 @@ export function SettingsHome() {
               <Label htmlFor="avatarUrl">Avatar URL</Label>
               <Input
                 id="avatarUrl"
-                value={profile?.avatarUrl ?? profile?.user_metadata?.avatarUrl ?? ""}
+                value={profile?.avatarUrl ?? ""}
                 onChange={(e) =>
                   setProfile((prev) =>
                     prev ? { ...prev, avatarUrl: e.target.value } : prev

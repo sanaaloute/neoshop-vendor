@@ -39,14 +39,6 @@ export type AuthMeResponse = {
   avatarUrl?: string | null;
   createdAt?: string;
   emailVerifiedAt?: string | null;
-  /** Supabase-style user metadata where name/surname may live when /auth/me proxies raw auth */
-  user_metadata?: {
-    name?: string | null;
-    surname?: string | null;
-    phone?: string | null;
-    avatarUrl?: string | null;
-    [key: string]: unknown;
-  } | null;
 };
 
 export type AuthSessionResponse = {
