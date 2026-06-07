@@ -242,6 +242,8 @@ export type CreateVariantDto = {
   attributeValueIds: string[];
   bulkPricing?: BulkPricingTier[];
   isActive?: boolean;
+  weightKg?: number;
+  volumeCbm?: number;
 };
 
 export type UpdateVariantDto = {
@@ -251,6 +253,8 @@ export type UpdateVariantDto = {
   attributeValueIds?: string[];
   bulkPricing?: BulkPricingTier[];
   isActive?: boolean;
+  weightKg?: number;
+  volumeCbm?: number;
 };
 
 // --- Orders ---

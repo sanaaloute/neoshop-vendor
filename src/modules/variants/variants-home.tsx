@@ -11,10 +11,16 @@ import { getApiBaseUrl } from "@/config/auth";
 import { useGatewayCatalogBootstrap } from "@/hooks/use-gateway-catalog-bootstrap";
 import { useGatewayVariantsBootstrap } from "@/hooks/use-gateway-variants-bootstrap";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
+import { slugify } from "@/lib/slugify";
 import { setVariantQuantity } from "@/services/vendor/inventory-api";
+import {
+  createProductAttribute,
+  createProductAttributeValue,
+} from "@/services/vendor/products-api";
 import {
   createVariant,
   deleteVariant,
+  listVariants,
   updateVariant as updateVariantApi,
 } from "@/services/vendor/variants-api";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
@@ -23,7 +29,7 @@ import { useVariantWorkbenchStore } from "@/store/variant-workbench-store";
 import { VariantBulkBar } from "./variant-bulk-bar";
 import { VariantMatrixPanel } from "./variant-matrix-panel";
 import { VariantPreviewSheet } from "./variant-preview-sheet";
-import type { VariantRow } from "./types";
+import type { VariantAttributeDefinition, VariantRow } from "./types";
 import { VariantTable } from "./variant-table";
 
 export function VariantsHome() {
@@ -137,6 +143,42 @@ export function VariantsHome() {
     }
   };
 
+  async function syncAttributesToBackend(
+    productId: string,
+    attributes: VariantAttributeDefinition[]
+  ): Promise<{ oldId: string; attr: VariantAttributeDefinition }[]> {
+    const result: { oldId: string; attr: VariantAttributeDefinition }[] = [];
+    for (const attr of attributes) {
+      const valueIdMap: Record<string, string> = { ...(attr.valueIdMap ?? {}) };
+      const allValuesHaveIds = attr.values.every((v) => valueIdMap[v]);
+      if (allValuesHaveIds) {
+        result.push({ oldId: attr.id, attr });
+        continue;
+      }
+
+      let backendAttrId = attr.id;
+      if (!attr.code) {
+        const created = await createProductAttribute(productId, {
+          code: slugify(attr.name) || `attr-${crypto.randomUUID().slice(0, 8)}`,
+          label: attr.name,
+        });
+        backendAttrId = String((created as Record<string, unknown>).id);
+      }
+
+      for (const value of attr.values) {
+        if (valueIdMap[value]) continue;
+        const created = await createProductAttributeValue(productId, backendAttrId, { value });
+        valueIdMap[value] = String((created as Record<string, unknown>).id);
+      }
+
+      result.push({
+        oldId: attr.id,
+        attr: { ...attr, id: backendAttrId, code: attr.code || slugify(attr.name), valueIdMap },
+      });
+    }
+    return result;
+  }
+
   const saveRows = async (rows: VariantRow[]) => {
     if (!getApiBaseUrl()) {
       setSaveMessage("Marketplace connection is not available.");
@@ -149,32 +191,90 @@ export function VariantsHome() {
     setSaveBusy(true);
     setSaveMessage(null);
     try {
-      for (const row of rows) {
+      // 1. Sync attributes so every value has a backend id.
+      const currentAttributes = useVariantWorkbenchStore.getState().attributes;
+      const synced = await syncAttributesToBackend(selectedProductId, currentAttributes);
+      const store = useVariantWorkbenchStore.getState();
+      for (const { oldId, attr } of synced) {
+        if (oldId !== attr.id) {
+          store.remapAttributeId(oldId, attr.id);
+        }
+        store.setAttributeValueIdMap(attr.id, attr.valueIdMap ?? {});
+      }
+
+      // 2. Rebuild rows with correct selectionIds.
+      const finalAttributes = useVariantWorkbenchStore.getState().attributes;
+      const rowsToSave = rows.map((row) => {
+        if (row.selectionIds && row.selectionIds.length > 0) return row;
+        const selectionIds: string[] = [];
+        for (const [attrId, value] of Object.entries(row.combo)) {
+          const attr = finalAttributes.find((a) => a.id === attrId);
+          const valueId = attr?.valueIdMap?.[value];
+          if (valueId) selectionIds.push(valueId);
+        }
+        return { ...row, selectionIds };
+      });
+
+      // 3. Discover which backend variants are being replaced.
+      const existingRaw = await listVariants(selectedProductId);
+      const existingVariants = Array.isArray(existingRaw) ? existingRaw : [];
+      const existingIds = new Set(
+        existingVariants
+          .map((v) => (v as Record<string, unknown>).id)
+          .filter((id): id is string => typeof id === "string")
+      );
+      const keptIds = new Set(rowsToSave.filter((r) => !r.isLocalOnly).map((r) => r.id));
+      const idsToDelete = [...existingIds].filter((id) => !keptIds.has(id));
+
+      // 4. Create / update variants.
+      const createdMappings: { localId: string; backendId: string }[] = [];
+      for (const row of rowsToSave) {
+        const weightKg = row.weightGrams > 0 ? row.weightGrams / 1000 : undefined;
+        const volumeCbm =
+          row.lengthCm > 0 && row.widthCm > 0 && row.heightCm > 0
+            ? (row.lengthCm * row.widthCm * row.heightCm) / 1_000_000
+            : undefined;
+
         if (row.isLocalOnly) {
           const created = await createVariant(selectedProductId, {
             wholesalePrice: row.price,
             moq: row.moq,
             attributeValueIds: row.selectionIds ?? [],
             isActive: true,
+            weightKg,
+            volumeCbm,
           });
-          const createdId = String(
-            (created as Record<string, unknown>).id
-          );
+          const createdId = String((created as Record<string, unknown>).id);
           await setVariantQuantity(createdId, { quantity: row.stock });
-          useVariantWorkbenchStore
-            .getState()
-            .updateVariant(row.id, { id: createdId, isLocalOnly: false });
+          createdMappings.push({ localId: row.id, backendId: createdId });
         } else {
           await updateVariantApi(selectedProductId, row.id, {
             wholesalePrice: row.price,
             moq: row.moq,
+            weightKg,
+            volumeCbm,
           });
           await setVariantQuantity(row.id, { quantity: row.stock });
         }
       }
+
+      // 5. Promote local rows to persisted.
+      for (const { localId, backendId } of createdMappings) {
+        store.updateVariant(localId, { id: backendId, isLocalOnly: false });
+      }
+
+      // 6. Remove orphaned backend variants.
+      for (const id of idsToDelete) {
+        try {
+          await deleteVariant(selectedProductId, id);
+        } catch {
+          // Best-effort cleanup.
+        }
+      }
+
       setSelected(new Set());
       setSaveMessage(
-        `${rows.length} variant${rows.length === 1 ? "" : "s"} saved.`
+        `${rowsToSave.length} variant${rowsToSave.length === 1 ? "" : "s"} saved.`
       );
       resetWorkbench();
     } catch (e) {

@@ -38,6 +38,8 @@ type VariantWorkbenchState = {
   addValueToAttribute: (attrId: string, value: string) => void;
   removeValueFromAttribute: (attrId: string, value: string) => void;
   generateMatrix: (defaults: VariantGenerationDefaults) => void;
+  setAttributeValueIdMap: (attrId: string, valueIdMap: Record<string, string>) => void;
+  remapAttributeId: (oldId: string, newId: string) => void;
   updateVariant: (id: string, patch: Partial<VariantRow>) => void;
   removeVariant: (id: string) => void;
   bulkUpdateVariants: (
@@ -158,6 +160,25 @@ export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
       const rows = buildVariantMatrix(attributes, skuPrefix, defaults);
       set({ variants: rows });
     },
+
+    setAttributeValueIdMap: (attrId: string, valueIdMap: Record<string, string>) =>
+      set((s) => ({
+        attributes: s.attributes.map((a) =>
+          a.id === attrId ? { ...a, valueIdMap: { ...(a.valueIdMap ?? {}), ...valueIdMap } } : a
+        ),
+      })),
+
+    remapAttributeId: (oldId: string, newId: string) =>
+      set((s) => ({
+        attributes: s.attributes.map((a) =>
+          a.id === oldId ? { ...a, id: newId } : a
+        ),
+        variants: s.variants.map((r) => {
+          if (!(oldId in r.combo)) return r;
+          const { [oldId]: value, ...restCombo } = r.combo;
+          return { ...r, combo: { ...restCombo, [newId]: value } };
+        }),
+      })),
 
     updateVariant: (id, patch) =>
       set((s) => ({
