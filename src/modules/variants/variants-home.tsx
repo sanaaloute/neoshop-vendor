@@ -192,10 +192,13 @@ export function VariantsHome() {
           });
           backendAttrId = String((created as Record<string, unknown>).id);
         } catch (e) {
-          const msg = String(e).toLowerCase();
+          const ax = e as { response?: { data?: { message?: string | string[] } } };
+          const m = ax.response?.data?.message;
+          const backendMsg = (typeof m === "string" ? m : Array.isArray(m) ? m.join(", ") : "").toLowerCase();
+          const errMsg = (backendMsg || (e instanceof Error ? e.message : String(e))).toLowerCase();
           if (
-            msg.includes("variants have been created") ||
-            msg.includes("cannot define")
+            errMsg.includes("variants have been created") ||
+            errMsg.includes("cannot define")
           ) {
             // Attribute likely already exists on the backend;
             // fall back to the current id so value creation can continue.
@@ -212,10 +215,13 @@ export function VariantsHome() {
           const created = await createProductAttributeValue(productId, backendAttrId, { values: [{ value }] });
           valueIdMap[value] = String((created as Record<string, unknown>).id);
         } catch (e) {
-          const msg = String(e).toLowerCase();
+          const ax = e as { response?: { data?: { message?: string | string[] } } };
+          const m = ax.response?.data?.message;
+          const backendMsg = (typeof m === "string" ? m : Array.isArray(m) ? m.join(", ") : "").toLowerCase();
+          const errMsg = (backendMsg || (e instanceof Error ? e.message : String(e))).toLowerCase();
           if (
-            msg.includes("variants have been created") ||
-            msg.includes("cannot define")
+            errMsg.includes("variants have been created") ||
+            errMsg.includes("cannot define")
           ) {
             // Value likely already exists or backend locked; skip it.
             continue;

@@ -16,6 +16,12 @@ function str(v: unknown, fallback = ""): string {
   return typeof v === "string" && v.trim() ? v : fallback;
 }
 
+function idStr(v: unknown, fallback = ""): string {
+  if (typeof v === "string" && v.trim()) return v;
+  if (typeof v === "number" && Number.isFinite(v)) return String(v);
+  return fallback;
+}
+
 function attrKind(label: string): VariantAttributeDefinition["kind"] {
   const s = label.toLowerCase();
   if (s.includes("color") || s.includes("colour")) return "color";
@@ -25,7 +31,7 @@ function attrKind(label: string): VariantAttributeDefinition["kind"] {
 }
 
 function stableAttrId(raw: Record<string, unknown>, index: number): string {
-  return str(raw.id, str(raw.attributeId, str(raw.code, `attr_${index}`)));
+  return idStr(raw.id, idStr(raw.attributeId, idStr(raw.code, `attr_${index}`)));
 }
 
 function attrFromApi(
@@ -43,14 +49,14 @@ function attrFromApi(
     .map((v) => {
       const item = v as Record<string, unknown>;
       const label = str(item.value, str(item.label, ""));
-      const valueId = str(item.id, "");
+      const valueId = idStr(item.id, "");
       if (label && valueId) {
         valueIdMap[label] = valueId;
       }
       return label;
     })
     .filter(Boolean);
-  return { id, name, kind: attrKind(name), values: [...new Set(values)], valueIdMap, code: str(row.code, str(row.id, str(row.attributeId, ""))) };
+  return { id, name, kind: attrKind(name), values: [...new Set(values)], valueIdMap, code: idStr(row.code, idStr(row.id, idStr(row.attributeId, ""))) };
 }
 
 function readSelections(row: Record<string, unknown>) {
@@ -121,7 +127,7 @@ export function mapApiProductDetailToVariantWorkbench(
       }
     }
 
-    const hasRealId = typeof row.id === "string" && row.id.trim().length > 0;
+    const hasRealId = (typeof row.id === "string" && row.id.trim().length > 0) || (typeof row.id === "number" && Number.isFinite(row.id));
 
     return {
       id: hasRealId ? String(row.id) : crypto.randomUUID(),
@@ -151,7 +157,7 @@ export function mapApiVariantToVariantRow(
   productMoq = 1
 ): VariantRow {
   const inventory = (row.inventory ?? {}) as Record<string, unknown>;
-  const hasRealId = typeof row.id === "string" && row.id.trim().length > 0;
+  const hasRealId = (typeof row.id === "string" && row.id.trim().length > 0) || (typeof row.id === "number" && Number.isFinite(row.id));
   return {
     id: hasRealId ? String(row.id) : crypto.randomUUID(),
     combo: {},
