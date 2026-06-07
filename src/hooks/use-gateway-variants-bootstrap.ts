@@ -6,6 +6,7 @@ import { getApiBaseUrl } from "@/config/auth";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
 import { mapApiProductDetailToVariantWorkbench } from "@/services/vendor/mappers/variants-from-api";
 import { getProduct } from "@/services/vendor/products-api";
+import { listVariants } from "@/services/vendor/variants-api";
 import { useVariantWorkbenchStore } from "@/store/variant-workbench-store";
 
 export function useGatewayVariantsBootstrap(productId: string | null) {
@@ -27,10 +28,25 @@ export function useGatewayVariantsBootstrap(productId: string | null) {
       setLoading(true);
       setError(null);
       try {
-        const raw = await getProduct(productId);
-        const mapped = mapApiProductDetailToVariantWorkbench(
-          raw as Record<string, unknown>
-        );
+        // Load product detail (attributes) and the authoritative variant list
+        // in parallel. The dedicated /variants endpoint is the source of truth
+        // for variant rows, while /products/:id gives us attribute definitions.
+        const [productRaw, variantsRaw] = await Promise.all([
+          getProduct(productId),
+          listVariants(productId),
+        ]);
+
+        const product = (productRaw ?? {}) as Record<string, unknown>;
+        const variantItems = Array.isArray(variantsRaw)
+          ? variantsRaw
+          : Array.isArray((variantsRaw as Record<string, unknown>)?.items)
+            ? ((variantsRaw as Record<string, unknown>).items as unknown[])
+            : [];
+
+        // Override the product's variants with the dedicated endpoint result.
+        product.variants = variantItems;
+
+        const mapped = mapApiProductDetailToVariantWorkbench(product);
         if (!cancelled) {
           replaceWorkbench({ productId, ...mapped });
         }
