@@ -192,10 +192,10 @@
     "unknown": "Unknown"
   },
   "documentTypes": {
-    "businessRegistration": "Business Registration",
-    "taxCertificate": "Tax Certificate",
-    "bankProof": "Bank Proof",
-    "identity": "Identity",
+    "idCard": "ID Card",
+    "businessLicense": "Business License",
+    "taxDocument": "Tax Document",
+    "addressProof": "Address Proof",
     "other": "Other"
   },
   "errors": {

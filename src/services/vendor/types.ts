@@ -117,6 +117,11 @@ export type UserMeResponse = {
 export type UpdateUserMeDto = {
   name?: string;
   surname?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  nationality?: string;
+  idCardType?: string;
+  idCardNumber?: string;
   avatarUrl?: string;
 };
 
@@ -133,14 +138,11 @@ export type RegisterVendorDto = {
   businessPhone?: string;
   /** ISO 3166-1 alpha-2 */
   countryCode?: string;
-  region?: string;
-  city?: string;
-  addressLine1?: string;
-  postalCode?: string;
 };
 
 /** PATCH /vendors/me/onboarding — all fields optional in spec */
 export type UpdateVendorOnboardingDto = {
+  vendorType?: VendorType;
   legalBusinessName?: string;
   tradeName?: string;
   taxId?: string;
@@ -154,10 +156,10 @@ export type UpdateVendorOnboardingDto = {
 };
 
 export type VendorDocumentType =
-  | "BUSINESS_REGISTRATION"
-  | "TAX_CERTIFICATE"
-  | "BANK_PROOF"
-  | "IDENTITY"
+  | "ID_CARD"
+  | "BUSINESS_LICENSE"
+  | "TAX_DOCUMENT"
+  | "ADDRESS_PROOF"
   | "OTHER";
 
 export type CreateVendorDocumentDto = {
@@ -194,7 +196,7 @@ export type UpdateShopDto = {
 
 export type CreateProductDto = {
   title: string;
-  slug?: string;
+  slug: string;
   description?: string;
   moq?: number;
   categoryIds?: string[];
@@ -221,25 +223,30 @@ export type CreateProductAttributeDto = {
   code: string;
   label: string;
   sortOrder?: number;
+  values?: Array<{
+    value: string;
+    sortOrder?: number;
+  }>;
 };
 
-export type CreateProductAttributeValueDto = {
-  value: string;
-  sortOrder?: number;
+export type AddAttributeValuesDto = {
+  values: Array<{
+    value: string;
+    sortOrder?: number;
+  }>;
 };
 
 // --- Variants ---
 
 export type BulkPricingTier = {
   minQuantity: number;
-  price: number;
+  unitPrice: number;
 };
 
 export type CreateVariantDto = {
-  sku?: string;
+  attributeValueIds: string[];
   wholesalePrice: number;
   moq?: number;
-  attributeValueIds: string[];
   bulkPricing?: BulkPricingTier[];
   isActive?: boolean;
   weightKg?: number;
@@ -247,10 +254,8 @@ export type CreateVariantDto = {
 };
 
 export type UpdateVariantDto = {
-  sku?: string;
   wholesalePrice?: number;
   moq?: number;
-  attributeValueIds?: string[];
   bulkPricing?: BulkPricingTier[];
   isActive?: boolean;
   weightKg?: number;
@@ -377,6 +382,8 @@ export type DisputeDetail = DisputeSummary & {
 
 export type PostDisputeMessageDto = {
   body: string;
+  internal?: boolean;
+  replyToId?: string;
 };
 
 // --- Notifications ---
@@ -422,6 +429,185 @@ export type WalletTransaction = {
   description?: string | null;
   metadata?: Record<string, unknown> | null;
   createdAt: string;
+};
+
+// --- Addresses ---
+
+export type Address = {
+  id: string;
+  label: string;
+  street: string;
+  city: string;
+  region?: string | null;
+  postalCode?: string | null;
+  country: string;
+  phone?: string | null;
+  isDefault?: boolean;
+};
+
+export type CreateAddressDto = {
+  label: string;
+  street: string;
+  city: string;
+  region?: string;
+  postalCode?: string;
+  country: string;
+  phone?: string;
+  isDefault?: boolean;
+};
+
+export type UpdateAddressDto = Partial<CreateAddressDto>;
+
+// --- Exchange Rates ---
+
+export type ExchangeRateCurrentResponse = {
+  from: string;
+  to: string;
+  rate: number;
+  updatedAt: string;
+};
+
+export type ExchangeRateConvertRequest = {
+  amount: number;
+  fromCurrency: string;
+  toCurrency: string;
+};
+
+export type ExchangeRateConvertResponse = {
+  amount: number;
+  fromCurrency: string;
+  toCurrency: string;
+  convertedAmount: number;
+  rate: number;
+};
+
+// --- Promotions ---
+
+export type CouponValidateRequest = {
+  code: string;
+  cartId?: string;
+};
+
+export type CouponValidateResponse = {
+  valid: boolean;
+  code: string;
+  discountAmount?: number;
+  discountPercent?: number;
+  message?: string;
+};
+
+export type PromotionActiveItem = {
+  id: string;
+  title: string;
+  description?: string | null;
+  startDate: string;
+  endDate?: string | null;
+};
+
+// --- Referrals ---
+
+export type ReferralMeResponse = {
+  code: string;
+  referralsCount: number;
+  earnedAmount: number;
+  currency: string;
+};
+
+export type ReferralRedeemRequest = {
+  code: string;
+};
+
+// --- Search ---
+
+export type SearchSuggestion = {
+  query: string;
+  type: "product" | "shop" | "category" | "history";
+};
+
+export type SearchHistoryItem = {
+  query: string;
+  searchedAt: string;
+};
+
+// --- Vendor Public ---
+
+export type VendorPublicSummary = {
+  id: string;
+  legalBusinessName: string;
+  tradeName?: string | null;
+  shopCount: number;
+  countryCode?: string | null;
+};
+
+export type VendorPublicProfile = {
+  id: string;
+  legalBusinessName: string;
+  tradeName?: string | null;
+  countryCode?: string | null;
+  city?: string | null;
+  shops: Array<{
+    slug: string;
+    name: string;
+    logoUrl?: string | null;
+  }>;
+};
+
+// --- Health & Setup ---
+
+export type HealthLiveResponse = {
+  status: "ok";
+};
+
+export type HealthReadyResponse = {
+  status: "ok" | "error";
+  checks?: Record<string, { status: "ok" | "error"; message?: string }>;
+};
+
+export type HealthBeaconRequest = {
+  platform: string;
+  appVersion: string;
+  deviceId?: string;
+};
+
+export type SetupStatusResponse = {
+  setupTokenRequired: boolean;
+  canBootstrap: boolean;
+};
+
+export type SetupBootstrapRequest = {
+  email: string;
+  password: string;
+  name?: string;
+};
+
+// --- Viewed Products ---
+
+export type ViewedProduct = {
+  productId: string;
+  viewedAt: string;
+};
+
+// --- Catalog Compare ---
+
+export type CatalogProductCompareRequest = {
+  productIds: string[];
+};
+
+export type CatalogProductCompareResponse = {
+  products: CatalogProductDetail[];
+};
+
+// --- Auth Refresh ---
+
+export type AuthRefreshRequest = {
+  sessionId: string;
+  refreshToken: string;
+};
+
+export type AuthRefreshResponse = {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: string;
 };
 
 // --- Catalog ---

@@ -12,6 +12,7 @@ import { getApiBaseUrl } from "@/config/auth";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
 import { useGatewayOrdersBootstrap } from "@/hooks/use-gateway-orders-bootstrap";
 import { useRefetchVendorOrders } from "@/hooks/use-refetch-vendor-orders";
+import { useOrderStats } from "@/hooks/use-order-stats";
 import { patchOrderStatus } from "@/services/vendor/orders-api";
 import type { ApiOrderStatus } from "@/services/vendor/types";
 import { useVendorWritesAllowed } from "@/hooks/use-vendor-writes";
@@ -36,6 +37,7 @@ export function OrdersHome() {
 
   const { loading: gatewayLoading, error: gatewayError } =
     useGatewayOrdersBootstrap();
+  const { stats: orderStats } = useOrderStats();
 
   const { liveKey } = useOrdersLive();
 
@@ -130,6 +132,35 @@ export function OrdersHome() {
     <div className="flex flex-col gap-6">
       <VendorWriteGuardBanner area="orders" status={vendorStatus} />
       <GatewaySyncBanner loading={gatewayLoading} error={gatewayError} />
+
+      {orderStats ? (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-8">
+          {(
+            [
+              ["Pending", orderStats.pending],
+              ["Paid", orderStats.paid],
+              ["Processing", orderStats.processing],
+              ["Shipped", orderStats.shipped],
+              ["Delivered", orderStats.delivered],
+              ["Disputed", orderStats.disputed],
+              ["Refunded", orderStats.refunded],
+              ["Cancelled", orderStats.cancelled],
+            ] as const
+          ).map(([label, count]) => (
+            <div
+              key={label}
+              className="bg-muted/40 border-border/60 flex flex-col rounded-lg border px-3 py-2"
+            >
+              <span className="text-muted-foreground text-[11px] font-medium uppercase tracking-wide">
+                {label}
+              </span>
+              <span className="text-foreground text-lg font-semibold tabular-nums">
+                {count}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <Badge

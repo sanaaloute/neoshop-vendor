@@ -24,10 +24,10 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
 const DOCUMENT_TYPES: { value: VendorDocumentType; label: string; description: string }[] = [
-  { value: "IDENTITY", label: "Identity", description: "Passport, national ID, driver's licence" },
-  { value: "BUSINESS_REGISTRATION", label: "Business Registration", description: "Business licence, registration certificate" },
-  { value: "TAX_CERTIFICATE", label: "Tax Certificate", description: "Tax ID certificate, VAT registration" },
-  { value: "BANK_PROOF", label: "Bank Proof", description: "Bank statement, cancelled cheque" },
+  { value: "ID_CARD", label: "ID Card", description: "Passport, national ID, driver's licence" },
+  { value: "BUSINESS_LICENSE", label: "Business License", description: "Business licence, registration certificate" },
+  { value: "TAX_DOCUMENT", label: "Tax Document", description: "Tax ID certificate, VAT registration" },
+  { value: "ADDRESS_PROOF", label: "Address Proof", description: "Utility bill, bank statement, lease agreement" },
   { value: "OTHER", label: "Other", description: "Any other supporting document" },
 ];
 
@@ -51,7 +51,7 @@ export function DocumentsStepForm() {
   const replaceDocument = useOnboardingWizardStore((s) => s.replaceDocument);
   const removeDocument = useOnboardingWizardStore((s) => s.removeDocument);
 
-  const [selectedType, setSelectedType] = useState<VendorDocumentType>("IDENTITY");
+  const [selectedType, setSelectedType] = useState<VendorDocumentType>("ID_CARD");
   const [dragActive, setDragActive] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);

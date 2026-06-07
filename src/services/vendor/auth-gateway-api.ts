@@ -14,7 +14,13 @@ import type {
   ResendVerificationResponse,
 } from "@/types/auth";
 
-import type { AuthMeResponse, AuthSessionResponse } from "./types";
+import type { AuthMeResponse, AuthRefreshRequest, AuthRefreshResponse, AuthSessionResponse } from "./types";
+
+/** POST /auth/refresh — exchange refresh token for a new access token */
+export async function postAuthRefresh(body: AuthRefreshRequest) {
+  const { data } = await vendorApiClient.post<AuthRefreshResponse>("/api/v1/auth/refresh", body);
+  return data;
+}
 
 /** GET /auth/me — Bearer required */
 export async function getAuthMe() {
@@ -39,7 +45,7 @@ export async function postAuthRegister(body: {
   name?: string;
   surname?: string;
   phone?: string;
-  role: string;
+  role?: string;
 }) {
   const { data } = await vendorApiClient.post<RegisterResponse>("/api/v1/auth/register", body);
   return data;

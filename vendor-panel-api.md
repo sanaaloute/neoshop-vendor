@@ -1,6 +1,6 @@
 # Barkosem Vendor Panel API Reference
 
-**Base URL:** `https://api.neoshop.com/api/v1`  
+**Base URL:** `https://api.barkosem.com/api/v1`  
 **Target Client:** Next.js Vendor Panel  
 **Authentication:** Supabase JWT Bearer tokens (`Authorization: Bearer <access_token>`)  
 **Content-Type:** `application/json`

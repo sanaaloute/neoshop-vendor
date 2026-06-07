@@ -24,6 +24,7 @@ import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { mapGatewayOrderDetailToVendorOrder } from "@/services/vendor/mappers/orders-from-api";
 import { getOrder, patchOrderStatus } from "@/services/vendor/orders-api";
+import { useShipping } from "@/hooks/use-shipping";
 import type { ApiOrderStatus } from "@/services/vendor/types";
 import { useOrdersStore } from "@/store/orders-store";
 
@@ -59,6 +60,7 @@ export function OrderDetailDrawer({
   onOpenChange,
 }: OrderDetailDrawerProps) {
   const { canWriteOrders } = useVendorWritesAllowed();
+  const { methods: shippingMethods } = useShipping();
   const orders = useOrdersStore((s) => s.orders);
   const upsertOrder = useOrdersStore((s) => s.upsertOrder);
 
@@ -308,6 +310,19 @@ export function OrderDetailDrawer({
               <Truck className="size-3.5" aria-hidden />
               Shipping updates
             </h3>
+            {shippingMethods.length > 0 ? (
+              <div className="mb-2 flex flex-wrap gap-1">
+                {shippingMethods.map((m) => (
+                  <span
+                    key={m.id}
+                    className="bg-muted/40 border-border/60 inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium"
+                    title={m.description ?? ""}
+                  >
+                    {m.name} · {formatCurrency(m.baseCost, m.currency)}
+                  </span>
+                ))}
+              </div>
+            ) : null}
             <Card className="border-border/70 bg-muted/15 p-3">
               <p className="text-muted-foreground mb-2 text-[11px]">
                 Carrier and tracking are saved on the order when you update

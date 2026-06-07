@@ -167,7 +167,7 @@ export function VariantsHome() {
 
       for (const value of attr.values) {
         if (valueIdMap[value]) continue;
-        const created = await createProductAttributeValue(productId, backendAttrId, { value });
+        const created = await createProductAttributeValue(productId, backendAttrId, { values: [{ value }] });
         valueIdMap[value] = String((created as Record<string, unknown>).id);
       }
 

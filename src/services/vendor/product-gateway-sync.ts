@@ -111,7 +111,8 @@ export async function updateProductFromForm(
 }
 
 export async function archiveProductOnGateway(productId: string) {
-  await updateProduct(productId, { status: "archived" });
+  // Vendors cannot PATCH status to "archived"; soft-delete via DELETE is the vendor equivalent.
+  await deleteProduct(productId);
 }
 
 export async function deleteProductOnGateway(productId: string) {

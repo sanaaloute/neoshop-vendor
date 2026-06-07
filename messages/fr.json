@@ -192,10 +192,10 @@
     "unknown": "Inconnu"
   },
   "documentTypes": {
-    "businessRegistration": "Enregistrement d'entreprise",
-    "taxCertificate": "Certificat fiscal",
-    "bankProof": "Preuve bancaire",
-    "identity": "Identité",
+    "idCard": "Carte d'identité",
+    "businessLicense": "Licence d'entreprise",
+    "taxDocument": "Document fiscal",
+    "addressProof": "Justificatif de domicile",
     "other": "Autre"
   },
   "errors": {

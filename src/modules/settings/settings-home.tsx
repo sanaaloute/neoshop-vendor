@@ -61,10 +61,10 @@ export function SettingsHome() {
 
   const DOCUMENT_TYPE_LABELS: Record<VendorDocumentType, string> = useMemo(
     () => ({
-      BUSINESS_REGISTRATION: td("businessRegistration"),
-      TAX_CERTIFICATE: td("taxCertificate"),
-      BANK_PROOF: td("bankProof"),
-      IDENTITY: td("identity"),
+      ID_CARD: td("idCard"),
+      BUSINESS_LICENSE: td("businessLicense"),
+      TAX_DOCUMENT: td("taxDocument"),
+      ADDRESS_PROOF: td("addressProof"),
       OTHER: td("other"),
     }),
     [td]

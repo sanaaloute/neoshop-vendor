@@ -1,9 +1,9 @@
 import { vendorApiClient } from "@/services/api/client";
 
 import type {
+  AddAttributeValuesDto,
   ApiProductStatus,
   CreateProductAttributeDto,
-  CreateProductAttributeValueDto,
   CreateProductDto,
   Paginated,
   ProductStatsResponse,
@@ -72,6 +72,7 @@ export async function attachProductMedia(
     alt?: string;
     sortOrder?: number;
     isPrimary?: boolean;
+    variantId?: string;
   }
 ) {
   const { data } = await vendorApiClient.post(
@@ -102,7 +103,7 @@ export async function createProductAttribute(
 export async function createProductAttributeValue(
   productId: string,
   attributeId: string,
-  body: CreateProductAttributeValueDto
+  body: AddAttributeValuesDto
 ) {
   const { data } = await vendorApiClient.post(
     `/api/v1/products/${productId}/attributes/${attributeId}/values`,

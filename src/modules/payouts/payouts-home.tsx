@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useExchangeRates } from "@/hooks/use-exchange-rates";
 import {
   getWalletMe,
   listWalletTransactions,
@@ -90,6 +91,7 @@ function signedCurrency(n: number, currency = "CNY") {
 }
 
 export function PayoutsHome() {
+  const { currentRate, fetchRate } = useExchangeRates();
   const [balance, setBalance] = useState<WalletBalanceResponse | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,6 +135,28 @@ export function PayoutsHome() {
               : "—"
           }
         />
+        <MetricCard
+          index={2}
+          label="Exchange rate"
+          value={
+            currentRate
+              ? `1 ${currentRate.from} = ${currentRate.rate.toFixed(4)} ${currentRate.to}`
+              : "—"
+          }
+        />
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {["USD", "EUR", "GBP", "JPY"].map((to) => (
+          <button
+            key={to}
+            type="button"
+            onClick={() => fetchRate(balance?.currency ?? "CNY", to)}
+            className="bg-muted/40 border-border/60 hover:bg-muted/60 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
+          >
+            {balance?.currency ?? "CNY"} → {to}
+          </button>
+        ))}
       </div>
 
       <DashboardCard className="gap-0 py-0">

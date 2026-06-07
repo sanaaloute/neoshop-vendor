@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Clock,
   CreditCard,
+  ExternalLink,
   Loader2,
   RotateCcw,
   Save,
@@ -29,12 +30,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { getApiBaseUrl } from "@/config/auth";
 import { BrandingDrop } from "./branding-drop";
 import { useShopGatewayBootstrap } from "@/hooks/use-shop-gateway-bootstrap";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
-import { listMyShops, updateShop } from "@/services/vendor/shops-api";
+import {
+  listMyShops,
+  createShop,
+  updateShop,
+  getShopPublicBySlug,
+} from "@/services/vendor/shops-api";
 
 import {
   useShopSettingsHydrated,
@@ -94,6 +107,16 @@ export function ShopSettingsHome() {
   const [saveHint, setSaveHint] = useState<string | null>(null);
   const saveHintTimerRef = useRef<number | undefined>(undefined);
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<{
+    name: string;
+    slug: string;
+    description?: string | null;
+    logoUrl?: string | null;
+    bannerUrl?: string | null;
+  } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
   const clearSaveHintSoon = useCallback(() => {
     if (saveHintTimerRef.current !== undefined) {
       window.clearTimeout(saveHintTimerRef.current);
@@ -113,12 +136,23 @@ export function ShopSettingsHome() {
       const shops = await listMyShops();
       const list = Array.isArray(shops) ? shops : [];
       const first = list[0] as { id?: string } | undefined;
-      if (!first?.id) {
-        setSaveHint("No shop found — complete onboarding to create a shop.");
-        clearSaveHintSoon();
-        return;
+      let shopId = first?.id;
+
+      if (!shopId) {
+        const created = (await createShop({
+          name: state.profile.shopName || "My Shop",
+          slug: state.profile.slug || "my-shop",
+          description: state.profile.description || undefined,
+        })) as { id?: string } | undefined;
+        shopId = created?.id;
+        if (!shopId) {
+          setSaveHint("Shop was created but no ID was returned.");
+          clearSaveHintSoon();
+          return;
+        }
       }
-      await updateShop(first.id, {
+
+      await updateShop(shopId, {
         name: state.profile.shopName,
         slug: state.profile.slug,
         description: state.profile.description || undefined,
@@ -141,7 +175,7 @@ export function ShopSettingsHome() {
           taxFormOnFile: state.payout.taxFormOnFile,
         },
       });
-      setSaveHint("Shop settings saved.");
+      setSaveHint(shopId === first?.id ? "Shop settings saved." : "Shop created and saved.");
     } catch (e) {
       setSaveHint(
         httpErrorMessageForUser(
@@ -152,6 +186,21 @@ export function ShopSettingsHome() {
     }
     clearSaveHintSoon();
   }, [state, clearSaveHintSoon]);
+
+  const runPreview = useCallback(async () => {
+    if (!getApiBaseUrl() || !state.profile.slug) return;
+    setPreviewLoading(true);
+    try {
+      const data = await getShopPublicBySlug(state.profile.slug);
+      setPreviewData(data as typeof previewData);
+      setPreviewOpen(true);
+    } catch (e) {
+      setSaveHint(httpErrorMessageForUser(e, "Could not load public preview."));
+      clearSaveHintSoon();
+    } finally {
+      setPreviewLoading(false);
+    }
+  }, [state.profile.slug, clearSaveHintSoon]);
 
   const bind =
     <S extends keyof ShopSettingsState>(section: S) =>
@@ -234,7 +283,24 @@ export function ShopSettingsHome() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="shop-slug">URL slug</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="shop-slug">URL slug</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto gap-1 px-1 py-0 text-xs"
+                      disabled={!state.profile.slug || previewLoading}
+                      onClick={() => void runPreview()}
+                    >
+                      {previewLoading ? (
+                        <Loader2 className="size-3 animate-spin" />
+                      ) : (
+                        <ExternalLink className="size-3" />
+                      )}
+                      Preview public page
+                    </Button>
+                  </div>
                   <Input
                     id="shop-slug"
                     value={state.profile.slug}
@@ -660,6 +726,52 @@ export function ShopSettingsHome() {
           </section>
         </div>
       </div>
+
+      <Sheet open={previewOpen} onOpenChange={setPreviewOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle>Public shop preview</SheetTitle>
+            <SheetDescription>
+              How customers see your storefront.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex flex-col gap-4 px-4 py-4">
+            {previewData ? (
+              <div className="space-y-4">
+                {previewData.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={previewData.logoUrl}
+                    alt="Shop logo"
+                    className="max-h-24 rounded-lg object-contain"
+                  />
+                ) : null}
+                <div>
+                  <h3 className="text-lg font-semibold">{previewData.name}</h3>
+                  <p className="text-muted-foreground text-sm">
+                    {previewData.slug}
+                  </p>
+                </div>
+                {previewData.description ? (
+                  <p className="text-sm">{previewData.description}</p>
+                ) : null}
+                {previewData.bannerUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={previewData.bannerUrl}
+                    alt="Shop banner"
+                    className="rounded-lg object-cover"
+                  />
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                No public data available for this slug.
+              </p>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

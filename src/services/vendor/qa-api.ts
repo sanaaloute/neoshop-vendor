@@ -24,6 +24,12 @@ export async function listProductQa(productId: string) {
   return data;
 }
 
+/** POST /products/:productId/qa — ask a question about a product */
+export async function createProductQaQuestion(productId: string, body: { question: string }) {
+  const { data } = await vendorApiClient.post<QaThread>(`/api/v1/products/${productId}/qa`, body);
+  return data;
+}
+
 /** POST /qa/:threadId/answers — answer a Q&A thread */
 export async function answerQaThread(threadId: string, body: CreateQaAnswerDto) {
   const { data } = await vendorApiClient.post(`/api/v1/qa/${threadId}/answers`, body);

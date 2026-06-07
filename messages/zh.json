@@ -192,10 +192,10 @@
     "unknown": "未知"
   },
   "documentTypes": {
-    "businessRegistration": "营业执照",
-    "taxCertificate": "税务登记证",
-    "bankProof": "银行证明",
-    "identity": "身份证明",
+    "idCard": "身份证件",
+    "businessLicense": "营业执照",
+    "taxDocument": "税务文件",
+    "addressProof": "地址证明",
     "other": "其他"
   },
   "errors": {

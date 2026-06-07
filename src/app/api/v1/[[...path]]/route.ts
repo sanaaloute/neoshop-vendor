@@ -26,6 +26,8 @@ async function proxyToGateway(
   if (contentType) headers.set("Content-Type", contentType);
   const accept = request.headers.get("accept");
   if (accept) headers.set("Accept", accept);
+  const sessionId = request.headers.get("x-session-id");
+  if (sessionId) headers.set("x-session-id", sessionId);
 
   let body: BodyInit | undefined;
   if (["POST", "PUT", "PATCH"].includes(method)) {

@@ -1,7 +1,7 @@
 import { vendorApiClient } from "@/services/api/client";
 
-/** POST /chat/conversations — open or resume a conversation with a customer */
-export async function createConversation(body: { withUserId: string }) {
+/** POST /chat/conversations — open or resume a conversation with a user or vendor */
+export async function createConversation(body: { withUserId?: string; withVendorId?: string }) {
   const { data } = await vendorApiClient.post("/api/v1/chat/conversations", body);
   return data;
 }

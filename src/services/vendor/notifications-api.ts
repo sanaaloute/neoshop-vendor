@@ -28,7 +28,7 @@ export async function getUnreadNotificationCount() {
 /** PATCH /notifications/:notificationId — mark a notification as read/unread */
 export async function patchNotification(
   notificationId: string,
-  body: { read?: boolean }
+  body: { read: boolean }
 ) {
   const { data } = await vendorApiClient.patch<NotificationRecord>(
     `/api/v1/notifications/${notificationId}`,
