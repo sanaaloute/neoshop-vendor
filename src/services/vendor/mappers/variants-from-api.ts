@@ -50,7 +50,7 @@ function attrFromApi(
       return label;
     })
     .filter(Boolean);
-  return { id, name, kind: attrKind(name), values: [...new Set(values)], valueIdMap, code: str(row.code, "") };
+  return { id, name, kind: attrKind(name), values: [...new Set(values)], valueIdMap, code: str(row.code, str(row.id, str(row.attributeId, ""))) };
 }
 
 function readSelections(row: Record<string, unknown>) {

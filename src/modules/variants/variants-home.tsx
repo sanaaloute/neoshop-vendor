@@ -185,17 +185,44 @@ export function VariantsHome() {
 
       let backendAttrId = attr.id;
       if (!attr.code) {
-        const created = await createProductAttribute(productId, {
-          code: slugify(attr.name) || `attr-${crypto.randomUUID().slice(0, 8)}`,
-          label: attr.name,
-        });
-        backendAttrId = String((created as Record<string, unknown>).id);
+        try {
+          const created = await createProductAttribute(productId, {
+            code: slugify(attr.name) || `attr-${crypto.randomUUID().slice(0, 8)}`,
+            label: attr.name,
+          });
+          backendAttrId = String((created as Record<string, unknown>).id);
+        } catch (e) {
+          const msg = String(e).toLowerCase();
+          if (
+            msg.includes("variants have been created") ||
+            msg.includes("cannot define")
+          ) {
+            // Attribute likely already exists on the backend;
+            // fall back to the current id so value creation can continue.
+            backendAttrId = attr.id;
+          } else {
+            throw e;
+          }
+        }
       }
 
       for (const value of attr.values) {
         if (valueIdMap[value]) continue;
-        const created = await createProductAttributeValue(productId, backendAttrId, { values: [{ value }] });
-        valueIdMap[value] = String((created as Record<string, unknown>).id);
+        try {
+          const created = await createProductAttributeValue(productId, backendAttrId, { values: [{ value }] });
+          valueIdMap[value] = String((created as Record<string, unknown>).id);
+        } catch (e) {
+          const msg = String(e).toLowerCase();
+          if (
+            msg.includes("variants have been created") ||
+            msg.includes("cannot define")
+          ) {
+            // Value likely already exists or backend locked; skip it.
+            continue;
+          } else {
+            throw e;
+          }
+        }
       }
 
       result.push({
