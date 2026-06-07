@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Eye, Loader2, Save } from "lucide-react";
 
@@ -17,6 +17,7 @@ import {
   createProductAttribute,
   createProductAttributeValue,
 } from "@/services/vendor/products-api";
+import { uploadStorageObject } from "@/services/vendor/storage-api";
 import {
   createVariant,
   deleteVariant,
@@ -53,6 +54,8 @@ export function VariantsHome() {
   const saveMessageTimerRef = useRef<number | undefined>(undefined);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const lastUrlProductId = useRef<string | null>(null);
+  const filesByVariantId = useRef(new Map<string, File>());
+  const blobUrls = useRef(new Set<string>());
 
   const catalogSync = useGatewayCatalogBootstrap();
   const variantSync = useGatewayVariantsBootstrap(selectedProductId);
@@ -84,6 +87,18 @@ export function VariantsHome() {
       resetWorkbench();
     }
   }, [products, urlProductId, catalogSync.loading, selectedProductId, resetWorkbench]);
+
+  // Reset workbench and revoke blob URLs when leaving the page.
+  useEffect(() => {
+    const urls = blobUrls.current;
+    const files = filesByVariantId.current;
+    return () => {
+      resetWorkbench();
+      urls.forEach((u) => URL.revokeObjectURL(u));
+      urls.clear();
+      files.clear();
+    };
+  }, [resetWorkbench]);
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -142,6 +157,18 @@ export function VariantsHome() {
       setDeleteBusy(false);
     }
   };
+
+  const handleImageChange = useCallback(
+    (variantId: string, file: File) => {
+      const url = URL.createObjectURL(file);
+      blobUrls.current.add(url);
+      filesByVariantId.current.set(variantId, file);
+      useVariantWorkbenchStore
+        .getState()
+        .updateVariant(variantId, { imageUrl: url });
+    },
+    []
+  );
 
   async function syncAttributesToBackend(
     productId: string,
@@ -235,6 +262,29 @@ export function VariantsHome() {
             ? (row.lengthCm * row.widthCm * row.heightCm) / 1_000_000
             : undefined;
 
+        // Upload pending image if any.
+        let imageUrl: string | undefined;
+        const pendingFile = filesByVariantId.current.get(row.id);
+        if (pendingFile && selectedProductId) {
+          try {
+            const up = await uploadStorageObject({
+              file: pendingFile,
+              bucket: "variant-media",
+              entityId: selectedProductId,
+              type: "variant_image",
+              subEntityId: row.id,
+            });
+            if (up.publicUrl) imageUrl = up.publicUrl;
+          } catch {
+            // Best-effort; continue without image if upload fails.
+          }
+          filesByVariantId.current.delete(row.id);
+        }
+        // Use existing backend URL if no new file was uploaded.
+        if (!imageUrl && row.imageUrl && !row.imageUrl.startsWith("blob:")) {
+          imageUrl = row.imageUrl;
+        }
+
         if (row.isLocalOnly) {
           const created = await createVariant(selectedProductId, {
             wholesalePrice: row.price,
@@ -243,6 +293,7 @@ export function VariantsHome() {
             isActive: true,
             weightKg,
             volumeCbm,
+            imageUrl,
           });
           const createdId = String((created as Record<string, unknown>).id);
           await setVariantQuantity(createdId, { quantity: row.stock });
@@ -253,6 +304,7 @@ export function VariantsHome() {
             moq: row.moq,
             weightKg,
             volumeCbm,
+            imageUrl,
           });
           await setVariantQuantity(row.id, { quantity: row.stock });
         }
@@ -397,6 +449,7 @@ export function VariantsHome() {
         onToggle={toggle}
         onToggleAll={toggleAll}
         onDelete={handleDeleteVariant}
+        onImageChange={handleImageChange}
       />
 
       <VariantPreviewSheet

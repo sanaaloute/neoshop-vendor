@@ -137,6 +137,7 @@ export function mapApiProductDetailToVariantWorkbench(
       widthCm: num(row.widthCm, 0),
       heightCm: num(row.heightCm, 0),
       barcode: str(row.barcode, ""),
+      imageUrl: str(row.imageUrl, ""),
     };
   });
 
@@ -164,5 +165,6 @@ export function mapApiVariantToVariantRow(
     widthCm: num(row.widthCm, 0),
     heightCm: num(row.heightCm, 0),
     barcode: str(row.barcode, ""),
+    imageUrl: str(row.imageUrl, ""),
   };
 }

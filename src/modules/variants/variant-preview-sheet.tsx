@@ -60,6 +60,13 @@ export function VariantPreviewSheet({
                     </Badge>
                   ))}
                 </div>
+                {row.imageUrl ? (
+                  <img
+                    src={row.imageUrl}
+                    alt={row.sku}
+                    className="mt-2 h-24 w-24 rounded-lg object-cover"
+                  />
+                ) : null}
                 <p className="text-muted-foreground mt-2 font-mono text-xs">
                   {row.sku}
                 </p>

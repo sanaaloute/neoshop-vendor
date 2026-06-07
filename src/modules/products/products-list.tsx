@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 
 import { EmptyState } from "@/components/cards/empty-state";
-import { VendorWriteGuardBanner } from "@/components/vendor/vendor-write-guard-banner";
 import { GatewaySyncBanner } from "@/components/feedback/gateway-sync-banner";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -73,7 +72,7 @@ function categorySummary(
 
 export function ProductsList() {
   const router = useRouter();
-  const { canWriteCatalog, status: vendorStatus } = useVendorWritesAllowed();
+  const { canWriteCatalog } = useVendorWritesAllowed();
   const { loading: gatewayLoading, error: gatewayError } =
     useGatewayCatalogBootstrap();
   const products = useProductCatalogStore((s) => s.products);
@@ -170,7 +169,6 @@ export function ProductsList() {
   if (!products.length) {
     return (
       <div className="flex flex-col gap-4">
-        <VendorWriteGuardBanner area="catalog" status={vendorStatus} />
         <GatewaySyncBanner loading={gatewayLoading} error={gatewayError} />
         {gatewayLoading ? (
           <Card className="border-border/80 text-muted-foreground border-dashed p-12 text-center text-sm">
@@ -199,7 +197,6 @@ export function ProductsList() {
 
   return (
     <div className="flex flex-col gap-4">
-      <VendorWriteGuardBanner area="catalog" status={vendorStatus} />
       <GatewaySyncBanner loading={gatewayLoading} error={gatewayError} />
       {listError ? (
         <p className="text-destructive text-sm">{listError}</p>

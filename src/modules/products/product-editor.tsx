@@ -57,12 +57,14 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
   }, [catalogProductId]);
 
   const storeValues = useMemo(() => {
+    if (!catalogProductId) {
+      useProductEditorDraftStore.getState().clearDraft("new");
+      return emptyProductFormValues();
+    }
     const d = useProductEditorDraftStore.getState().getDraft(editorKey);
     if (d) return d;
-    if (catalogProductId) {
-      const p = useProductCatalogStore.getState().getProduct(catalogProductId);
-      if (p) return productToFormValues(p);
-    }
+    const p = useProductCatalogStore.getState().getProduct(catalogProductId);
+    if (p) return productToFormValues(p);
     return emptyProductFormValues();
   }, [editorKey, catalogProductId]);
 

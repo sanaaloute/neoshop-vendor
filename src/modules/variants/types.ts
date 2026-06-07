@@ -26,6 +26,8 @@ export type VariantRow = {
   widthCm: number;
   heightCm: number;
   barcode: string;
+  /** Variant-specific image URL (from storage or a local blob preview). */
+  imageUrl?: string;
   /** Backend selection ids required when creating this variant on the server. */
   selectionIds?: string[];
   /** True when this row was created locally and does not yet exist on the backend. */

@@ -68,6 +68,7 @@ export function buildVariantMatrix(
       widthCm: defaults.widthCm,
       heightCm: defaults.heightCm,
       barcode: defaults.barcode.trim(),
+      imageUrl: "",
     };
   });
 }

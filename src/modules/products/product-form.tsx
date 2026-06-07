@@ -29,7 +29,6 @@ import {
 
 import { VendorTextField } from "@/components/forms/vendor-text-field";
 import { VendorMuted } from "@/components/layout/typography";
-import { VendorWriteGuardBanner } from "@/components/vendor/vendor-write-guard-banner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,7 +83,7 @@ export function ProductForm({
   onValuesSnapshot,
   onSavingChange,
 }: ProductFormProps) {
-  const { canWriteCatalog, status: vendorStatus } = useVendorWritesAllowed();
+  const { canWriteCatalog } = useVendorWritesAllowed();
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues,
@@ -347,6 +346,8 @@ export function ProductForm({
           const p = await updateProductFromForm(catalogProductId, next);
           upsertProduct(p);
           await syncPendingMedia(catalogProductId, next.media);
+          clearDraft(editorKey);
+          onSuccess?.();
         } else {
           const p = await createProductFromForm(next);
           upsertProduct(p);
@@ -365,6 +366,8 @@ export function ProductForm({
     }
     if (catalogProductId) {
       updateProduct(catalogProductId, next);
+      clearDraft(editorKey);
+      onSuccess?.();
     } else {
       const id = addProduct(next);
       clearDraft(editorKey);
@@ -375,8 +378,6 @@ export function ProductForm({
   return (
     <FormProvider {...form}>
       <div className="flex flex-col gap-5">
-        <VendorWriteGuardBanner area="catalog" status={vendorStatus} />
-
         {/* Gallery — First & Emphasized */}
         <Card className="glass-card shadow-glass overflow-hidden">
           <CardHeader className="pb-2">

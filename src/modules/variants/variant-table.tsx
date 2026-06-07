@@ -1,13 +1,14 @@
 "use client";
 
 import type { ComponentProps } from "react";
+import { useRef } from "react";
 
 import { formatCurrency } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Trash2 } from "lucide-react";
+import { ImageIcon, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -51,11 +52,53 @@ function ComboBadges({
   );
 }
 
+function VariantImageCell({
+  row,
+  onChange,
+}: {
+  row: VariantRow;
+  onChange: (file: File) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border/60 bg-muted/30 hover:bg-muted/50"
+        title={row.imageUrl ? "Change image" : "Add image"}
+      >
+        {row.imageUrl ? (
+          <img
+            src={row.imageUrl}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <ImageIcon className="size-4 text-muted-foreground" />
+        )}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onChange(file);
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
+
 type VariantTableProps = {
   selected: Set<string>;
   onToggle: (id: string) => void;
   onToggleAll: () => void;
   onDelete?: (id: string) => void;
+  onImageChange?: (id: string, file: File) => void;
 };
 
 export function VariantTable({
@@ -63,6 +106,7 @@ export function VariantTable({
   onToggle,
   onToggleAll,
   onDelete,
+  onImageChange,
 }: VariantTableProps) {
   const variants = useVariantWorkbenchStore((s) => s.variants);
   const attributes = useVariantWorkbenchStore((s) => s.attributes);
@@ -95,6 +139,7 @@ export function VariantTable({
                 />
               </TableHead>
               <TableHead className="min-w-[200px]">Combination</TableHead>
+              <TableHead className="w-14">Image</TableHead>
               <TableHead className="min-w-[140px]">SKU</TableHead>
               <TableHead className="w-16">MOQ</TableHead>
               <TableHead className="w-20">Stock</TableHead>
@@ -122,6 +167,16 @@ export function VariantTable({
                 </TableCell>
                 <TableCell>
                   <ComboBadges row={row} defs={attributes} />
+                </TableCell>
+                <TableCell>
+                  {onImageChange ? (
+                    <VariantImageCell
+                      row={row}
+                      onChange={(file) => onImageChange(row.id, file)}
+                    />
+                  ) : (
+                    <span className="text-muted-foreground text-xs">—</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <span className="bg-muted/50 block min-w-[120px] rounded-md px-2 py-1 font-mono text-xs tabular-nums">

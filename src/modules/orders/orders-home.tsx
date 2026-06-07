@@ -6,7 +6,6 @@ import { Radio } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { VendorWriteGuardBanner } from "@/components/vendor/vendor-write-guard-banner";
 import { GatewaySyncBanner } from "@/components/feedback/gateway-sync-banner";
 import { getApiBaseUrl } from "@/config/auth";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
@@ -29,7 +28,7 @@ function toApi(s: OrderStatus): ApiOrderStatus {
 }
 
 export function OrdersHome() {
-  const { canWriteOrders, status: vendorStatus } = useVendorWritesAllowed();
+  const { canWriteOrders } = useVendorWritesAllowed();
   const orders = useOrdersStore((s) => s.orders);
   const refetch = useRefetchVendorOrders();
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -130,7 +129,6 @@ export function OrdersHome() {
 
   return (
     <div className="flex flex-col gap-6">
-      <VendorWriteGuardBanner area="orders" status={vendorStatus} />
       <GatewaySyncBanner loading={gatewayLoading} error={gatewayError} />
 
       {orderStats ? (
