@@ -64,6 +64,76 @@ function readSelections(row: Record<string, unknown>) {
   return raw.map((s) => s as Record<string, unknown>);
 }
 
+function reconstructAttributesFromVariants(
+  rawVariants: unknown[]
+): VariantAttributeDefinition[] {
+  const attrMap = new Map<
+    string,
+    {
+      id: string;
+      code: string;
+      label: string;
+      values: Map<string, string>;
+    }
+  >();
+
+  for (const v of rawVariants) {
+    const row = v as Record<string, unknown>;
+    for (const selection of readSelections(row)) {
+      const valueRow = (selection.attributeValue ??
+        selection.value ??
+        {}) as Record<string, unknown>;
+      const attrRow = (valueRow.attribute ??
+        selection.attribute ??
+        {}) as Record<string, unknown>;
+
+      const attrId =
+        idStr(attrRow.id, "") ||
+        idStr(valueRow.attributeId, "") ||
+        idStr(selection.attributeCode, "") ||
+        "";
+      if (!attrId) continue;
+
+      const attrCode =
+        str(attrRow.code, "") ||
+        str(selection.attributeCode, "") ||
+        attrId;
+      const attrLabel = str(attrRow.label, str(attrRow.name, attrCode));
+      const valueId = idStr(valueRow.id, "");
+      const valueLabel = str(valueRow.value, str(selection.value, ""));
+      if (!valueLabel) continue;
+
+      let entry = attrMap.get(attrId);
+      if (!entry) {
+        entry = { id: attrId, code: attrCode, label: attrLabel, values: new Map() };
+        attrMap.set(attrId, entry);
+      }
+      if (valueId) {
+        entry.values.set(valueLabel, valueId);
+      } else if (!entry.values.has(valueLabel)) {
+        entry.values.set(valueLabel, "");
+      }
+    }
+  }
+
+  return Array.from(attrMap.values()).map((entry) => {
+    const valueIdMap: Record<string, string> = {};
+    const values: string[] = [];
+    for (const [label, id] of entry.values) {
+      values.push(label);
+      if (id) valueIdMap[label] = id;
+    }
+    return {
+      id: entry.id,
+      name: entry.label,
+      kind: attrKind(entry.label),
+      values: [...new Set(values)],
+      valueIdMap,
+      code: entry.code,
+    };
+  });
+}
+
 export function mapApiProductDetailToVariantWorkbench(
   product: Record<string, unknown>
 ): {
@@ -72,9 +142,18 @@ export function mapApiProductDetailToVariantWorkbench(
   skuPrefix: string;
 } {
   const rawAttrs = Array.isArray(product.attributes) ? product.attributes : [];
-  const attributes = rawAttrs.map((a, i) =>
+  let attributes = rawAttrs.map((a, i) =>
     attrFromApi(a as Record<string, unknown>, i)
   );
+
+  const rawVariants = Array.isArray(product.variants) ? product.variants : [];
+
+  // If the top-level attributes array is empty or missing, reconstruct
+  // attribute definitions by scanning every variant selection.
+  if (attributes.length === 0 && rawVariants.length > 0) {
+    attributes = reconstructAttributesFromVariants(rawVariants);
+  }
+
   const attrByRawValueId = new Map<string, string>();
   for (const attr of attributes) {
     for (const value of attr.values) {
@@ -91,7 +170,6 @@ export function mapApiProductDetailToVariantWorkbench(
     }
   }
 
-  const rawVariants = Array.isArray(product.variants) ? product.variants : [];
   const variants = rawVariants.map((v, index) => {
     const row = v as Record<string, unknown>;
     const inventory = (row.inventory ?? {}) as Record<string, unknown>;

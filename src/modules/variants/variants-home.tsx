@@ -51,7 +51,6 @@ export function VariantsHome() {
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const saveMessageTimerRef = useRef<number | undefined>(undefined);
-  const [deleteBusy, setDeleteBusy] = useState(false);
   const lastUrlProductId = useRef<string | null>(null);
   const filesByVariantId = useRef(new Map<string, File>());
   const blobUrls = useRef(new Set<string>());
@@ -137,7 +136,6 @@ export function VariantsHome() {
     if (row.isLocalOnly) return;
     if (!selectedProductId) return;
 
-    setDeleteBusy(true);
     setSaveMessage(null);
     try {
       await deleteVariant(selectedProductId, variantId);
@@ -152,8 +150,6 @@ export function VariantsHome() {
         () => setSaveMessage(null),
         5000
       );
-    } finally {
-      setDeleteBusy(false);
     }
   };
 
@@ -168,6 +164,10 @@ export function VariantsHome() {
     },
     []
   );
+
+  function isLocalAttrId(id: string): boolean {
+    return id.startsWith("attr_") && id.length > 5;
+  }
 
   async function syncAttributesToBackend(
     productId: string,
@@ -191,7 +191,9 @@ export function VariantsHome() {
           });
           const createdItem = Array.isArray(created) ? (created as unknown[])[0] : created;
           const extractedId = (createdItem as Record<string, unknown> | undefined)?.id;
-          if (extractedId) backendAttrId = String(extractedId);
+          if (extractedId) {
+            backendAttrId = String(extractedId);
+          }
         } catch (e) {
           const ax = e as { response?: { data?: { message?: string | string[] } } };
           const m = ax.response?.data?.message;
@@ -201,37 +203,45 @@ export function VariantsHome() {
             errMsg.includes("variants have been created") ||
             errMsg.includes("cannot define")
           ) {
-            // Attribute likely already exists on the backend;
-            // fall back to the current id so value creation can continue.
-            backendAttrId = attr.id;
+            // Backend locked (variants already exist) or attribute already exists.
+            // If the current id is a local generated id we do NOT have a valid
+            // backend attribute id → we cannot create values. Fall back only
+            // when the id already looks like a backend id.
+            if (!isLocalAttrId(attr.id)) {
+              backendAttrId = attr.id;
+            }
           } else {
             throw e;
           }
         }
       }
 
-      for (const value of attr.values) {
-        if (valueIdMap[value]) continue;
-        try {
-          const created = await createProductAttributeValue(productId, backendAttrId, { values: [{ value }] });
-          const createdItems = Array.isArray(created) ? created : [created];
-          const firstItem = createdItems[0] as Record<string, unknown> | undefined;
-          if (firstItem?.id) {
-            valueIdMap[value] = String(firstItem.id);
-          }
-        } catch (e) {
-          const ax = e as { response?: { data?: { message?: string | string[] } } };
-          const m = ax.response?.data?.message;
-          const backendMsg = (typeof m === "string" ? m : Array.isArray(m) ? m.join(", ") : "").toLowerCase();
-          const errMsg = (backendMsg || (e instanceof Error ? e.message : String(e))).toLowerCase();
-          if (
-            errMsg.includes("variants have been created") ||
-            errMsg.includes("cannot define")
-          ) {
-            // Value likely already exists or backend locked; skip it.
-            continue;
-          } else {
-            throw e;
+      // Only attempt to create values when we are sure backendAttrId is a
+      // real backend identifier (not a local attr_… id).
+      if (!isLocalAttrId(backendAttrId)) {
+        for (const value of attr.values) {
+          if (valueIdMap[value]) continue;
+          try {
+            const created = await createProductAttributeValue(productId, backendAttrId, { values: [{ value }] });
+            const createdItems = Array.isArray(created) ? created : [created];
+            const firstItem = createdItems[0] as Record<string, unknown> | undefined;
+            if (firstItem?.id) {
+              valueIdMap[value] = String(firstItem.id);
+            }
+          } catch (e) {
+            const ax = e as { response?: { data?: { message?: string | string[] } } };
+            const m = ax.response?.data?.message;
+            const backendMsg = (typeof m === "string" ? m : Array.isArray(m) ? m.join(", ") : "").toLowerCase();
+            const errMsg = (backendMsg || (e instanceof Error ? e.message : String(e))).toLowerCase();
+            if (
+              errMsg.includes("variants have been created") ||
+              errMsg.includes("cannot define")
+            ) {
+              // Value likely already exists or backend locked; skip it.
+              continue;
+            } else {
+              throw e;
+            }
           }
         }
       }
@@ -280,6 +290,18 @@ export function VariantsHome() {
         return { ...row, selectionIds };
       });
 
+      // 2b. Filter out rows that still have no selection ids — they cannot be
+      // created on the backend. Warn the user so they know something is off.
+      const validRows = rowsToSave.filter(
+        (r) => Array.isArray(r.selectionIds) && r.selectionIds.length > 0
+      );
+      const skippedCount = rowsToSave.length - validRows.length;
+      if (validRows.length === 0 && rowsToSave.length > 0) {
+        throw new Error(
+          "No variants could be saved because the attribute values could not be resolved. Please refresh the page and try again."
+        );
+      }
+
       // 3. Discover which backend variants are being replaced.
       const existingRaw = await listVariants(selectedProductId);
       const existingVariants = Array.isArray(existingRaw)
@@ -292,12 +314,12 @@ export function VariantsHome() {
           .map((v) => (v as Record<string, unknown>).id)
           .filter((id): id is string => typeof id === "string")
       );
-      const keptIds = new Set(rowsToSave.filter((r) => !r.isLocalOnly).map((r) => r.id));
+      const keptIds = new Set(validRows.filter((r) => !r.isLocalOnly).map((r) => r.id));
       const idsToDelete = [...existingIds].filter((id) => !keptIds.has(id));
 
       // 4. Create / update variants.
       const createdMappings: { localId: string; backendId: string }[] = [];
-      for (const row of rowsToSave) {
+      for (const row of validRows) {
         const weightKg = row.weightGrams > 0 ? row.weightGrams / 1000 : undefined;
         const volumeCbm =
           row.lengthCm > 0 && row.widthCm > 0 && row.heightCm > 0
@@ -343,9 +365,11 @@ export function VariantsHome() {
       }
 
       setSelected(new Set());
-      setSaveMessage(
-        `${rowsToSave.length} variant${rowsToSave.length === 1 ? "" : "s"} saved.`
-      );
+      let msg = `${validRows.length} variant${validRows.length === 1 ? "" : "s"} saved.`;
+      if (skippedCount > 0) {
+        msg += ` ${skippedCount} row${skippedCount === 1 ? "" : "s"} skipped because attribute values could not be synced.`;
+      }
+      setSaveMessage(msg);
       resetWorkbench();
     } catch (e) {
       setSaveMessage(
