@@ -106,14 +106,14 @@ export function mapApiProductDetailToVariantWorkbench(
         {}) as Record<string, unknown>;
       const value = str(valueRow.value, str(selection.value, ""));
       const attrId =
-        str(attrRow.id, "") ||
-        str(valueRow.attributeId, "") ||
-        attrByRawValueId.get(`${str(valueRow.attributeId, "")}:${value}`) ||
+        idStr(attrRow.id, "") ||
+        idStr(valueRow.attributeId, "") ||
+        attrByRawValueId.get(`${idStr(valueRow.attributeId, "")}:${value}`) ||
         "";
       if (attrId && value) combo[attrId] = value;
 
       // Primary: nested attributeValue.id
-      const valueId = str(valueRow.id, "");
+      const valueId = idStr(valueRow.id, "");
       if (valueId) {
         selectionIds.push(valueId);
       } else {

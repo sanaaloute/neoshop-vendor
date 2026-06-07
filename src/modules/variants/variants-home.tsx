@@ -17,7 +17,6 @@ import {
   createProductAttribute,
   createProductAttributeValue,
 } from "@/services/vendor/products-api";
-import { uploadStorageObject } from "@/services/vendor/storage-api";
 import {
   createVariant,
   deleteVariant,
@@ -190,7 +189,9 @@ export function VariantsHome() {
             code: slugify(attr.name) || `attr-${crypto.randomUUID().slice(0, 8)}`,
             label: attr.name,
           });
-          backendAttrId = String((created as Record<string, unknown>).id);
+          const createdItem = Array.isArray(created) ? (created as unknown[])[0] : created;
+          const extractedId = (createdItem as Record<string, unknown> | undefined)?.id;
+          if (extractedId) backendAttrId = String(extractedId);
         } catch (e) {
           const ax = e as { response?: { data?: { message?: string | string[] } } };
           const m = ax.response?.data?.message;
@@ -213,7 +214,11 @@ export function VariantsHome() {
         if (valueIdMap[value]) continue;
         try {
           const created = await createProductAttributeValue(productId, backendAttrId, { values: [{ value }] });
-          valueIdMap[value] = String((created as Record<string, unknown>).id);
+          const createdItems = Array.isArray(created) ? created : [created];
+          const firstItem = createdItems[0] as Record<string, unknown> | undefined;
+          if (firstItem?.id) {
+            valueIdMap[value] = String(firstItem.id);
+          }
         } catch (e) {
           const ax = e as { response?: { data?: { message?: string | string[] } } };
           const m = ax.response?.data?.message;
@@ -277,7 +282,11 @@ export function VariantsHome() {
 
       // 3. Discover which backend variants are being replaced.
       const existingRaw = await listVariants(selectedProductId);
-      const existingVariants = Array.isArray(existingRaw) ? existingRaw : [];
+      const existingVariants = Array.isArray(existingRaw)
+        ? existingRaw
+        : Array.isArray((existingRaw as Record<string, unknown>)?.items)
+          ? ((existingRaw as Record<string, unknown>).items as unknown[])
+          : [];
       const existingIds = new Set(
         existingVariants
           .map((v) => (v as Record<string, unknown>).id)
@@ -295,29 +304,6 @@ export function VariantsHome() {
             ? (row.lengthCm * row.widthCm * row.heightCm) / 1_000_000
             : undefined;
 
-        // Upload pending image if any.
-        let imageUrl: string | undefined;
-        const pendingFile = filesByVariantId.current.get(row.id);
-        if (pendingFile && selectedProductId) {
-          try {
-            const up = await uploadStorageObject({
-              file: pendingFile,
-              bucket: "variant-media",
-              entityId: selectedProductId,
-              type: "variant_image",
-              subEntityId: row.id,
-            });
-            if (up.publicUrl) imageUrl = up.publicUrl;
-          } catch {
-            // Best-effort; continue without image if upload fails.
-          }
-          filesByVariantId.current.delete(row.id);
-        }
-        // Use existing backend URL if no new file was uploaded.
-        if (!imageUrl && row.imageUrl && !row.imageUrl.startsWith("blob:")) {
-          imageUrl = row.imageUrl;
-        }
-
         if (row.isLocalOnly) {
           const created = await createVariant(selectedProductId, {
             wholesalePrice: row.price,
@@ -326,9 +312,9 @@ export function VariantsHome() {
             isActive: true,
             weightKg,
             volumeCbm,
-            imageUrl,
           });
-          const createdId = String((created as Record<string, unknown>).id);
+          const createdItem = Array.isArray(created) ? (created as unknown[])[0] : created;
+          const createdId = String((createdItem as Record<string, unknown> | undefined)?.id);
           await setVariantQuantity(createdId, { quantity: row.stock });
           createdMappings.push({ localId: row.id, backendId: createdId });
         } else {
@@ -337,7 +323,6 @@ export function VariantsHome() {
             moq: row.moq,
             weightKg,
             volumeCbm,
-            imageUrl,
           });
           await setVariantQuantity(row.id, { quantity: row.stock });
         }
