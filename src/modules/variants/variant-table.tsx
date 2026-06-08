@@ -52,6 +52,21 @@ function ComboBadges({
   );
 }
 
+function StatusBadge({ isLocalOnly }: { isLocalOnly?: boolean }) {
+  if (isLocalOnly) {
+    return (
+      <Badge variant="outline" className="text-[10px] font-normal text-amber-600 border-amber-200">
+        New
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="text-[10px] font-normal text-emerald-600 border-emerald-200">
+      Saved
+    </Badge>
+  );
+}
+
 function VariantImageCell({
   row,
   onChange,
@@ -69,6 +84,7 @@ function VariantImageCell({
         title={row.imageUrl ? "Change image" : "Add image"}
       >
         {row.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={row.imageUrl}
             alt=""
@@ -166,7 +182,10 @@ export function VariantTable({
                   />
                 </TableCell>
                 <TableCell>
-                  <ComboBadges row={row} defs={attributes} />
+                  <div className="flex flex-col gap-1">
+                    <ComboBadges row={row} defs={attributes} />
+                    <StatusBadge isLocalOnly={row.isLocalOnly} />
+                  </div>
                 </TableCell>
                 <TableCell>
                   {onImageChange ? (

@@ -30,7 +30,7 @@ type VariantWorkbenchState = {
   }) => void;
   upsertVariant: (variant: VariantRow) => void;
   setSkuPrefix: (v: string) => void;
-  addAttribute: (name: string, kind: VariantAttributeKind) => void;
+  addAttribute: (name: string, kind: VariantAttributeKind) => string;
   removeAttribute: (id: string) => void;
   renameAttribute: (id: string, name: string) => void;
   setAttributeKind: (id: string, kind: VariantAttributeKind) => void;
@@ -88,18 +88,21 @@ export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
 
     setSkuPrefix: (v) => set({ skuPrefix: v }),
 
-    addAttribute: (name, kind) =>
+    addAttribute: (name, kind) => {
+      const id = genAttrId();
       set((s) => ({
         attributes: [
           ...s.attributes,
           {
-            id: genAttrId(),
+            id,
             name: name.trim() || "Attribute",
             kind,
             values: [],
           },
         ],
-      })),
+      }));
+      return id;
+    },
 
     removeAttribute: (id) =>
       set((s) => ({

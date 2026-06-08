@@ -170,11 +170,21 @@ export function mapApiProductDetailToVariantWorkbench(
     }
   }
 
+  // Reverse lookup: backend value UUID → { attrId, displayValue }
+  const valueIdToAttrValue = new Map<string, { attrId: string; value: string }>();
+  for (const attr of attributes) {
+    for (const [value, valueId] of Object.entries(attr.valueIdMap ?? {})) {
+      valueIdToAttrValue.set(valueId, { attrId: attr.id, value });
+    }
+  }
+
   const variants = rawVariants.map((v, index) => {
     const row = v as Record<string, unknown>;
     const inventory = (row.inventory ?? {}) as Record<string, unknown>;
     const combo: Record<string, string> = {};
     const selectionIds: string[] = [];
+
+    // 1. Nested / flattened selections (full object shape)
     for (const selection of readSelections(row)) {
       const valueRow = (selection.attributeValue ??
         selection.value ??
@@ -199,8 +209,29 @@ export function mapApiProductDetailToVariantWorkbench(
         const attrCode = str(selection.attributeCode, "");
         const selValue = str(selection.value, "");
         if (attrCode && selValue) {
+          // Also populate combo when we only have a flat code+value
+          const attr = attributes.find(
+            (a) => a.code === attrCode || a.name.toLowerCase() === attrCode.toLowerCase()
+          );
+          if (attr) combo[attr.id] = selValue;
+
           const fallbackId = valueIdByCode.get(`${attrCode}:${selValue}`);
           if (fallbackId) selectionIds.push(fallbackId);
+        }
+      }
+    }
+
+    // 2. Some backends return only attributeValueIds (UUID array) without
+    //    full selection objects.  Use the reverse lookup to rebuild combo.
+    const rawAttrValueIds = Array.isArray(row.attributeValueIds)
+      ? row.attributeValueIds
+      : [];
+    for (const valId of rawAttrValueIds) {
+      const mapped = valueIdToAttrValue.get(String(valId));
+      if (mapped) {
+        combo[mapped.attrId] = mapped.value;
+        if (!selectionIds.includes(String(valId))) {
+          selectionIds.push(String(valId));
         }
       }
     }

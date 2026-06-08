@@ -23,9 +23,11 @@ import {
   listVariants,
   updateVariant as updateVariantApi,
 } from "@/services/vendor/variants-api";
+import { useCategories } from "@/hooks/use-categories";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
 import { useVariantWorkbenchStore } from "@/store/variant-workbench-store";
 
+import { resolvePresetAttributes } from "./category-attribute-presets";
 import { VariantBulkBar } from "./variant-bulk-bar";
 import { VariantMatrixPanel } from "./variant-matrix-panel";
 import { VariantPreviewSheet } from "./variant-preview-sheet";
@@ -57,6 +59,8 @@ export function VariantsHome() {
 
   const catalogSync = useGatewayCatalogBootstrap();
   const variantSync = useGatewayVariantsBootstrap(selectedProductId);
+  const categories = useCategories();
+  const presetInjectedFor = useRef(new Set<string>());
 
   /*
    * Validate selectedProductId against the loaded catalog.
@@ -86,17 +90,39 @@ export function VariantsHome() {
     }
   }, [products, urlProductId, catalogSync.loading, selectedProductId, resetWorkbench]);
 
-  // Reset workbench and revoke blob URLs when leaving the page.
+  // Reset preset tracker whenever the selected product changes.
   useEffect(() => {
-    const urls = blobUrls.current;
-    const files = filesByVariantId.current;
-    return () => {
-      resetWorkbench();
-      urls.forEach((u) => URL.revokeObjectURL(u));
-      urls.clear();
-      files.clear();
-    };
-  }, [resetWorkbench]);
+    if (selectedProductId) {
+      presetInjectedFor.current.clear();
+    }
+  }, [selectedProductId]);
+
+  // Inject category-based default attributes when a product has no backend
+  // attributes after the detail load finishes.  Vendors can still edit / add /
+  // remove them freely.
+  useEffect(() => {
+    if (variantSync.loading || !selectedProductId) return;
+    if (attributes.length > 0) return;
+    if (presetInjectedFor.current.has(selectedProductId)) return;
+
+    const product = products.find((p) => p.id === selectedProductId);
+    if (!product || product.categoryIds.length === 0) return;
+
+    const categoryNames = product.categoryIds.map(
+      (id) => categories.find((c) => c.id === id)?.name ?? id
+    );
+    const presets = resolvePresetAttributes(categoryNames);
+    if (presets.length === 0) return;
+
+    presetInjectedFor.current.add(selectedProductId);
+    const store = useVariantWorkbenchStore.getState();
+    for (const attr of presets) {
+      const addedId = store.addAttribute(attr.name, attr.kind);
+      for (const value of attr.values) {
+        store.addValueToAttribute(addedId, value);
+      }
+    }
+  }, [variantSync.loading, selectedProductId, attributes.length, products, categories]);
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -478,6 +504,28 @@ export function VariantsHome() {
           </Button>
         </div>
       </div>
+
+      {variants.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">
+            {variants.filter((v) => !v.isLocalOnly).length} saved
+          </span>
+          {variants.some((v) => v.isLocalOnly) && (
+            <>
+              <span>·</span>
+              <span className="font-medium text-amber-600">
+                {variants.filter((v) => v.isLocalOnly).length} new
+              </span>
+            </>
+          )}
+          {attributes.length > 0 && (
+            <>
+              <span>·</span>
+              <span>{attributes.length} attribute{attributes.length === 1 ? "" : "s"}</span>
+            </>
+          )}
+        </div>
+      )}
 
       <VariantMatrixPanel />
 
