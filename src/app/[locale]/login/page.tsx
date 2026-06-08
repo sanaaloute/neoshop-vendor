@@ -9,7 +9,7 @@ export default function LoginRoutePage() {
   const t = useTranslations("auth");
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-background p-4">
+    <main className="flex min-h-dvh items-center justify-center px-4 py-12">
       <Suspense
         fallback={
           <LoadingState

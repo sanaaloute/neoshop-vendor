@@ -69,7 +69,13 @@
     "emailNotVerified": "Votre email n'est pas vérifié.",
     "resendSuccess": "Si un compte existe, un email de vérification a été envoyé.",
     "accountCreatedCheckEmail": "Compte créé. Veuillez vérifier votre email pour confirmer votre compte avant de vous connecter.",
-    "registrationIncomplete": "L'inscription ne s'est pas terminée. Réessayez."
+    "registrationIncomplete": "L'inscription ne s'est pas terminée. Réessayez.",
+    "signInToContinue": "Connectez-vous pour continuer.",
+    "continue": "Continuer",
+    "verify": "Vérifier",
+    "enterOtp": "Code de vérification",
+    "otpSent": "Un code de vérification a été envoyé à votre téléphone.",
+    "backToPhone": "Utiliser un autre numéro de téléphone"
   },
   "dashboard": {
     "overview": "Vue d'ensemble",

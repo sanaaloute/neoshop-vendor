@@ -21,6 +21,8 @@ type VendorPasswordFieldProps<TFieldValues extends FieldValues> = {
   placeholder?: string;
   autoComplete?: string;
   className?: string;
+  inputClassName?: string;
+  labelClassName?: string;
 };
 
 export function VendorPasswordField<TFieldValues extends FieldValues>({
@@ -30,6 +32,8 @@ export function VendorPasswordField<TFieldValues extends FieldValues>({
   placeholder,
   autoComplete,
   className,
+  inputClassName,
+  labelClassName,
 }: VendorPasswordFieldProps<TFieldValues>) {
   const [visible, setVisible] = useState(false);
 
@@ -39,7 +43,7 @@ export function VendorPasswordField<TFieldValues extends FieldValues>({
       name={name}
       render={({ field, fieldState }) => (
         <div className={cn("grid gap-1.5", className)}>
-          <Label htmlFor={field.name}>{label}</Label>
+          <Label htmlFor={field.name} className={labelClassName}>{label}</Label>
           <div className="relative">
             <Input
               id={field.name}
@@ -47,7 +51,7 @@ export function VendorPasswordField<TFieldValues extends FieldValues>({
               placeholder={placeholder}
               autoComplete={autoComplete}
               aria-invalid={fieldState.invalid}
-              className="pr-10"
+              className={cn("pr-10", inputClassName)}
               {...field}
             />
             <Button

@@ -20,6 +20,8 @@ type VendorTextFieldProps<TFieldValues extends FieldValues> = {
   type?: React.HTMLInputTypeAttribute;
   autoComplete?: string;
   className?: string;
+  inputClassName?: string;
+  labelClassName?: string;
 };
 
 export function VendorTextField<TFieldValues extends FieldValues>({
@@ -31,6 +33,8 @@ export function VendorTextField<TFieldValues extends FieldValues>({
   type = "text",
   autoComplete,
   className,
+  inputClassName,
+  labelClassName,
 }: VendorTextFieldProps<TFieldValues>) {
   return (
     <Controller
@@ -38,7 +42,7 @@ export function VendorTextField<TFieldValues extends FieldValues>({
       name={name}
       render={({ field, fieldState }) => (
         <div className={cn("grid gap-1.5", className)}>
-          <Label htmlFor={field.name}>{label}</Label>
+          <Label htmlFor={field.name} className={labelClassName}>{label}</Label>
           {description ? (
             <p className="text-muted-foreground text-xs">{description}</p>
           ) : null}
@@ -48,6 +52,7 @@ export function VendorTextField<TFieldValues extends FieldValues>({
             placeholder={placeholder}
             autoComplete={autoComplete}
             aria-invalid={fieldState.invalid}
+            className={inputClassName}
             {...field}
           />
           {fieldState.error?.message ? (

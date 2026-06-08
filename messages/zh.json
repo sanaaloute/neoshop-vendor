@@ -69,7 +69,13 @@
     "emailNotVerified": "您的邮箱尚未验证。",
     "resendSuccess": "如果账户存在，验证邮件已发送。",
     "accountCreatedCheckEmail": "账户已创建。请查收邮件验证您的账户后再登录。",
-    "registrationIncomplete": "注册未完成，请重试。"
+    "registrationIncomplete": "注册未完成，请重试。",
+    "signInToContinue": "请登录以继续。",
+    "continue": "继续",
+    "verify": "验证",
+    "enterOtp": "验证码",
+    "otpSent": "验证码已发送至您的手机。",
+    "backToPhone": "使用其他手机号码"
   },
   "dashboard": {
     "overview": "概览",

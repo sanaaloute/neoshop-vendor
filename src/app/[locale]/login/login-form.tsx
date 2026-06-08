@@ -9,20 +9,13 @@ import { useTranslations } from "next-intl";
 import { VendorForm } from "@/components/forms/vendor-form";
 import { VendorTextField } from "@/components/forms/vendor-text-field";
 import { VendorPasswordField } from "@/components/forms/vendor-password-field";
-import { VendorMuted } from "@/components/layout/typography";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { getAuthErrorMessage } from "@/lib/get-auth-error-message";
 import { useRateLimit } from "@/lib/rate-limit";
 import { refreshTokensClient } from "@/services/auth-refresh-client";
 import { useAuthStore } from "@/store/auth-store";
+import { getOrCreateDeviceId } from "@/lib/get-device-id";
+import { cn } from "@/lib/utils";
 
 /** Reject absolute and protocol-relative URLs from `?next=` (open-redirect hardening). */
 function safePostLoginPath(next: string | null): string {
@@ -51,9 +44,18 @@ export function LoginForm() {
   const [resendSuccess, setResendSuccess] = useState<string | null>(null);
   const resumeStarted = useRef(false);
 
+  // Phone login state
+  const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [phoneStep, setPhoneStep] = useState<"input" | "otp">("input");
+  const [isPhoneSubmitting, setIsPhoneSubmitting] = useState(false);
+
   const loginRateLimit = useRateLimit("auth:login", 10, 60_000);
   const registerRateLimit = useRateLimit("auth:register", 5, 60_000);
   const resendRateLimit = useRateLimit("auth:resend-verification", 3, 60_000);
+  const phoneInitiateRateLimit = useRateLimit("auth:login-phone-initiate", 5, 60_000);
+  const phoneVerifyRateLimit = useRateLimit("auth:login-phone-verify", 5, 60_000);
 
   const passwordSchema = useMemo(
     () =>
@@ -114,7 +116,14 @@ export function LoginForm() {
     setSignupSuccess(null);
     setUnverifiedEmail(null);
     setResendSuccess(null);
+    setPhoneStep("input");
+    setPhone("");
+    setOtp("");
   }, [mode]);
+
+  useEffect(() => {
+    setError(null);
+  }, [authMethod]);
 
   const isSignup = mode === "signup";
 
@@ -187,24 +196,78 @@ export function LoginForm() {
     }
   }
 
+  async function handlePhoneSubmit() {
+    setError(null);
+
+    if (phoneStep === "input") {
+      if (!phone || !/^\+[1-9]\d{1,14}$/.test(phone)) {
+        setError(t("phone"));
+        return;
+      }
+      if (!phoneInitiateRateLimit.tryRecord()) {
+        setError(te("tooManyRequests"));
+        return;
+      }
+      setIsPhoneSubmitting(true);
+      try {
+        const res = await useAuthStore.getState().loginPhoneInitiate(phone);
+        if (res.success) {
+          setPhoneStep("otp");
+        } else {
+          setError(res.message || te("unableToSignIn"));
+        }
+      } catch (e) {
+        setError(mapAuthError(e, "login"));
+      } finally {
+        setIsPhoneSubmitting(false);
+      }
+    } else {
+      if (!otp || otp.length < 4) {
+        setError(te("invalidEmailOrPassword"));
+        return;
+      }
+      if (!phoneVerifyRateLimit.tryRecord()) {
+        setError(te("tooManyRequests"));
+        return;
+      }
+      setIsPhoneSubmitting(true);
+      try {
+        await useAuthStore.getState().loginPhoneVerify({
+          phone,
+          code: otp,
+          deviceId: getOrCreateDeviceId(),
+        });
+        router.replace(safePostLoginPath(searchParams.get("next")));
+      } catch (e) {
+        setError(mapAuthError(e, "login"));
+      } finally {
+        setIsPhoneSubmitting(false);
+      }
+    }
+  }
+
+  const inputClassName =
+    "h-12 rounded-xl border-white/10 bg-white/[0.04] px-4 text-sm text-white placeholder:text-slate-500 focus-visible:border-teal-400/50 focus-visible:ring-teal-400/20 dark:bg-white/[0.04]";
+
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="text-center">
-        <div className="mb-2 flex justify-center">
-          <img
-            src="/logo.png"
-            alt="Barkosem Vendor Dashboard"
-            className="h-12 w-auto select-none"
-          />
-        </div>
-        <CardTitle>{isSignup ? t("createAccount") : t("signIn")}</CardTitle>
-        <CardDescription>
+    <div className="w-full max-w-[420px] rounded-2xl border border-white/[0.06] bg-[#0f0f16]/90 p-8 shadow-2xl backdrop-blur-xl sm:p-10">
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold tracking-tight text-white">
+          {isSignup ? t("createAccount") : t("signIn")}
+        </h1>
+        <p className="text-sm leading-relaxed text-slate-400">
           {isSignup ? t("registerDescription") : t("signInDescription")}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        </p>
+        {!isSignup && (
+          <p className="pt-2 text-sm text-slate-500">
+            {t("signInToContinue")}
+          </p>
+        )}
+      </div>
+
+      <div className="mt-6">
         {signupSuccess ? (
-          <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-sm text-green-800 dark:text-green-200">
+          <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-300">
             {signupSuccess}
           </div>
         ) : isSignup ? (
@@ -256,6 +319,8 @@ export function LoginForm() {
                     label={t("firstName")}
                     placeholder={t("firstNamePlaceholder")}
                     autoComplete="given-name"
+                    inputClassName={inputClassName}
+                    labelClassName="text-slate-400"
                   />
                   <VendorTextField
                     control={form.control}
@@ -263,6 +328,8 @@ export function LoginForm() {
                     label={t("lastName")}
                     placeholder={t("lastNamePlaceholder")}
                     autoComplete="family-name"
+                    inputClassName={inputClassName}
+                    labelClassName="text-slate-400"
                   />
                 </div>
                 <VendorTextField
@@ -272,6 +339,8 @@ export function LoginForm() {
                   placeholder={t("emailPlaceholder")}
                   type="email"
                   autoComplete="email"
+                  inputClassName={inputClassName}
+                  labelClassName="text-slate-400"
                 />
                 <VendorTextField
                   control={form.control}
@@ -280,6 +349,8 @@ export function LoginForm() {
                   placeholder={t("phonePlaceholder")}
                   type="tel"
                   autoComplete="tel"
+                  inputClassName={inputClassName}
+                  labelClassName="text-slate-400"
                 />
                 <div className="space-y-1">
                   <VendorPasswordField
@@ -288,8 +359,10 @@ export function LoginForm() {
                     label={t("password")}
                     placeholder="••••••••"
                     autoComplete="new-password"
+                    inputClassName={inputClassName}
+                    labelClassName="text-slate-400"
                   />
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-xs text-slate-500">
                     {t("passwordHint")}
                   </p>
                 </div>
@@ -299,134 +372,244 @@ export function LoginForm() {
                   label={t("confirmPassword")}
                   placeholder="••••••••"
                   autoComplete="new-password"
+                  inputClassName={inputClassName}
+                  labelClassName="text-slate-400"
                 />
                 {error ? (
-                  <VendorMuted className="text-destructive">{error}</VendorMuted>
+                  <p className="text-sm text-red-400">{error}</p>
                 ) : null}
-                <Button
+                <button
                   type="submit"
-                  className="w-full"
                   disabled={form.formState.isSubmitting || !registerRateLimit.canRequest}
+                  className="h-12 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
                 >
                   {form.formState.isSubmitting
                     ? t("creatingAccount")
                     : !registerRateLimit.canRequest
                       ? t("retryIn", { seconds: registerRateLimit.remainingSeconds })
                       : t("createVendorAccount")}
-                </Button>
+                </button>
               </>
             )}
           </VendorForm>
         ) : (
-          <VendorForm<z.infer<typeof loginSchema>>
-            key="login"
-            schema={loginSchema}
-            defaultValues={{ email: "", password: "" }}
-            onSubmit={async (values) => {
-              setError(null);
-              setUnverifiedEmail(null);
-              setResendSuccess(null);
-              if (!loginRateLimit.tryRecord()) {
-                setError(te("tooManyRequests"));
-                return;
-              }
-              try {
-                await login(values);
-                router.replace(safePostLoginPath(searchParams.get("next")));
-              } catch (e) {
-                if (isEmailNotVerifiedError(e)) {
-                  setUnverifiedEmail(values.email);
-                }
-                setError(mapAuthError(e, "login"));
-              }
-            }}
-            className="w-full space-y-4"
-          >
-            {(form) => (
-              <>
-                <VendorTextField
-                  control={form.control}
-                  name="email"
-                  label={t("email")}
-                  placeholder={t("emailPlaceholder")}
-                  type="email"
-                  autoComplete="email"
-                />
-                <VendorPasswordField
-                  control={form.control}
-                  name="password"
-                  label={t("password")}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                />
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    className="text-primary text-xs font-medium underline-offset-4 hover:underline"
-                    onClick={() => router.push("/login/forgot-password")}
-                  >
-                    {t("forgotPassword")}
-                  </button>
-                </div>
-                {error ? (
-                  <VendorMuted className="text-destructive">{error}</VendorMuted>
-                ) : null}
-                {unverifiedEmail && (
-                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
-                    <p className="text-amber-800 dark:text-amber-200">
-                      {t("emailNotVerified")}
-                    </p>
-                    {resendSuccess ? (
-                      <p className="mt-1 text-green-700 dark:text-green-300">{resendSuccess}</p>
-                    ) : (
+          <div className="space-y-4">
+            {/* Auth method tabs */}
+            <div className="flex gap-2 rounded-xl bg-white/[0.03] p-1">
+              <button
+                type="button"
+                onClick={() => setAuthMethod("email")}
+                className={cn(
+                  "flex-1 rounded-lg py-2 text-sm font-medium transition-all",
+                  authMethod === "email"
+                    ? "bg-teal-400 text-slate-900"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                {t("email")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMethod("phone")}
+                className={cn(
+                  "flex-1 rounded-lg py-2 text-sm font-medium transition-all",
+                  authMethod === "phone"
+                    ? "bg-teal-400 text-slate-900"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                {t("phone")}
+              </button>
+            </div>
+
+            {authMethod === "email" ? (
+              <VendorForm<z.infer<typeof loginSchema>>
+                key="login"
+                schema={loginSchema}
+                defaultValues={{ email: "", password: "" }}
+                onSubmit={async (values) => {
+                  setError(null);
+                  setUnverifiedEmail(null);
+                  setResendSuccess(null);
+                  if (!loginRateLimit.tryRecord()) {
+                    setError(te("tooManyRequests"));
+                    return;
+                  }
+                  try {
+                    await login(values);
+                    router.replace(safePostLoginPath(searchParams.get("next")));
+                  } catch (e) {
+                    if (isEmailNotVerifiedError(e)) {
+                      setUnverifiedEmail(values.email);
+                    }
+                    setError(mapAuthError(e, "login"));
+                  }
+                }}
+                className="w-full space-y-4"
+              >
+                {(form) => (
+                  <>
+                    <VendorTextField
+                      control={form.control}
+                      name="email"
+                      label={t("email")}
+                      placeholder={t("emailPlaceholder")}
+                      type="email"
+                      autoComplete="email"
+                      inputClassName={inputClassName}
+                      labelClassName="text-slate-400"
+                    />
+                    <VendorPasswordField
+                      control={form.control}
+                      name="password"
+                      label={t("password")}
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      inputClassName={inputClassName}
+                      labelClassName="text-slate-400"
+                    />
+                    <div className="flex justify-end">
                       <button
                         type="button"
-                        className="mt-1 text-xs font-medium underline-offset-4 hover:underline disabled:opacity-50"
-                        disabled={!resendRateLimit.canRequest}
-                        onClick={() => handleResendVerification(unverifiedEmail)}
+                        className="text-sm text-teal-400 hover:text-teal-300"
+                        onClick={() => router.push("/login/forgot-password")}
                       >
-                        {!resendRateLimit.canRequest
-                          ? t("resendAvailableIn", { seconds: resendRateLimit.remainingSeconds })
-                          : t("resendVerification")}
+                        {t("forgotPassword")}
                       </button>
+                    </div>
+                    {error ? (
+                      <p className="text-sm text-red-400">{error}</p>
+                    ) : null}
+                    {unverifiedEmail && (
+                      <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-sm">
+                        <p className="text-amber-300">
+                          {t("emailNotVerified")}
+                        </p>
+                        {resendSuccess ? (
+                          <p className="mt-1 text-green-300">{resendSuccess}</p>
+                        ) : (
+                          <button
+                            type="button"
+                            className="mt-1 text-xs font-medium text-teal-400 hover:text-teal-300 disabled:opacity-50"
+                            disabled={!resendRateLimit.canRequest}
+                            onClick={() => handleResendVerification(unverifiedEmail)}
+                          >
+                            {!resendRateLimit.canRequest
+                              ? t("resendAvailableIn", { seconds: resendRateLimit.remainingSeconds })
+                              : t("resendVerification")}
+                          </button>
+                        )}
+                      </div>
                     )}
+                    <button
+                      type="submit"
+                      disabled={form.formState.isSubmitting || !loginRateLimit.canRequest}
+                      className="h-12 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
+                    >
+                      {form.formState.isSubmitting
+                        ? t("signingIn")
+                        : !loginRateLimit.canRequest
+                          ? t("retryIn", { seconds: loginRateLimit.remainingSeconds })
+                          : t("continue")}
+                    </button>
+                  </>
+                )}
+              </VendorForm>
+            ) : (
+              <div className="space-y-4">
+                {phoneStep === "input" ? (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-300">
+                      {t("phone")}
+                    </label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder={t("phonePlaceholder")}
+                      autoComplete="tel"
+                      className={inputClassName}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-300">
+                      {t("enterOtp")}
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      placeholder="123456"
+                      autoComplete="one-time-code"
+                      className={inputClassName}
+                    />
+                    <p className="text-xs text-slate-500">
+                      {t("otpSent")}
+                    </p>
                   </div>
                 )}
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={form.formState.isSubmitting || !loginRateLimit.canRequest}
+                {error ? (
+                  <p className="text-sm text-red-400">{error}</p>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={handlePhoneSubmit}
+                  disabled={
+                    isPhoneSubmitting ||
+                    (phoneStep === "input" && !phoneInitiateRateLimit.canRequest) ||
+                    (phoneStep === "otp" && !phoneVerifyRateLimit.canRequest)
+                  }
+                  className="h-12 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
                 >
-                  {form.formState.isSubmitting
+                  {isPhoneSubmitting
                     ? t("signingIn")
-                    : !loginRateLimit.canRequest
-                      ? t("retryIn", { seconds: loginRateLimit.remainingSeconds })
-                      : t("signInLink")}
-                </Button>
-              </>
+                    : phoneStep === "input"
+                      ? !phoneInitiateRateLimit.canRequest
+                        ? t("retryIn", { seconds: phoneInitiateRateLimit.remainingSeconds })
+                        : t("continue")
+                      : !phoneVerifyRateLimit.canRequest
+                        ? t("retryIn", { seconds: phoneVerifyRateLimit.remainingSeconds })
+                        : t("verify")}
+                </button>
+                {phoneStep === "otp" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhoneStep("input");
+                      setOtp("");
+                      setError(null);
+                    }}
+                    className="w-full text-center text-sm text-slate-400 hover:text-slate-200"
+                  >
+                    {t("backToPhone")}
+                  </button>
+                )}
+              </div>
             )}
-          </VendorForm>
+          </div>
         )}
 
         {!signupSuccess && (
-          <div className="text-center text-sm">
+          <div className="mt-6 text-center text-sm">
             {isSignup ? (
-              <p className="text-muted-foreground">
+              <p className="text-slate-500">
                 {t("alreadyHaveAccount")}{" "}
                 <button
                   type="button"
-                  className="text-primary font-medium underline-offset-4 hover:underline"
+                  className="font-medium text-teal-400 hover:text-teal-300"
                   onClick={() => setMode("login")}
                 >
                   {t("signInLink")}
                 </button>
               </p>
             ) : (
-              <p className="text-muted-foreground">
+              <p className="text-slate-500">
                 {t("newVendor")}{" "}
                 <button
                   type="button"
-                  className="text-primary font-medium underline-offset-4 hover:underline"
+                  className="font-medium text-teal-400 hover:text-teal-300"
                   onClick={() => setMode("signup")}
                 >
                   {t("createAccountLink")}
@@ -436,10 +619,10 @@ export function LoginForm() {
           </div>
         )}
 
-        <VendorMuted className="text-center text-xs">
+        <p className="mt-6 text-center text-xs text-slate-600">
           {t("onboardingHint")}
-        </VendorMuted>
-      </CardContent>
-    </Card>
+        </p>
+      </div>
+    </div>
   );
 }
