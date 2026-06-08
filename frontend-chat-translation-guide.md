@@ -27,7 +27,7 @@ Any ISO 639-1 language code is accepted (e.g. `en`, `fr`, `es`, `de`, `it`, `pt`
 
 ## User Settings — Language Preference
 
-### `GET /users/settings`
+### `GET /users/me/settings`
 
 Retrieve the current user's notification and language settings.
 
@@ -57,7 +57,7 @@ Authorization: Bearer <supabase_access_token>
 
 ---
 
-### `PATCH /users/settings`
+### `PATCH /users/me/settings`
 
 Update the current user's settings, including language preference.
 
@@ -356,7 +356,7 @@ import axios from 'axios';
 const API_BASE = 'https://api.barkosem.com/api/v1';
 
 export async function getSettings(token: string): Promise<UserSettings> {
-  const res = await axios.get(`${API_BASE}/users/settings`, {
+  const res = await axios.get(`${API_BASE}/users/me/settings`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
@@ -366,7 +366,7 @@ export async function updateSettings(
   token: string,
   partial: Partial<UserSettings>
 ): Promise<UserSettings> {
-  const res = await axios.patch(`${API_BASE}/users/settings`, partial, {
+  const res = await axios.patch(`${API_BASE}/users/me/settings`, partial, {
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -554,8 +554,8 @@ export function getPreviewText(
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET` | `/users/settings` | JWT | Get language preference |
-| `PATCH` | `/users/settings` | JWT | Update language preference |
+| `GET` | `/users/me/settings` | JWT | Get language preference |
+| `PATCH` | `/users/me/settings` | JWT | Update language preference |
 | `GET` | `/chat/conversations` | JWT | List conversations (latest message may have `translatedBody`) |
 | `GET` | `/chat/conversations/:id/messages` | JWT | Message history (may have `translatedBody`) |
 | `POST` | `/chat/conversations/:id/messages` | JWT | Send message (response never has `translatedBody`) |

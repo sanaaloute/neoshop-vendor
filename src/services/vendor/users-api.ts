@@ -30,16 +30,32 @@ export type UpdateUserSettingsDto = {
   preferredLanguage?: string;
 };
 
-/** GET /users/settings — notification/settings preferences (includes language) */
+/** GET /users/me/settings — notification/settings preferences (includes language) */
 export async function getUserSettings() {
-  const { data } = await vendorApiClient.get<UserSettingsResponse>("/api/v1/users/settings");
-  return data;
+  try {
+    const { data } = await vendorApiClient.get<UserSettingsResponse>("/api/v1/users/me/settings");
+    return data;
+  } catch (e: any) {
+    if (e?.response?.status === 404) {
+      // Endpoint not available yet — return empty defaults so UI still works
+      return {} as UserSettingsResponse;
+    }
+    throw e;
+  }
 }
 
-/** PATCH /users/settings — update settings preferences (including language) */
+/** PATCH /users/me/settings — update settings preferences (including language) */
 export async function patchUserSettings(body: UpdateUserSettingsDto) {
-  const { data } = await vendorApiClient.patch<UserSettingsResponse>("/api/v1/users/settings", body);
-  return data;
+  try {
+    const { data } = await vendorApiClient.patch<UserSettingsResponse>("/api/v1/users/me/settings", body);
+    return data;
+  } catch (e: any) {
+    if (e?.response?.status === 404) {
+      // Endpoint not available yet — return body as-is so UI still works
+      return body as UserSettingsResponse;
+    }
+    throw e;
+  }
 }
 
 /** GET /users/me/viewed-products — list recently viewed products */
