@@ -85,6 +85,9 @@ export function RealtimeStoreBridge() {
         senderUserId: payload.senderUserId,
         body: payload.body,
         sentAt: payload.createdAt,
+        translatedBody: payload.translatedBody,
+        originalLanguage: payload.originalLanguage,
+        targetLanguage: payload.targetLanguage,
       });
 
       // Auto-mark read if the conversation is currently open and message is from peer

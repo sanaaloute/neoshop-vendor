@@ -11,6 +11,7 @@ import {
   User,
   Bell,
   FileStack,
+  Globe,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -68,6 +69,22 @@ export function SettingsHome() {
       OTHER: td("other"),
     }),
     [td]
+  );
+
+  const LANGUAGES = useMemo(
+    () => [
+      { code: "en", label: "English" },
+      { code: "fr", label: "Français" },
+      { code: "es", label: "Español" },
+      { code: "de", label: "Deutsch" },
+      { code: "ar", label: "العربية" },
+      { code: "pt", label: "Português" },
+      { code: "zh", label: "中文" },
+      { code: "sw", label: "Kiswahili" },
+      { code: "yo", label: "Yorùbá" },
+      { code: "ha", label: "Hausa" },
+    ],
+    []
   );
 
   const STATUS_VARIANTS: Record<
@@ -198,6 +215,7 @@ export function SettingsHome() {
         promoMessages: settings.promoMessages,
         emailNewsletter: settings.emailNewsletter,
         pushEnabled: settings.pushEnabled,
+        preferredLanguage: settings.preferredLanguage ?? undefined,
       });
       setSettings(updated ?? {});
       setSettingsSuccess(true);
@@ -854,6 +872,37 @@ export function SettingsHome() {
                 />
               </label>
             ))}
+
+            {/* Language preference */}
+            <div className="space-y-2 rounded-lg border border-border/60 px-3 py-3">
+              <div className="flex items-center gap-2">
+                <Globe className="text-muted-foreground size-4" />
+                <span className="text-sm font-medium">
+                  {t("preferredLanguage")}
+                </span>
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {t("preferredLanguageHint")}
+              </p>
+              <select
+                className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
+                value={settings?.preferredLanguage ?? "en"}
+                onChange={(e) =>
+                  setSettings((prev) =>
+                    prev
+                      ? { ...prev, preferredLanguage: e.target.value }
+                      : prev
+                  )
+                }
+              >
+                {LANGUAGES.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {settingsError ? (
               <p className="text-destructive text-sm">{settingsError}</p>
             ) : null}

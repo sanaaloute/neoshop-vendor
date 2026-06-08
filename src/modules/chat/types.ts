@@ -30,6 +30,10 @@ export type ChatMessage = {
   attachments?: ChatAttachment[];
   /** Delivery hint for optimistic rows */
   pending?: boolean;
+  // Translation fields (only present when sender and receiver have different languages)
+  translatedBody?: string;
+  originalLanguage?: string;
+  targetLanguage?: string;
 };
 
 export type ChatThread = {

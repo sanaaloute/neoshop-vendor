@@ -42,6 +42,10 @@ export type ChatMessagePayload = {
   senderUserId: string;
   body: string;
   createdAt: string;
+  // Translation fields (only present when sender and receiver have different languages)
+  translatedBody?: string;
+  originalLanguage?: string;
+  targetLanguage?: string;
 };
 
 export type ChatTypingPayload = {

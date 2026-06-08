@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   FileIcon,
   Image as ImageIcon,
+  Languages,
   MessageSquare,
   Paperclip,
   Radio,
@@ -402,7 +403,14 @@ export function MessagingHome() {
                         </div>
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-muted-foreground truncate text-xs">
-                            {preview?.body ?? "No messages yet"}
+                            {(() => {
+                              if (!preview) return "No messages yet";
+                              const isFromOther = preview.authorRole !== "vendor";
+                              if (isFromOther && preview.translatedBody) {
+                                return preview.translatedBody;
+                              }
+                              return preview.body;
+                            })()}
                           </span>
                           {unread > 0 ? (
                             <Badge
@@ -551,6 +559,152 @@ function EmptyConversation() {
   );
 }
 
+function TranslationBadge({
+  originalLanguage,
+  targetLanguage,
+}: {
+  originalLanguage?: string;
+  targetLanguage?: string;
+}) {
+  if (!originalLanguage || !targetLanguage) return null;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+      <Languages className="size-2.5" aria-hidden />
+      {originalLanguage.toUpperCase()} → {targetLanguage.toUpperCase()}
+    </span>
+  );
+}
+
+function MessageBubble({
+  m,
+  thread,
+  currentUserIds,
+  hoveredMessageId,
+  setHoveredMessageId,
+  onDeleteMessage,
+}: {
+  m: ChatMessage;
+  thread: ChatThread;
+  currentUserIds: string[];
+  hoveredMessageId: string | null;
+  setHoveredMessageId: (id: string | null) => void;
+  onDeleteMessage: (id: string) => void;
+}) {
+  const isVendor = m.authorRole === "vendor";
+  const sender = m.senderUserId
+    ? thread.participantMap[m.senderUserId]
+    : undefined;
+  const senderName = sender?.name || thread.customerName;
+  const badge = sender ? roleBadge(sender.role) : null;
+  const isMine =
+    m.senderUserId && currentUserIds.includes(m.senderUserId) ? true : false;
+  const hasTranslation = !!m.translatedBody;
+  const [showOriginal, setShowOriginal] = useState(false);
+
+  return (
+    <div
+      className={cn("flex gap-2", isVendor ? "justify-end" : "justify-start")}
+      onMouseEnter={() => setHoveredMessageId(m.id)}
+      onMouseLeave={() => setHoveredMessageId(null)}
+    >
+      {!isVendor && sender?.avatarUrl ? (
+        <img
+          src={sender.avatarUrl}
+          alt=""
+          className="mt-1 size-7 shrink-0 rounded-full object-cover"
+        />
+      ) : !isVendor ? (
+        <div className="bg-primary/10 text-primary mt-1 flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
+          {initials(senderName)}
+        </div>
+      ) : null}
+      <div className="flex max-w-[min(100%,420px)] flex-col">
+        {!isVendor && (
+          <span className="text-muted-foreground mb-0.5 flex items-center gap-1.5 px-1 text-[11px]">
+            <span>{senderName}</span>
+            {badge ? (
+              <Badge variant="outline" className="h-4 px-1 text-[9px]">
+                {badge}
+              </Badge>
+            ) : null}
+          </span>
+        )}
+        <div
+          className={cn(
+            "group relative rounded-2xl border px-3 py-2 text-sm shadow-sm",
+            isVendor
+              ? "border-primary/30 bg-primary/15 text-foreground"
+              : "border-border bg-muted/40"
+          )}
+        >
+          {/* Delete button - only on current user's own messages */}
+          {m.senderUserId &&
+            currentUserIds.includes(m.senderUserId) &&
+            hoveredMessageId === m.id && (
+              <button
+                type="button"
+                onClick={() => onDeleteMessage(m.id)}
+                className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-100"
+                title="Delete message"
+              >
+                <Trash2 className="size-3" />
+              </button>
+            )}
+          {/* Message text: show translated by default for received messages when available */}
+          <p className="whitespace-pre-wrap">
+            {isMine || !hasTranslation || showOriginal
+              ? m.body
+              : m.translatedBody}
+          </p>
+          {/* Translation toggle (receiver only, when translation exists) */}
+          {!isMine && hasTranslation && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setShowOriginal((v) => !v)}
+                className="inline-flex items-center gap-1 rounded-md bg-background/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground ring-1 ring-border/60 backdrop-blur-sm transition-colors hover:text-foreground"
+              >
+                <Languages className="size-2.5" aria-hidden />
+                {showOriginal ? "Show translation" : "Show original"}
+              </button>
+              <TranslationBadge
+                originalLanguage={m.originalLanguage}
+                targetLanguage={m.targetLanguage}
+              />
+            </div>
+          )}
+          {m.attachments?.length ? (
+            <ul className="border-border/50 mt-2 space-y-1 border-t pt-2">
+              {m.attachments.map((a) => (
+                <li
+                  key={a.id}
+                  className="text-muted-foreground flex items-center gap-2 text-xs"
+                >
+                  {a.mime.startsWith("image/") ? (
+                    <ImageIcon
+                      className="size-3.5 shrink-0"
+                      aria-hidden
+                    />
+                  ) : (
+                    <FileIcon className="size-3.5 shrink-0" aria-hidden />
+                  )}
+                  <span className="truncate">{a.filename}</span>
+                  <span className="tabular-nums">
+                    {(a.sizeBytes / 1024).toFixed(1)} KB
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <p className="text-muted-foreground mt-1 text-[10px] tabular-nums">
+            {formatShortTime(m.sentAt)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ConversationBody({
   thread,
   draft,
@@ -614,98 +768,17 @@ function ConversationBody({
 
       <ScrollArea className="min-h-0 flex-1 px-2">
         <div className="space-y-3 py-3 pr-2">
-          {thread.messages.map((m) => {
-            const isVendor = m.authorRole === "vendor";
-            const sender = m.senderUserId
-              ? thread.participantMap[m.senderUserId]
-              : undefined;
-            const senderName = sender?.name || thread.customerName;
-            const badge = sender ? roleBadge(sender.role) : null;
-            return (
-              <div
-                key={m.id}
-                className={cn(
-                  "flex gap-2",
-                  isVendor ? "justify-end" : "justify-start"
-                )}
-                onMouseEnter={() => setHoveredMessageId(m.id)}
-                onMouseLeave={() => setHoveredMessageId(null)}
-              >
-                {!isVendor && sender?.avatarUrl ? (
-                  <img
-                    src={sender.avatarUrl}
-                    alt=""
-                    className="mt-1 size-7 shrink-0 rounded-full object-cover"
-                  />
-                ) : !isVendor ? (
-                  <div className="bg-primary/10 text-primary mt-1 flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
-                    {initials(senderName)}
-                  </div>
-                ) : null}
-                <div className="flex max-w-[min(100%,420px)] flex-col">
-                  {!isVendor && (
-                    <span className="text-muted-foreground mb-0.5 flex items-center gap-1.5 px-1 text-[11px]">
-                      <span>{senderName}</span>
-                      {badge ? (
-                        <Badge variant="outline" className="h-4 px-1 text-[9px]">
-                          {badge}
-                        </Badge>
-                      ) : null}
-                    </span>
-                  )}
-                  <div
-                    className={cn(
-                      "group relative rounded-2xl border px-3 py-2 text-sm shadow-sm",
-                      isVendor
-                        ? "border-primary/30 bg-primary/15 text-foreground"
-                        : "border-border bg-muted/40"
-                    )}
-                  >
-                    {/* Delete button - only on current user's own messages */}
-                    {m.senderUserId &&
-                      currentUserIds.includes(m.senderUserId) &&
-                      hoveredMessageId === m.id && (
-                        <button
-                          type="button"
-                          onClick={() => onDeleteMessage(m.id)}
-                          className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-100"
-                          title="Delete message"
-                        >
-                          <Trash2 className="size-3" />
-                        </button>
-                      )}
-                    <p className="whitespace-pre-wrap">{m.body}</p>
-                    {m.attachments?.length ? (
-                      <ul className="border-border/50 mt-2 space-y-1 border-t pt-2">
-                        {m.attachments.map((a) => (
-                          <li
-                            key={a.id}
-                            className="text-muted-foreground flex items-center gap-2 text-xs"
-                          >
-                            {a.mime.startsWith("image/") ? (
-                              <ImageIcon
-                                className="size-3.5 shrink-0"
-                                aria-hidden
-                              />
-                            ) : (
-                              <FileIcon className="size-3.5 shrink-0" aria-hidden />
-                            )}
-                            <span className="truncate">{a.filename}</span>
-                            <span className="tabular-nums">
-                              {(a.sizeBytes / 1024).toFixed(1)} KB
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                    <p className="text-muted-foreground mt-1 text-[10px] tabular-nums">
-                      {formatShortTime(m.sentAt)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {thread.messages.map((m) => (
+            <MessageBubble
+              key={m.id}
+              m={m}
+              thread={thread}
+              currentUserIds={currentUserIds}
+              hoveredMessageId={hoveredMessageId}
+              setHoveredMessageId={setHoveredMessageId}
+              onDeleteMessage={onDeleteMessage}
+            />
+          ))}
           {peerTyping ? (
             <div className="flex justify-start">
               <div className="border-border bg-muted/30 text-muted-foreground rounded-2xl border border-dashed px-3 py-2 text-xs italic">

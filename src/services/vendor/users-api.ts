@@ -19,6 +19,7 @@ export type UserSettingsResponse = {
   promoMessages?: boolean;
   emailNewsletter?: boolean;
   pushEnabled?: boolean;
+  preferredLanguage?: string | null;
 };
 
 export type UpdateUserSettingsDto = {
@@ -26,17 +27,18 @@ export type UpdateUserSettingsDto = {
   promoMessages?: boolean;
   emailNewsletter?: boolean;
   pushEnabled?: boolean;
+  preferredLanguage?: string;
 };
 
-/** GET /users/me/settings — notification/settings preferences */
+/** GET /users/settings — notification/settings preferences (includes language) */
 export async function getUserSettings() {
-  const { data } = await vendorApiClient.get<UserSettingsResponse>("/api/v1/users/me/settings");
+  const { data } = await vendorApiClient.get<UserSettingsResponse>("/api/v1/users/settings");
   return data;
 }
 
-/** PATCH /users/me/settings — update settings preferences */
+/** PATCH /users/settings — update settings preferences (including language) */
 export async function patchUserSettings(body: UpdateUserSettingsDto) {
-  const { data } = await vendorApiClient.patch<UserSettingsResponse>("/api/v1/users/me/settings", body);
+  const { data } = await vendorApiClient.patch<UserSettingsResponse>("/api/v1/users/settings", body);
   return data;
 }
 

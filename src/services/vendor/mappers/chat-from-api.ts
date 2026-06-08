@@ -57,6 +57,9 @@ export function mapChatMessage(
     senderUserId: sender,
     body: String(raw.body ?? ""),
     sentAt: String(raw.createdAt ?? new Date().toISOString()),
+    translatedBody: typeof raw.translatedBody === "string" ? raw.translatedBody : undefined,
+    originalLanguage: typeof raw.originalLanguage === "string" ? raw.originalLanguage : undefined,
+    targetLanguage: typeof raw.targetLanguage === "string" ? raw.targetLanguage : undefined,
   };
 }
 
@@ -100,7 +103,13 @@ export function mapConversationToThread(
   const peerParticipant = mapParticipant(peer);
   const name = peerParticipant?.name || "Customer";
 
-  const last = raw.lastMessage as Record<string, unknown> | undefined;
+  // Backend may return `messages` (array, take:1) or legacy `lastMessage`
+  const apiMessages = Array.isArray(raw.messages)
+    ? (raw.messages as Record<string, unknown>[])
+    : [];
+  const last =
+    apiMessages[0] ??
+    (raw.lastMessage as Record<string, unknown> | undefined);
   const seedMsgs =
     messages.length > 0
       ? messages
@@ -112,6 +121,9 @@ export function mapConversationToThread(
                 senderUserId: String(last.senderUserId ?? ""),
                 body: last.body,
                 createdAt: last.createdAt,
+                translatedBody: last.translatedBody,
+                originalLanguage: last.originalLanguage,
+                targetLanguage: last.targetLanguage,
               },
               String(raw.id),
               vendorIds
