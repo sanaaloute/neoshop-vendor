@@ -191,8 +191,10 @@ export function VariantsHome() {
     []
   );
 
-  function isLocalAttrId(id: string): boolean {
-    return id.startsWith("attr_") && id.length > 5;
+  function isUuidV4(id: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      id
+    );
   }
 
   async function syncAttributesToBackend(
@@ -233,7 +235,7 @@ export function VariantsHome() {
             // If the current id is a local generated id we do NOT have a valid
             // backend attribute id → we cannot create values. Fall back only
             // when the id already looks like a backend id.
-            if (!isLocalAttrId(attr.id)) {
+            if (isUuidV4(attr.id)) {
               backendAttrId = attr.id;
             }
           } else {
@@ -244,7 +246,7 @@ export function VariantsHome() {
 
       // Only attempt to create values when we are sure backendAttrId is a
       // real backend identifier (not a local attr_… id).
-      if (!isLocalAttrId(backendAttrId)) {
+      if (isUuidV4(backendAttrId)) {
         for (const value of attr.values) {
           if (valueIdMap[value]) continue;
           try {
@@ -440,6 +442,25 @@ export function VariantsHome() {
               </option>
             ))}
           </select>
+          {selectedProductId && (
+            <div className="flex flex-wrap items-center gap-1">
+              {(() => {
+                const product = products.find((p) => p.id === selectedProductId);
+                if (!product || product.categoryIds.length === 0) return null;
+                return product.categoryIds.map((id) => {
+                  const cat = categories.find((c) => c.id === id);
+                  return cat ? (
+                    <span
+                      key={id}
+                      className="bg-secondary text-secondary-foreground inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+                    >
+                      {cat.name}
+                    </span>
+                  ) : null;
+                });
+              })()}
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           {saveMessage ? (

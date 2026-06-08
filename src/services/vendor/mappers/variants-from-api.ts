@@ -31,7 +31,7 @@ function attrKind(label: string): VariantAttributeDefinition["kind"] {
 }
 
 function stableAttrId(raw: Record<string, unknown>, index: number): string {
-  return idStr(raw.id, idStr(raw.attributeId, idStr(raw.code, `attr_${index}`)));
+  return idStr(raw.id, idStr(raw.attributeId, `attr_${index}`));
 }
 
 function attrFromApi(

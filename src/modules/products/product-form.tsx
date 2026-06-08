@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Controller,
@@ -16,7 +15,6 @@ import {
   FolderOpen,
   GripVertical,
   ImageIcon,
-  Layers,
   Save,
   Search,
   Send,
@@ -509,32 +507,6 @@ export function ProductForm({
           </CardHeader>
           <CardContent>
             <TagSelector />
-          </CardContent>
-        </Card>
-
-        {/* Variants */}
-        <Card className="glass-card shadow-glass">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <Layers className="size-4 text-primary" />
-              Variants
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3">
-              {catalogProductId ? (
-                <Link
-                  href={`/variants?productId=${catalogProductId}`}
-                  className="text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline"
-                >
-                  Edit variants →
-                </Link>
-              ) : (
-                <span className="text-muted-foreground text-sm">
-                  Variants can be configured after submitting for review
-                </span>
-              )}
-            </div>
           </CardContent>
         </Card>
 

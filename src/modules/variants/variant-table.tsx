@@ -38,12 +38,12 @@ function ComboBadges({
   defs: VariantAttributeDefinition[];
 }) {
   return (
-    <div className="flex max-w-[220px] flex-wrap gap-1">
+    <div className="flex flex-wrap gap-1">
       {defs.map((d) => (
         <Badge
           key={d.id}
           variant={kindVariant(d.kind)}
-          className="text-[10px] font-normal"
+          className="text-[10px] font-normal whitespace-nowrap"
         >
           {d.name}: {row.combo[d.id] ?? "—"}
         </Badge>
@@ -182,7 +182,7 @@ export function VariantTable({
                   />
                 </TableCell>
                 <TableCell>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
                     <ComboBadges row={row} defs={attributes} />
                     <StatusBadge isLocalOnly={row.isLocalOnly} />
                   </div>
@@ -198,14 +198,14 @@ export function VariantTable({
                   )}
                 </TableCell>
                 <TableCell>
-                  <span className="bg-muted/50 block min-w-[120px] rounded-md px-2 py-1 font-mono text-xs tabular-nums">
+                  <span className="bg-muted/50 block min-w-[100px] rounded-md px-2 py-1 font-mono text-xs tabular-nums whitespace-nowrap">
                     {row.sku}
                   </span>
                 </TableCell>
                 <TableCell>
                   <Input
                     type="number"
-                    className="h-8 w-14 text-xs tabular-nums"
+                    className="h-8 w-12 text-xs tabular-nums"
                     min={1}
                     value={row.moq}
                     onChange={(e) =>
@@ -221,7 +221,7 @@ export function VariantTable({
                 <TableCell>
                   <Input
                     type="number"
-                    className="h-8 w-16 text-xs tabular-nums"
+                    className="h-8 w-14 text-xs tabular-nums"
                     min={0}
                     value={row.stock}
                     onChange={(e) =>
@@ -237,7 +237,7 @@ export function VariantTable({
                 <TableCell>
                   <Input
                     type="number"
-                    className="h-8 w-20 text-xs tabular-nums"
+                    className="h-8 w-16 text-xs tabular-nums"
                     min={0}
                     step={0.01}
                     value={row.price}
@@ -254,7 +254,7 @@ export function VariantTable({
                 <TableCell>
                   <Input
                     type="number"
-                    className="h-8 w-16 text-xs tabular-nums"
+                    className="h-8 w-14 text-xs tabular-nums"
                     min={0}
                     value={row.weightGrams}
                     onChange={(e) =>
@@ -271,7 +271,7 @@ export function VariantTable({
                   <div className="flex gap-1">
                     <Input
                       type="number"
-                      className="h-8 w-12 px-1 text-[10px] tabular-nums"
+                      className="h-8 w-10 px-0.5 text-center text-[10px] tabular-nums"
                       title="Length cm"
                       value={row.lengthCm}
                       onChange={(e) =>
@@ -285,7 +285,7 @@ export function VariantTable({
                     />
                     <Input
                       type="number"
-                      className="h-8 w-12 px-1 text-[10px] tabular-nums"
+                      className="h-8 w-10 px-0.5 text-center text-[10px] tabular-nums"
                       title="Width cm"
                       value={row.widthCm}
                       onChange={(e) =>
@@ -299,7 +299,7 @@ export function VariantTable({
                     />
                     <Input
                       type="number"
-                      className="h-8 w-12 px-1 text-[10px] tabular-nums"
+                      className="h-8 w-10 px-0.5 text-center text-[10px] tabular-nums"
                       title="Height cm"
                       value={row.heightCm}
                       onChange={(e) =>
@@ -315,7 +315,7 @@ export function VariantTable({
                 </TableCell>
                 <TableCell>
                   <Input
-                    className="h-8 min-w-[100px] font-mono text-xs"
+                    className="h-8 min-w-[80px] font-mono text-xs"
                     value={row.barcode}
                     onChange={(e) =>
                       updateVariant(row.id, { barcode: e.target.value })
