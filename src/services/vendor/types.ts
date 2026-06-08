@@ -280,6 +280,16 @@ export type UpdateOrderStatusDto = {
   note?: string;
 };
 
+/** GET /orders/vendor/customers — raw customer row with order counts */
+export type VendorCustomerFromApi = {
+  id: string;
+  name: string;
+  email: string;
+  orderCount: number;
+  totalSpend: number;
+  createdAt: string;
+};
+
 // --- Payments ---
 
 export type PaymentMethod = {

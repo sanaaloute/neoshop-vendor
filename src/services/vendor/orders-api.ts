@@ -4,6 +4,7 @@ import type {
   ApiOrderStatus,
   OrderStatsResponse,
   UpdateOrderStatusDto,
+  VendorCustomerFromApi,
 } from "./types";
 
 /** GET /orders/vendor — returns an array of order summaries (no pagination params per spec) */
@@ -24,7 +25,7 @@ export async function getVendorOrderStats() {
 
 /** GET /orders/vendor/customers — list unique customers who ordered from this vendor */
 export async function listVendorCustomers() {
-  const { data } = await vendorApiClient.get<unknown[]>("/api/v1/orders/vendor/customers");
+  const { data } = await vendorApiClient.get<VendorCustomerFromApi[]>("/api/v1/orders/vendor/customers");
   return data;
 }
 
