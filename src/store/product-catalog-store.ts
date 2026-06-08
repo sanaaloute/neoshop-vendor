@@ -53,7 +53,10 @@ export const useProductCatalogStore = create<CatalogState>()(
                 p.price === 0 && ex.price !== 0 ? ex.price : p.price,
             };
           });
-          return { products: merged };
+          // Preserve store-only products that haven't appeared in the API yet.
+          const apiIds = new Set(products.map((p) => p.id));
+          const preserved = s.products.filter((p) => !apiIds.has(p.id));
+          return { products: [...preserved, ...merged] };
         }),
 
       upsertProduct: (product) =>

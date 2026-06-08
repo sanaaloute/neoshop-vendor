@@ -51,7 +51,6 @@ export type ProductFormValues = {
   media: ProductMedia[];
   status: ProductStatus;
   publishAt: string | null;
-  configureVariants: boolean;
 };
 
 export function productToFormValues(p: Product): ProductFormValues {
@@ -66,7 +65,6 @@ export function productToFormValues(p: Product): ProductFormValues {
     media: p.media.map((m) => ({ ...m })),
     status: p.status,
     publishAt: p.publishAt,
-    configureVariants: false,
   };
 }
 

@@ -12,6 +12,5 @@ export function emptyProductFormValues(): ProductFormValues {
     media: [],
     status: "draft",
     publishAt: null,
-    configureVariants: false,
   };
 }

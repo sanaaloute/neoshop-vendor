@@ -70,7 +70,7 @@ type ProductFormProps = {
   editorKey: string;
   catalogProductId: string | null;
   defaultValues: ProductFormValues;
-  onSuccess?: (createdProductId?: string, configureVariants?: boolean) => void;
+  onSuccess?: (createdProductId?: string, wasSubmittedForReview?: boolean) => void;
   onValuesSnapshot?: (values: ProductFormValues) => void;
   onSavingChange?: (saving: boolean) => void;
 };
@@ -311,7 +311,7 @@ export function ProductForm({
           upsertProduct(p);
           await syncPendingMedia(p.id, v.media);
           clearDraft(editorKey);
-          onSuccess?.(p.id, v.configureVariants);
+          onSuccess?.(p.id);
         }
       } catch (e) {
         setSaveError(httpErrorMessageForUser(e, "Could not save. Try again."));
@@ -347,13 +347,13 @@ export function ProductForm({
           upsertProduct(p);
           await syncPendingMedia(catalogProductId, next.media);
           clearDraft(editorKey);
-          onSuccess?.();
+          onSuccess?.(catalogProductId, true);
         } else {
           const p = await createProductFromForm(next);
           upsertProduct(p);
           await syncPendingMedia(p.id, next.media);
           clearDraft(editorKey);
-          onSuccess?.();
+          onSuccess?.(p.id, true);
         }
       } catch (e) {
         setSaveError(
@@ -367,11 +367,11 @@ export function ProductForm({
     if (catalogProductId) {
       updateProduct(catalogProductId, next);
       clearDraft(editorKey);
-      onSuccess?.();
+      onSuccess?.(catalogProductId, true);
     } else {
       const id = addProduct(next);
       clearDraft(editorKey);
-      onSuccess?.();
+      onSuccess?.(id, true);
     }
   });
 
@@ -521,34 +521,20 @@ export function ProductForm({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {catalogProductId ? (
-              <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
+              {catalogProductId ? (
                 <Link
                   href={`/variants?productId=${catalogProductId}`}
                   className="text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline"
                 >
                   Edit variants →
                 </Link>
-              </div>
-            ) : (
-              <Controller
-                control={form.control}
-                name="configureVariants"
-                render={({ field }) => (
-                  <label className="flex cursor-pointer items-center gap-2">
-                    <input
-                      type="checkbox"
-                      className="accent-primary size-4"
-                      checked={field.value ?? false}
-                      onChange={(e) => field.onChange(e.target.checked)}
-                    />
-                    <span className="text-sm">
-                      Go to variant setup after saving this product
-                    </span>
-                  </label>
-                )}
-              />
-            )}
+              ) : (
+                <span className="text-muted-foreground text-sm">
+                  Variants can be configured after submitting for review
+                </span>
+              )}
+            </div>
           </CardContent>
         </Card>
 

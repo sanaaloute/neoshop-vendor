@@ -10,7 +10,7 @@ import {
   updateProduct,
 } from "./products-api";
 import type { ApiProductStatus } from "./types";
-import { createVariant, listVariants, updateVariant } from "./variants-api";
+
 
 function uiStatusToApi(
   status: ProductFormValues["status"]
@@ -27,30 +27,6 @@ function uiStatusToApi(
     case "draft":
     default:
       return "draft";
-  }
-}
-
-async function ensurePrimaryVariant(
-  productId: string,
-  values: ProductFormValues
-) {
-  const raw = await listVariants(productId);
-  const variants = Array.isArray(raw) ? raw : [];
-  const first = variants[0] as Record<string, unknown> | undefined;
-  const body = {
-    wholesalePrice: values.price,
-    moq: 1,
-    isActive: true,
-  };
-  if (first?.id) {
-    await updateVariant(productId, String(first.id), body);
-  } else {
-    await createVariant(productId, {
-      attributeValueIds: [],
-      wholesalePrice: values.price,
-      moq: 1,
-      isActive: true,
-    });
   }
 }
 
@@ -78,7 +54,6 @@ export async function createProductFromForm(
   }
 
   await setProductCategories(pid, { categoryIds: values.categoryIds });
-  await ensurePrimaryVariant(pid, values);
   const refreshed = await getProduct(pid);
   return mapApiProductRowToProduct(refreshed as Record<string, unknown>);
 }
@@ -105,7 +80,6 @@ export async function updateProductFromForm(
   }
   await updateProduct(productId, body);
   await setProductCategories(productId, { categoryIds: values.categoryIds });
-  await ensurePrimaryVariant(productId, values);
   const refreshed = await getProduct(productId);
   return mapApiProductRowToProduct(refreshed as Record<string, unknown>);
 }
@@ -140,30 +114,6 @@ export async function duplicateProductOnGateway(
       : undefined,
   });
   const pid = String((row as Record<string, unknown>).id);
-  const srcVariants = Array.isArray(r.variants) ? r.variants : [];
-  const v0 = srcVariants[0] as Record<string, unknown> | undefined;
-  const wholesale =
-    typeof v0?.wholesalePrice === "number"
-      ? v0.wholesalePrice
-      : typeof v0?.wholesalePrice === "string"
-        ? parseFloat(v0.wholesalePrice)
-        : 0;
-  const variantBody = {
-    wholesalePrice: Number.isFinite(wholesale) ? wholesale : 0,
-    moq: typeof v0?.moq === "number" ? v0.moq : 1,
-    isActive: v0?.isActive !== false,
-  };
-  const existing = await listVariants(pid);
-  const ev = Array.isArray(existing) ? existing : [];
-  const firstNew = ev[0] as Record<string, unknown> | undefined;
-  if (firstNew?.id) {
-    await updateVariant(pid, String(firstNew.id), variantBody);
-  } else {
-    await createVariant(pid, {
-      attributeValueIds: [],
-      ...variantBody,
-    });
-  }
   const refreshed = await getProduct(pid);
   return mapApiProductRowToProduct(refreshed as Record<string, unknown>);
 }

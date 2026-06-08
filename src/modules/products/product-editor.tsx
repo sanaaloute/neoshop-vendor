@@ -191,8 +191,8 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
             editorKey={editorKey}
             catalogProductId={catalogProductId}
             defaultValues={defaultValues}
-            onSuccess={(createdId, configureVariants) => {
-              if (createdId && configureVariants) {
+            onSuccess={(createdId, wasSubmittedForReview) => {
+              if (createdId && wasSubmittedForReview) {
                 router.push(`/variants?productId=${createdId}`);
               } else {
                 router.push("/products");
