@@ -45,10 +45,6 @@ export const useProductCatalogStore = create<CatalogState>()(
             return {
               ...ex,
               ...p,
-              sku:
-                p.sku === "—" && ex.sku !== "—" && ex.sku !== ""
-                  ? ex.sku
-                  : p.sku,
               price:
                 p.price === 0 && ex.price !== 0 ? ex.price : p.price,
             };
@@ -118,7 +114,6 @@ export const useProductCatalogStore = create<CatalogState>()(
         const copy: Product = {
           ...src,
           id: nid,
-          sku: `${src.sku}-COPY`,
           name: `${src.name} (copy)`,
           status: "draft",
           publishAt: null,

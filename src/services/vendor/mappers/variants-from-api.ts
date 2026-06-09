@@ -2,6 +2,7 @@ import type {
   VariantAttributeDefinition,
   VariantRow,
 } from "@/modules/variants/types";
+import type { ProductMedia } from "@/modules/products/types";
 
 function num(v: unknown, fallback = 0): number {
   if (typeof v === "number" && Number.isFinite(v)) return v;
@@ -68,6 +69,31 @@ function readMediaUrl(item: Record<string, unknown>): string {
     (typeof item.src === "string" && item.src) ||
     ""
   );
+}
+
+function readProductMedia(
+  product: Record<string, unknown>
+): ProductMedia[] {
+  const rawMedia = Array.isArray(product.media)
+    ? product.media
+    : Array.isArray(product.images)
+      ? product.images
+      : [];
+
+  const result: ProductMedia[] = [];
+  for (let i = 0; i < rawMedia.length; i++) {
+    const m = rawMedia[i] as Record<string, unknown>;
+    const url = readMediaUrl(m);
+    if (!url) continue;
+    const id = idStr(m.id, `media_${i}`);
+    result.push({
+      id,
+      fileName: str(m.fileName, str(m.alt, id)),
+      sortIndex: num(m.sortOrder, num(m.sortIndex, i)),
+      url,
+    });
+  }
+  return result;
 }
 
 function buildVariantImageMap(
@@ -172,7 +198,7 @@ export function mapApiProductDetailToVariantWorkbench(
 ): {
   attributes: VariantAttributeDefinition[];
   variants: VariantRow[];
-  skuPrefix: string;
+  productImages: ProductMedia[];
 } {
   const rawAttrs = Array.isArray(product.attributes) ? product.attributes : [];
   let attributes = rawAttrs.map((a, i) =>
@@ -216,7 +242,7 @@ export function mapApiProductDetailToVariantWorkbench(
     }
   }
 
-  const variants = rawVariants.map((v, index) => {
+  const variants = rawVariants.map((v) => {
     const row = v as Record<string, unknown>;
     const inventory = (row.inventory ?? {}) as Record<string, unknown>;
     const combo: Record<string, string> = {};
@@ -284,7 +310,9 @@ export function mapApiProductDetailToVariantWorkbench(
       combo,
       selectionIds,
       isLocalOnly: !hasRealId,
-      sku: str(row.sku, `SKU-${index + 1}`),
+      ...(typeof row.sku === "string" && row.sku.trim()
+        ? { sku: row.sku }
+        : {}),
       moq: Math.max(1, Math.round(num(row.moq, num(product.moq, 1)))),
       stock: Math.max(0, Math.round(num(inventory.quantity, 0))),
       price: num(row.wholesalePrice, 0),
@@ -297,9 +325,8 @@ export function mapApiProductDetailToVariantWorkbench(
     };
   });
 
-  const firstSku = variants[0]?.sku ?? "";
-  const skuPrefix = firstSku.includes("-") ? firstSku.split("-")[0] : "";
-  return { attributes, variants, skuPrefix };
+  const productImages = readProductMedia(product);
+  return { attributes, variants, productImages };
 }
 
 export function mapApiVariantToVariantRow(
@@ -312,7 +339,7 @@ export function mapApiVariantToVariantRow(
     id: hasRealId ? String(row.id) : crypto.randomUUID(),
     combo: {},
     isLocalOnly: !hasRealId,
-    sku: str(row.sku, "SKU"),
+    ...(typeof row.sku === "string" && row.sku.trim() ? { sku: row.sku } : {}),
     moq: Math.max(1, Math.round(num(row.moq, productMoq))),
     stock: Math.max(0, Math.round(num(inventory.quantity, 0))),
     price: num(row.wholesalePrice, 0),

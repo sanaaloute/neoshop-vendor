@@ -159,25 +159,6 @@ export function ProductForm({
 
   useEffect(() => {
     if (!watchedName?.trim()) return;
-    const currentSku = form.getValues("sku");
-    const base = slugify(watchedName).toUpperCase();
-    const shortId = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
-    const generated = `${base}-${shortId}`;
-    if (
-      !currentSku ||
-      currentSku.startsWith(
-        slugify(watchedName.slice(0, -1) || watchedName).toUpperCase()
-      )
-    ) {
-      form.setValue("sku", generated, {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
-    }
-  }, [watchedName, form]);
-
-  useEffect(() => {
-    if (!watchedName?.trim()) return;
     const currentSlug = form.getValues("seo.slug");
     const generated = slugify(watchedName);
     if (
@@ -417,15 +398,6 @@ export function ProductForm({
               placeholder="Wholesale ceramic mugs"
             />
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="grid gap-1.5">
-                <Label className="text-sm font-medium">SKU</Label>
-                <Input
-                  readOnly
-                  disabled
-                  value={form.watch("sku")}
-                  className="bg-muted/50 h-9 font-mono text-xs tabular-nums"
-                />
-              </div>
               <Controller
                 control={form.control}
                 name="price"

@@ -39,9 +39,8 @@ export function mapApiProductRowToProduct(
   const price = money(
     row.price ?? row.wholesalePrice ?? (first ? first.wholesalePrice : undefined)
   );
-  const sku = String(
-    row.sku ?? (first ? first.sku : undefined) ?? "—"
-  );
+  const skuRaw = row.sku ?? (first ? first.sku : undefined);
+  const sku = typeof skuRaw === "string" && skuRaw.trim() ? skuRaw : undefined;
 
   const categories = Array.isArray(row.categories) ? row.categories : [];
   const categoryIds = categories
@@ -88,7 +87,7 @@ export function mapApiProductRowToProduct(
 
   return {
     id: String(row.id),
-    sku,
+    ...(sku !== undefined ? { sku } : {}),
     name: String(row.title ?? row.name ?? "Product"),
     description: String(row.description ?? ""),
     price,

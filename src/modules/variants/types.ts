@@ -17,7 +17,8 @@ export type VariantRow = {
   id: string;
   /** Maps attribute id → chosen value for this row. */
   combo: Record<string, string>;
-  sku: string;
+  /** Backend-generated SKU; the frontend never creates or edits it. */
+  sku?: string | null;
   moq: number;
   stock: number;
   price: number;

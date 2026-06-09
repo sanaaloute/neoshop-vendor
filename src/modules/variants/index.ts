@@ -1,5 +1,5 @@
 /**
- * Variant matrix — dynamic attributes, SKUs, inventory fields.
+ * Variant matrix — dynamic attributes, inventory fields.
  * @module modules/variants
  */
 
@@ -12,5 +12,4 @@ export * from "./types";
 export {
   cartesianValues,
   buildVariantMatrix,
-  buildSku,
 } from "./generate-matrix";

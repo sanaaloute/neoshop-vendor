@@ -64,9 +64,7 @@ export function ProductPreviewSheet({
             <h3 className="text-lg leading-tight font-semibold">
               {values.name.trim() || "Untitled product"}
             </h3>
-            <p className="text-muted-foreground mt-1 text-sm">
-              SKU {values.sku || "—"}
-            </p>
+
             <p className="mt-3 text-xl font-semibold tabular-nums">
               {Number.isFinite(values.price)
                 ? formatCurrency(values.price)

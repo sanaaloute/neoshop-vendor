@@ -25,7 +25,8 @@ export type ProductSeo = {
 
 export type Product = {
   id: string;
-  sku: string;
+  /** Backend-generated SKU; the frontend never creates or edits it. */
+  sku?: string | null;
   name: string;
   description: string;
   price: number;
@@ -41,7 +42,6 @@ export type Product = {
 };
 
 export type ProductFormValues = {
-  sku: string;
   name: string;
   description: string;
   price: number;
@@ -55,7 +55,6 @@ export type ProductFormValues = {
 
 export function productToFormValues(p: Product): ProductFormValues {
   return {
-    sku: p.sku,
     name: p.name,
     description: p.description,
     price: p.price,
@@ -70,9 +69,8 @@ export function productToFormValues(p: Product): ProductFormValues {
 
 export function formValuesToProductPatch(
   v: ProductFormValues
-): Omit<Product, "id" | "createdAt" | "updatedAt"> {
+): Omit<Product, "id" | "createdAt" | "updatedAt" | "sku"> {
   return {
-    sku: v.sku.trim(),
     name: v.name.trim(),
     description: v.description.trim(),
     price: v.price,

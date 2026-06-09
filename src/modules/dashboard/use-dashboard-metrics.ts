@@ -74,7 +74,7 @@ export function useDashboardMetrics(): DashboardMetrics {
       .filter((p) => p.status === "published")
       .slice(0, 4)
       .map((p) => ({
-        sku: p.sku,
+        sku: p.sku || "—",
         name: p.name,
         revenue: p.price * 4,
       }));

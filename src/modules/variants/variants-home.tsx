@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Eye, Loader2, Save } from "lucide-react";
 
@@ -41,6 +41,7 @@ export function VariantsHome() {
   const products = useProductCatalogStore((s) => s.products);
   const variants = useVariantWorkbenchStore((s) => s.variants);
   const attributes = useVariantWorkbenchStore((s) => s.attributes);
+  const productImages = useVariantWorkbenchStore((s) => s.productImages);
   const resetWorkbench = useVariantWorkbenchStore((s) => s.resetWorkbench);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -54,8 +55,6 @@ export function VariantsHome() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const saveMessageTimerRef = useRef<number | undefined>(undefined);
   const lastUrlProductId = useRef<string | null>(null);
-  const filesByVariantId = useRef(new Map<string, File>());
-  const blobUrls = useRef(new Set<string>());
 
   const catalogSync = useGatewayCatalogBootstrap();
   const variantSync = useGatewayVariantsBootstrap(selectedProductId);
@@ -178,18 +177,6 @@ export function VariantsHome() {
       );
     }
   };
-
-  const handleImageChange = useCallback(
-    (variantId: string, file: File) => {
-      const url = URL.createObjectURL(file);
-      blobUrls.current.add(url);
-      filesByVariantId.current.set(variantId, file);
-      useVariantWorkbenchStore
-        .getState()
-        .updateVariant(variantId, { imageUrl: url });
-    },
-    []
-  );
 
   function isUuidV4(id: string): boolean {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -362,6 +349,7 @@ export function VariantsHome() {
             isActive: true,
             weightKg,
             volumeCbm,
+            imageUrl: row.imageUrl,
           });
           const createdItem = Array.isArray(created) ? (created as unknown[])[0] : created;
           const createdId = String((createdItem as Record<string, unknown> | undefined)?.id);
@@ -373,6 +361,7 @@ export function VariantsHome() {
             moq: row.moq,
             weightKg,
             volumeCbm,
+            imageUrl: row.imageUrl,
           });
           await setVariantQuantity(row.id, { quantity: row.stock });
         }
@@ -554,6 +543,28 @@ export function VariantsHome() {
         </div>
       )}
 
+      {productImages.length > 0 && (
+        <div className="border-border/80 bg-card shadow-vendor-card rounded-xl border p-4">
+          <h3 className="text-sm font-semibold tracking-tight">
+            Product images
+          </h3>
+          <p className="text-muted-foreground mt-1 text-xs">
+            Click an image in a variant row to associate it with that variant.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {productImages.map((img) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={img.id}
+                src={img.url}
+                alt={img.fileName}
+                className="h-16 w-16 rounded-md border border-border/60 object-cover"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       <VariantMatrixPanel />
 
       <VariantBulkBar
@@ -566,7 +577,6 @@ export function VariantsHome() {
         onToggle={toggle}
         onToggleAll={toggleAll}
         onDelete={handleDeleteVariant}
-        onImageChange={handleImageChange}
       />
 
       <VariantPreviewSheet

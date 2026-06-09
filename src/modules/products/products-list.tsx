@@ -108,7 +108,8 @@ export function ProductsList() {
       const q = filterSearch.trim().toLowerCase();
       result = result.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
+          p.name.toLowerCase().includes(q) ||
+          (p.sku?.toLowerCase() ?? "").includes(q)
       );
     }
     return result;
@@ -400,7 +401,7 @@ export function ProductsList() {
                       </Link>
                     </TableCell>
                     <TableCell className="text-muted-foreground tabular-nums">
-                      {p.sku}
+                      {p.sku || "—"}
                     </TableCell>
                     <TableCell className="text-muted-foreground hidden max-w-[180px] truncate md:table-cell">
                       {categorySummary(p.categoryIds, categories)}

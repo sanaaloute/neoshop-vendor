@@ -25,8 +25,6 @@ const KIND_OPTIONS: { value: VariantAttributeKind; label: string }[] = [
 
 export function VariantMatrixPanel() {
   const productId = useVariantWorkbenchStore((s) => s.productId);
-  const skuPrefix = useVariantWorkbenchStore((s) => s.skuPrefix);
-  const setSkuPrefix = useVariantWorkbenchStore((s) => s.setSkuPrefix);
   const attributes = useVariantWorkbenchStore((s) => s.attributes);
   const addAttribute = useVariantWorkbenchStore((s) => s.addAttribute);
   const removeAttribute = useVariantWorkbenchStore((s) => s.removeAttribute);
@@ -41,7 +39,6 @@ export function VariantMatrixPanel() {
   const generateMatrix = useVariantWorkbenchStore((s) => s.generateMatrix);
   const variants = useVariantWorkbenchStore((s) => s.variants);
   const resetWorkbench = useVariantWorkbenchStore((s) => s.resetWorkbench);
-  const regenerateSkus = useVariantWorkbenchStore((s) => s.regenerateSkus);
 
   const [defaults, setDefaults] = useState(emptyGenerationDefaults);
   const [valueDraft, setValueDraft] = useState<Record<string, string>>({});
@@ -123,14 +120,6 @@ export function VariantMatrixPanel() {
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => regenerateSkus()}
-          >
-            Regenerate SKUs
-          </Button>
-          <Button
-            type="button"
             variant="ghost"
             size="sm"
             onClick={() => resetWorkbench()}
@@ -140,17 +129,7 @@ export function VariantMatrixPanel() {
         </div>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <div className="grid gap-2">
-          <Label htmlFor="sku-prefix">SKU prefix</Label>
-          <Input
-            id="sku-prefix"
-            value={skuPrefix}
-            onChange={(e) => setSkuPrefix(e.target.value)}
-            placeholder="PROD-001"
-          />
-        </div>
-
+      <div className="mt-4">
         <div className="border-border/80 bg-muted/20 rounded-lg border border-dashed p-3">
           <p className="text-foreground text-xs font-medium">
             Defaults for generated rows

@@ -160,6 +160,9 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
   "slug": "product-slug",
   "description?": "string (max 20000)",
   "moq?": 1,
+  "bulkPricing?": [
+    { "minQuantity": 100, "unitPrice": 20.00 }
+  ],
   "categoryIds?": ["uuid"]
 }
 ```
@@ -203,7 +206,10 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
   "slug?": "string",
   "description?": "string",
   "status?": "draft" | "pending_review" | "hidden",
-  "moq?": 1
+  "moq?": 1,
+  "bulkPricing?": [
+    { "minQuantity": 100, "unitPrice": 20.00 }
+  ]
 }
 ```
 
@@ -323,13 +329,10 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 {
   "attributeValueIds": ["val-uuid-1", "val-uuid-2"],
   "wholesalePrice": 25.00,
-  "moq?": 10,
-  "bulkPricing?": [
-    { "minQuantity": 100, "unitPrice": 20.00 }
-  ],
   "isActive?": true,
   "weightKg?": 0.5,
-  "volumeCbm?": 0.002
+  "volumeCbm?": 0.002,
+  "imageUrl?": "https://cdn.example.com/black-m.jpg"
 }
 ```
 
@@ -343,13 +346,84 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 ```json
 {
   "wholesalePrice?": 25.00,
-  "moq?": 10,
-  "bulkPricing?": [{ "minQuantity": 100, "unitPrice": 20.00 }],
   "isActive?": true,
   "weightKg?": 0.5,
-  "volumeCbm?": 0.002
+  "volumeCbm?": 0.002,
+  "imageUrl?": "https://cdn.example.com/black-m.jpg"
 }
 ```
+
+---
+
+### `POST /products/:productId/variants/bulk`
+
+**Auth:** `VENDOR_PRODUCTS_WRITE`
+
+**Body:** `BulkCreateVariantsDto`
+```json
+{
+  "variants": [
+    {
+      "attributeValueIds": ["val-uuid-1", "val-uuid-2"],
+      "wholesalePrice": 25.00,
+      "isActive": true,
+      "weightKg": 0.5,
+      "volumeCbm": 0.002,
+      "imageUrl": "https://cdn.example.com/black-m.jpg"
+    },
+    {
+      "attributeValueIds": ["val-uuid-1", "val-uuid-3"],
+      "wholesalePrice": 25.00,
+      "isActive": true,
+      "weightKg": 0.5,
+      "volumeCbm": 0.002,
+      "imageUrl": "https://cdn.example.com/black-l.jpg"
+    }
+  ]
+}
+```
+
+**Response:** Array of created variants (same shape as `GET /variants`).
+
+---
+
+### `PATCH /products/:productId/variants/bulk`
+
+**Auth:** `VENDOR_PRODUCTS_WRITE`
+
+**Body:** `BulkUpdateVariantsDto`
+```json
+{
+  "updates": [
+    {
+      "variantId": "var-uuid-1",
+      "wholesalePrice": 26.00,
+      "isActive": false
+    },
+    {
+      "variantId": "var-uuid-2",
+      "imageUrl": "https://cdn.example.com/new-image.jpg"
+    }
+  ]
+}
+```
+
+**Response:** Array of updated variants.
+
+---
+
+### `POST /products/:productId/variants/bulk-delete`
+
+**Auth:** `VENDOR_PRODUCTS_WRITE`
+
+**Body:** `BulkDeleteVariantsDto`
+```json
+{
+  "variantIds": ["var-uuid-1", "var-uuid-2"]
+}
+```
+
+**Response:** `{ "deletedCount": 2 }`
 
 ---
 
@@ -357,7 +431,7 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 
 **Auth:** `VENDOR_PRODUCTS_WRITE`
 
-**Note:** Also deletes the linked inventory row.
+**Note:** Soft-deletes the variant (sets `deletedAt`).
 
 ---
 

@@ -199,6 +199,7 @@ export type CreateProductDto = {
   slug: string;
   description?: string;
   moq?: number;
+  bulkPricing?: BulkPricingTier[];
   categoryIds?: string[];
 };
 
@@ -251,6 +252,7 @@ export type CreateVariantDto = {
   isActive?: boolean;
   weightKg?: number;
   volumeCbm?: number;
+  imageUrl?: string;
 };
 
 export type UpdateVariantDto = {
@@ -260,6 +262,7 @@ export type UpdateVariantDto = {
   isActive?: boolean;
   weightKg?: number;
   volumeCbm?: number;
+  imageUrl?: string;
 };
 
 // --- Orders ---

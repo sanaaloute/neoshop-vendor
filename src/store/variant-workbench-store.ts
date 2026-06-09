@@ -2,16 +2,14 @@
 
 import { create } from "zustand";
 
-import {
-  buildSku,
-  buildVariantMatrix,
-} from "@/modules/variants/generate-matrix";
+import { buildVariantMatrix } from "@/modules/variants/generate-matrix";
 import type {
   VariantAttributeDefinition,
   VariantAttributeKind,
   VariantGenerationDefaults,
   VariantRow,
 } from "@/modules/variants/types";
+import type { ProductMedia } from "@/modules/products/types";
 
 function genAttrId() {
   return `attr_${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`;
@@ -19,17 +17,16 @@ function genAttrId() {
 
 type VariantWorkbenchState = {
   productId: string | null;
-  skuPrefix: string;
   attributes: VariantAttributeDefinition[];
   variants: VariantRow[];
+  productImages: ProductMedia[];
   replaceWorkbench: (payload: {
     productId: string;
-    skuPrefix?: string;
     attributes: VariantAttributeDefinition[];
     variants: VariantRow[];
+    productImages?: ProductMedia[];
   }) => void;
   upsertVariant: (variant: VariantRow) => void;
-  setSkuPrefix: (v: string) => void;
   addAttribute: (name: string, kind: VariantAttributeKind) => string;
   removeAttribute: (id: string) => void;
   renameAttribute: (id: string, name: string) => void;
@@ -58,23 +55,22 @@ type VariantWorkbenchState = {
       >
     >
   ) => void;
-  regenerateSkus: () => void;
   resetWorkbench: () => void;
 };
 
 export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
   (set, get) => ({
     productId: null,
-    skuPrefix: "",
     attributes: [],
     variants: [],
+    productImages: [],
 
-    replaceWorkbench: ({ productId, skuPrefix, attributes, variants }) =>
+    replaceWorkbench: ({ productId, attributes, variants, productImages }) =>
       set({
         productId,
-        skuPrefix: skuPrefix ?? "",
         attributes,
         variants,
+        productImages: productImages ?? [],
       }),
 
     upsertVariant: (variant) =>
@@ -85,8 +81,6 @@ export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
         next[i] = variant;
         return { variants: next };
       }),
-
-    setSkuPrefix: (v) => set({ skuPrefix: v }),
 
     addAttribute: (name, kind) => {
       const id = genAttrId();
@@ -159,8 +153,8 @@ export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
       })),
 
     generateMatrix: (defaults) => {
-      const { attributes, skuPrefix } = get();
-      const rows = buildVariantMatrix(attributes, skuPrefix, defaults);
+      const { attributes } = get();
+      const rows = buildVariantMatrix(attributes, defaults);
       set({ variants: rows });
     },
 
@@ -204,26 +198,12 @@ export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
       }));
     },
 
-    regenerateSkus: () => {
-      const { variants, skuPrefix, attributes } = get();
-      const order = attributes.map((a) => a.id);
-      set({
-        variants: variants.map((r, idx) => {
-          const tuple = order.map((id) => r.combo[id] ?? "").filter(Boolean);
-          return {
-            ...r,
-            sku: buildSku(skuPrefix, tuple, idx),
-          };
-        }),
-      });
-    },
-
     resetWorkbench: () =>
       set({
         productId: null,
-        skuPrefix: "",
         attributes: [],
         variants: [],
+        productImages: [],
       }),
   })
 );

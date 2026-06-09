@@ -36,7 +36,7 @@ export function VariantPreviewSheet({
         <SheetHeader className="border-border border-b text-left">
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>
-            Preview how this SKU and options look on packing and fulfillment
+            Preview how variants and options look on packing and fulfillment
             views.
           </SheetDescription>
         </SheetHeader>
@@ -63,13 +63,10 @@ export function VariantPreviewSheet({
                 {row.imageUrl ? (
                   <img
                     src={row.imageUrl}
-                    alt={row.sku}
+                    alt=""
                     className="mt-2 h-24 w-24 rounded-lg object-cover"
                   />
                 ) : null}
-                <p className="text-muted-foreground mt-2 font-mono text-xs">
-                  {row.sku}
-                </p>
                 <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                   <div>
                     <dt className="text-muted-foreground">MOQ</dt>

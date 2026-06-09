@@ -2,7 +2,6 @@ import type { ProductFormValues } from "./types";
 
 export function emptyProductFormValues(): ProductFormValues {
   return {
-    sku: "",
     name: "",
     description: "",
     price: 9.99,

@@ -1,14 +1,13 @@
 "use client";
 
 import type { ComponentProps } from "react";
-import { useRef } from "react";
 
 import { formatCurrency } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ImageIcon, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -20,6 +19,7 @@ import {
 import { useVariantWorkbenchStore } from "@/store/variant-workbench-store";
 
 import type { VariantAttributeDefinition, VariantRow } from "./types";
+import { VariantImageSelector } from "./variant-image-selector";
 
 function kindVariant(
   k: VariantAttributeDefinition["kind"]
@@ -67,54 +67,11 @@ function StatusBadge({ isLocalOnly }: { isLocalOnly?: boolean }) {
   );
 }
 
-function VariantImageCell({
-  row,
-  onChange,
-}: {
-  row: VariantRow;
-  onChange: (file: File) => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  return (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border/60 bg-muted/30 hover:bg-muted/50"
-        title={row.imageUrl ? "Change image" : "Add image"}
-      >
-        {row.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={row.imageUrl}
-            alt=""
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <ImageIcon className="size-4 text-muted-foreground" />
-        )}
-      </button>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) onChange(file);
-          e.target.value = "";
-        }}
-      />
-    </div>
-  );
-}
-
 type VariantTableProps = {
   selected: Set<string>;
   onToggle: (id: string) => void;
   onToggleAll: () => void;
   onDelete?: (id: string) => void;
-  onImageChange?: (id: string, file: File) => void;
 };
 
 export function VariantTable({
@@ -122,7 +79,6 @@ export function VariantTable({
   onToggle,
   onToggleAll,
   onDelete,
-  onImageChange,
 }: VariantTableProps) {
   const variants = useVariantWorkbenchStore((s) => s.variants);
   const attributes = useVariantWorkbenchStore((s) => s.attributes);
@@ -156,7 +112,6 @@ export function VariantTable({
               </TableHead>
               <TableHead className="min-w-[200px]">Combination</TableHead>
               <TableHead className="w-14">Image</TableHead>
-              <TableHead className="min-w-[140px]">SKU</TableHead>
               <TableHead className="w-16">MOQ</TableHead>
               <TableHead className="w-20">Stock</TableHead>
               <TableHead className="w-24">Price</TableHead>
@@ -178,7 +133,7 @@ export function VariantTable({
                     className="accent-primary size-4"
                     checked={selected.has(row.id)}
                     onChange={() => onToggle(row.id)}
-                    aria-label={`Select ${row.sku}`}
+                    aria-label="Select variant"
                   />
                 </TableCell>
                 <TableCell>
@@ -188,19 +143,7 @@ export function VariantTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  {onImageChange ? (
-                    <VariantImageCell
-                      row={row}
-                      onChange={(file) => onImageChange(row.id, file)}
-                    />
-                  ) : (
-                    <span className="text-muted-foreground text-xs">—</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <span className="bg-muted/50 block min-w-[100px] rounded-md px-2 py-1 font-mono text-xs tabular-nums whitespace-nowrap">
-                    {row.sku}
-                  </span>
+                  <VariantImageSelector row={row} />
                 </TableCell>
                 <TableCell>
                   <Input
