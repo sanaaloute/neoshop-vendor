@@ -10,6 +10,7 @@ import {
   useWatch,
 } from "react-hook-form";
 import {
+  Check,
   ChevronDown,
   ChevronUp,
   FolderOpen,
@@ -530,28 +531,44 @@ export function ProductForm({
               <VendorMuted className="text-xs">
                 {saving
                   ? "Saving…"
-                  : "Changes are auto-saved locally. Submit when ready."}
+                  : catalogProductId
+                    ? "Update your product changes."
+                    : "Changes are auto-saved locally. Submit when ready."}
               </VendorMuted>
               <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={saving || !canWriteCatalog}
-                  onClick={() => void saveToCatalog()}
-                  className="gap-1.5"
-                >
-                  <Save className="size-4" />
-                  Save Draft
-                </Button>
-                <Button
-                  type="button"
-                  disabled={saving || !canWriteCatalog}
-                  onClick={() => void publishNow()}
-                  className="gap-1.5"
-                >
-                  <Send className="size-4" />
-                  Submit Review
-                </Button>
+                {catalogProductId ? (
+                  <Button
+                    type="button"
+                    disabled={saving || !canWriteCatalog}
+                    onClick={() => void saveToCatalog()}
+                    className="gap-1.5"
+                  >
+                    <Check className="size-4" />
+                    Update
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={saving || !canWriteCatalog}
+                      onClick={() => void saveToCatalog()}
+                      className="gap-1.5"
+                    >
+                      <Save className="size-4" />
+                      Save Draft
+                    </Button>
+                    <Button
+                      type="button"
+                      disabled={saving || !canWriteCatalog}
+                      onClick={() => void publishNow()}
+                      className="gap-1.5"
+                    >
+                      <Send className="size-4" />
+                      Submit Review
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
