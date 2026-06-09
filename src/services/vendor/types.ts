@@ -248,7 +248,6 @@ export type BulkPricingTier = {
 export type CreateVariantDto = {
   attributeValueIds: string[];
   wholesalePrice: number;
-  moq?: number;
   bulkPricing?: BulkPricingTier[];
   isActive?: boolean;
   weightKg?: number;
@@ -258,7 +257,6 @@ export type CreateVariantDto = {
 
 export type UpdateVariantDto = {
   wholesalePrice?: number;
-  moq?: number;
   bulkPricing?: BulkPricingTier[];
   isActive?: boolean;
   weightKg?: number;

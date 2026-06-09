@@ -348,7 +348,6 @@ export function VariantsHome() {
               : undefined;
           return {
             wholesalePrice: row.price,
-            moq: row.moq,
             attributeValueIds: row.selectionIds ?? [],
             isActive: true,
             weightKg,
@@ -391,7 +390,6 @@ export function VariantsHome() {
           return {
             variantId: row.id,
             wholesalePrice: row.price,
-            moq: row.moq,
             weightKg,
             volumeCbm,
             imageUrl: row.imageUrl,

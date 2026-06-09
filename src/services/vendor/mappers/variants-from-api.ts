@@ -313,7 +313,6 @@ export function mapApiProductDetailToVariantWorkbench(
       ...(typeof row.sku === "string" && row.sku.trim()
         ? { sku: row.sku }
         : {}),
-      moq: Math.max(1, Math.round(num(row.moq, num(product.moq, 1)))),
       stock: Math.max(0, Math.round(num(inventory.quantity, 0))),
       price: num(row.wholesalePrice, 0),
       weightGrams: Math.round(num(row.weightGrams, num(row.weightKg, 0) * 1000)),
@@ -330,8 +329,7 @@ export function mapApiProductDetailToVariantWorkbench(
 }
 
 export function mapApiVariantToVariantRow(
-  row: Record<string, unknown>,
-  productMoq = 1
+  row: Record<string, unknown>
 ): VariantRow {
   const inventory = (row.inventory ?? {}) as Record<string, unknown>;
   const hasRealId = (typeof row.id === "string" && row.id.trim().length > 0) || (typeof row.id === "number" && Number.isFinite(row.id));
@@ -340,7 +338,6 @@ export function mapApiVariantToVariantRow(
     combo: {},
     isLocalOnly: !hasRealId,
     ...(typeof row.sku === "string" && row.sku.trim() ? { sku: row.sku } : {}),
-    moq: Math.max(1, Math.round(num(row.moq, productMoq))),
     stock: Math.max(0, Math.round(num(inventory.quantity, 0))),
     price: num(row.wholesalePrice, 0),
     weightGrams: Math.round(num(row.weightGrams, num(row.weightKg, 0) * 1000)),

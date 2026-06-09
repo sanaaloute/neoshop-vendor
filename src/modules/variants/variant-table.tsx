@@ -112,7 +112,6 @@ export function VariantTable({
               </TableHead>
               <TableHead className="min-w-[200px]">Combination</TableHead>
               <TableHead className="w-14">Image</TableHead>
-              <TableHead className="w-16">MOQ</TableHead>
               <TableHead className="w-20">Stock</TableHead>
               <TableHead className="w-24">Price</TableHead>
               <TableHead className="w-20">Weight g (optional)</TableHead>
@@ -144,22 +143,6 @@ export function VariantTable({
                 </TableCell>
                 <TableCell>
                   <VariantImageSelector row={row} />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    className="h-8 w-12 text-xs tabular-nums"
-                    min={1}
-                    value={row.moq}
-                    onChange={(e) =>
-                      updateVariant(row.id, {
-                        moq: Math.max(
-                          1,
-                          Number.parseInt(e.target.value, 10) || 1
-                        ),
-                      })
-                    }
-                  />
                 </TableCell>
                 <TableCell>
                   <Input

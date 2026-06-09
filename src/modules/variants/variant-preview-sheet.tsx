@@ -69,10 +69,6 @@ export function VariantPreviewSheet({
                 ) : null}
                 <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                   <div>
-                    <dt className="text-muted-foreground">MOQ</dt>
-                    <dd className="font-medium tabular-nums">{row.moq}</dd>
-                  </div>
-                  <div>
                     <dt className="text-muted-foreground">Stock</dt>
                     <dd className="font-medium tabular-nums">{row.stock}</dd>
                   </div>

@@ -44,7 +44,6 @@ type VariantWorkbenchState = {
     patch: Partial<
       Pick<
         VariantRow,
-        | "moq"
         | "stock"
         | "price"
         | "weightGrams"

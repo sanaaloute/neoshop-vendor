@@ -53,7 +53,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
   });
 
   return (
-    <div className="flex min-h-dvh w-full">
+    <div className="flex h-dvh w-full overflow-hidden">
       <VendorSidebarDesktop />
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetContent

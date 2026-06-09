@@ -136,13 +136,6 @@ export function VariantMatrixPanel() {
           </p>
           <div className="mt-2 flex flex-wrap items-end gap-2">
             <DefaultNum
-              label="MOQ"
-              value={defaults.moq}
-              onChange={(moq) => setDefaults((d) => ({ ...d, moq }))}
-              min={1}
-              step={1}
-            />
-            <DefaultNum
               label="Stock"
               value={defaults.stock}
               onChange={(stock) => setDefaults((d) => ({ ...d, stock }))}

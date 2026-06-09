@@ -19,7 +19,6 @@ export type VariantRow = {
   combo: Record<string, string>;
   /** Backend-generated SKU; the frontend never creates or edits it. */
   sku?: string | null;
-  moq: number;
   stock: number;
   price: number;
   weightGrams: number;
@@ -36,7 +35,6 @@ export type VariantRow = {
 };
 
 export type VariantGenerationDefaults = {
-  moq: number;
   stock: number;
   price: number;
   weightGrams: number;
@@ -48,7 +46,6 @@ export type VariantGenerationDefaults = {
 
 export function emptyGenerationDefaults(): VariantGenerationDefaults {
   return {
-    moq: 1,
     stock: 1000000,
     price: 9.99,
     weightGrams: 250,

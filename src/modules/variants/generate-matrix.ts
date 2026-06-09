@@ -47,7 +47,6 @@ export function buildVariantMatrix(
       combo,
       selectionIds,
       isLocalOnly: true,
-      moq: defaults.moq,
       stock: defaults.stock,
       price: defaults.price,
       weightGrams: defaults.weightGrams,

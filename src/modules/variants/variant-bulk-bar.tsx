@@ -21,7 +21,6 @@ export function VariantBulkBar({
     (s) => s.bulkUpdateVariants
   );
 
-  const [moq, setMoq] = useState("");
   const [stock, setStock] = useState("");
   const [price, setPrice] = useState("");
   const [weight, setWeight] = useState("");
@@ -32,7 +31,6 @@ export function VariantBulkBar({
   const apply = () => {
     const ids = [...selected];
     const patch: Parameters<typeof bulkUpdateVariants>[1] = {};
-    if (moq.trim()) patch.moq = Math.max(1, Number.parseInt(moq, 10) || 1);
     if (stock.trim())
       patch.stock = Math.max(0, Number.parseInt(stock, 10) || 0);
     if (price.trim()) patch.price = Math.max(0, Number.parseFloat(price) || 0);
@@ -43,7 +41,6 @@ export function VariantBulkBar({
     if (Object.keys(patch).length) {
       bulkUpdateVariants(ids, patch);
     }
-    setMoq("");
     setStock("");
     setPrice("");
     setWeight("");
@@ -58,7 +55,6 @@ export function VariantBulkBar({
           Bulk update ({selected.size} selected)
         </p>
         <div className="flex flex-wrap items-end gap-3">
-          <Field label="MOQ" value={moq} onChange={setMoq} />
           <Field label="Stock" value={stock} onChange={setStock} />
           <Field label="Price" value={price} onChange={setPrice} />
           <Field label="Weight g (optional)" value={weight} onChange={setWeight} />
