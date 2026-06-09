@@ -59,6 +59,39 @@ function attrFromApi(
   return { id, name, kind: attrKind(name), values: [...new Set(values)], valueIdMap, code: idStr(row.code, idStr(row.id, idStr(row.attributeId, ""))) };
 }
 
+function readMediaUrl(item: Record<string, unknown>): string {
+  return (
+    (typeof item.url === "string" && item.url) ||
+    (typeof item.imageUrl === "string" && item.imageUrl) ||
+    (typeof item.publicUrl === "string" && item.publicUrl) ||
+    (typeof item.fileUrl === "string" && item.fileUrl) ||
+    (typeof item.src === "string" && item.src) ||
+    ""
+  );
+}
+
+function buildVariantImageMap(
+  product: Record<string, unknown>
+): Map<string, string> {
+  const rawMedia = Array.isArray(product.media)
+    ? product.media
+    : Array.isArray(product.images)
+      ? product.images
+      : [];
+
+  const map = new Map<string, string>();
+  for (const m of rawMedia) {
+    const item = m as Record<string, unknown>;
+    const variantId = idStr(item.variantId, "");
+    if (!variantId) continue;
+    const url = readMediaUrl(item);
+    if (url && !map.has(variantId)) {
+      map.set(variantId, url);
+    }
+  }
+  return map;
+}
+
 function readSelections(row: Record<string, unknown>) {
   const raw = Array.isArray(row.selections) ? row.selections : [];
   return raw.map((s) => s as Record<string, unknown>);
@@ -154,6 +187,11 @@ export function mapApiProductDetailToVariantWorkbench(
     attributes = reconstructAttributesFromVariants(rawVariants);
   }
 
+  // Product media may be tagged with a variantId; build a lookup so existing
+  // variant rows can display their attached images without requiring an
+  // imageUrl field directly on the variant payload.
+  const variantImageMap = buildVariantImageMap(product);
+
   const attrByRawValueId = new Map<string, string>();
   for (const attr of attributes) {
     for (const value of attr.values) {
@@ -238,6 +276,9 @@ export function mapApiProductDetailToVariantWorkbench(
 
     const hasRealId = (typeof row.id === "string" && row.id.trim().length > 0) || (typeof row.id === "number" && Number.isFinite(row.id));
 
+    const directImageUrl = str(row.imageUrl, "");
+    const mappedImageUrl = hasRealId ? variantImageMap.get(String(row.id)) : undefined;
+
     return {
       id: hasRealId ? String(row.id) : crypto.randomUUID(),
       combo,
@@ -252,7 +293,7 @@ export function mapApiProductDetailToVariantWorkbench(
       widthCm: num(row.widthCm, 0),
       heightCm: num(row.heightCm, 0),
       barcode: str(row.barcode, ""),
-      imageUrl: str(row.imageUrl, ""),
+      imageUrl: directImageUrl || mappedImageUrl || "",
     };
   });
 
