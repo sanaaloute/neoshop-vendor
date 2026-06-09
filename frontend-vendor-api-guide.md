@@ -205,7 +205,7 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
   "title?": "string",
   "slug?": "string",
   "description?": "string",
-  "status?": "draft" | "pending_review" | "hidden",
+  "status?": "draft" | "hidden" | "archived" | "published",
   "moq?": 1,
   "bulkPricing?": [
     { "minQuantity": 100, "unitPrice": 20.00 }
@@ -213,7 +213,7 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 }
 ```
 
-**Note:** Vendors may only set `draft`, `pending_review`, or `hidden`. Publication, rejection, and archival require an administrator.
+**Note:** Vendors may set `draft`, `hidden`, `archived`, or `published`. Selecting `published` is only allowed when the product is already in `published` status (admin-approved). Initial publication and the `rejected` status can only be set by an administrator.
 
 ---
 

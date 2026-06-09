@@ -209,6 +209,7 @@ export type UpdateProductDto = {
   description?: string;
   moq?: number;
   status?: ApiProductStatus;
+  bulkPricing?: BulkPricingTier[];
 };
 
 export type ProductStatsResponse = {
@@ -263,6 +264,18 @@ export type UpdateVariantDto = {
   weightKg?: number;
   volumeCbm?: number;
   imageUrl?: string;
+};
+
+export type BulkCreateVariantsDto = {
+  variants: CreateVariantDto[];
+};
+
+export type BulkUpdateVariantsDto = {
+  updates: Array<UpdateVariantDto & { variantId: string }>;
+};
+
+export type BulkDeleteVariantsDto = {
+  variantIds: string[];
 };
 
 // --- Orders ---

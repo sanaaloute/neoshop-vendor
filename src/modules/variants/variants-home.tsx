@@ -18,10 +18,11 @@ import {
   createProductAttributeValue,
 } from "@/services/vendor/products-api";
 import {
-  createVariant,
+  createVariantsBulk,
   deleteVariant,
+  deleteVariantsBulk,
   listVariants,
-  updateVariant as updateVariantApi,
+  updateVariantsBulk,
 } from "@/services/vendor/variants-api";
 import { useCategories } from "@/hooks/use-categories";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
@@ -332,17 +333,20 @@ export function VariantsHome() {
       const keptIds = new Set(validRows.filter((r) => !r.isLocalOnly).map((r) => r.id));
       const idsToDelete = [...existingIds].filter((id) => !keptIds.has(id));
 
-      // 4. Create / update variants.
+      // 4. Create / update variants in bulk.
+      const toCreate = validRows.filter((r) => r.isLocalOnly);
+      const toUpdate = validRows.filter((r) => !r.isLocalOnly);
       const createdMappings: { localId: string; backendId: string }[] = [];
-      for (const row of validRows) {
-        const weightKg = row.weightGrams > 0 ? row.weightGrams / 1000 : undefined;
-        const volumeCbm =
-          row.lengthCm > 0 && row.widthCm > 0 && row.heightCm > 0
-            ? (row.lengthCm * row.widthCm * row.heightCm) / 1_000_000
-            : undefined;
 
-        if (row.isLocalOnly) {
-          const created = await createVariant(selectedProductId, {
+      if (toCreate.length > 0) {
+        const variants = toCreate.map((row) => {
+          const weightKg =
+            row.weightGrams > 0 ? row.weightGrams / 1000 : undefined;
+          const volumeCbm =
+            row.lengthCm > 0 && row.widthCm > 0 && row.heightCm > 0
+              ? (row.lengthCm * row.widthCm * row.heightCm) / 1_000_000
+              : undefined;
+          return {
             wholesalePrice: row.price,
             moq: row.moq,
             attributeValueIds: row.selectionIds ?? [],
@@ -350,34 +354,83 @@ export function VariantsHome() {
             weightKg,
             volumeCbm,
             imageUrl: row.imageUrl,
-          });
-          const createdItem = Array.isArray(created) ? (created as unknown[])[0] : created;
-          const createdId = String((createdItem as Record<string, unknown> | undefined)?.id);
-          await setVariantQuantity(createdId, { quantity: row.stock });
-          createdMappings.push({ localId: row.id, backendId: createdId });
-        } else {
-          await updateVariantApi(selectedProductId, row.id, {
+          };
+        });
+        const created = await createVariantsBulk(selectedProductId, {
+          variants,
+        });
+        const createdItems = Array.isArray(created)
+          ? created
+          : Array.isArray((created as Record<string, unknown>)?.items)
+            ? ((created as Record<string, unknown>).items as unknown[])
+            : [];
+        for (let i = 0; i < toCreate.length; i++) {
+          const item = createdItems[i] as Record<string, unknown> | undefined;
+          const createdId = item?.id ? String(item.id) : undefined;
+          if (createdId) {
+            createdMappings.push({
+              localId: toCreate[i].id,
+              backendId: createdId,
+            });
+          }
+        }
+        // Promote immediately so retries don't accidentally delete them as orphans.
+        for (const { localId, backendId } of createdMappings) {
+          store.updateVariant(localId, { id: backendId, isLocalOnly: false });
+        }
+      }
+
+      if (toUpdate.length > 0) {
+        const updates = toUpdate.map((row) => {
+          const weightKg =
+            row.weightGrams > 0 ? row.weightGrams / 1000 : undefined;
+          const volumeCbm =
+            row.lengthCm > 0 && row.widthCm > 0 && row.heightCm > 0
+              ? (row.lengthCm * row.widthCm * row.heightCm) / 1_000_000
+              : undefined;
+          return {
+            variantId: row.id,
             wholesalePrice: row.price,
             moq: row.moq,
             weightKg,
             volumeCbm,
             imageUrl: row.imageUrl,
-          });
-          await setVariantQuantity(row.id, { quantity: row.stock });
+          };
+        });
+        await updateVariantsBulk(selectedProductId, { updates });
+      }
+
+      // 5. Set inventory for all variants in parallel.
+      const inventoryTasks: Promise<void>[] = [];
+      for (const row of validRows) {
+        const variantId = row.isLocalOnly
+          ? createdMappings.find((m) => m.localId === row.id)?.backendId
+          : row.id;
+        if (variantId) {
+          inventoryTasks.push(
+            setVariantQuantity(variantId, { quantity: row.stock }).then(
+              () => undefined
+            )
+          );
         }
       }
+      await Promise.all(inventoryTasks);
 
-      // 5. Promote local rows to persisted.
-      for (const { localId, backendId } of createdMappings) {
-        store.updateVariant(localId, { id: backendId, isLocalOnly: false });
-      }
-
-      // 6. Remove orphaned backend variants.
-      for (const id of idsToDelete) {
+      // 7. Remove orphaned backend variants in bulk.
+      if (idsToDelete.length > 0) {
         try {
-          await deleteVariant(selectedProductId, id);
+          await deleteVariantsBulk(selectedProductId, {
+            variantIds: idsToDelete,
+          });
         } catch {
-          // Best-effort cleanup.
+          // Best-effort cleanup; fall back to single deletes.
+          for (const id of idsToDelete) {
+            try {
+              await deleteVariant(selectedProductId, id);
+            } catch {
+              /* ignore */
+            }
+          }
         }
       }
 

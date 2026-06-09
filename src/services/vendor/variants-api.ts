@@ -1,6 +1,12 @@
 import { vendorApiClient } from "@/services/api/client";
 
-import type { CreateVariantDto, UpdateVariantDto } from "./types";
+import type {
+  BulkCreateVariantsDto,
+  BulkDeleteVariantsDto,
+  BulkUpdateVariantsDto,
+  CreateVariantDto,
+  UpdateVariantDto,
+} from "./types";
 
 /** GET /products/:productId/variants */
 export async function listVariants(productId: string) {
@@ -27,4 +33,40 @@ export async function updateVariant(
 /** DELETE /products/:productId/variants/:variantId */
 export async function deleteVariant(productId: string, variantId: string) {
   await vendorApiClient.delete(`/api/v1/products/${productId}/variants/${variantId}`);
+}
+
+/** POST /products/:productId/variants/bulk */
+export async function createVariantsBulk(
+  productId: string,
+  body: BulkCreateVariantsDto
+) {
+  const { data } = await vendorApiClient.post(
+    `/api/v1/products/${productId}/variants/bulk`,
+    body
+  );
+  return data;
+}
+
+/** PATCH /products/:productId/variants/bulk */
+export async function updateVariantsBulk(
+  productId: string,
+  body: BulkUpdateVariantsDto
+) {
+  const { data } = await vendorApiClient.patch(
+    `/api/v1/products/${productId}/variants/bulk`,
+    body
+  );
+  return data;
+}
+
+/** POST /products/:productId/variants/bulk-delete */
+export async function deleteVariantsBulk(
+  productId: string,
+  body: BulkDeleteVariantsDto
+) {
+  const { data } = await vendorApiClient.post(
+    `/api/v1/products/${productId}/variants/bulk-delete`,
+    body
+  );
+  return data;
 }

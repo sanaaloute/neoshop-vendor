@@ -49,6 +49,8 @@ export async function createProductFromForm(
     "draft",
     "pending_review",
     "hidden",
+    "archived",
+    "published",
   ];
   if (vendorControlledStatuses.includes(apiStatus) && apiStatus !== "draft") {
     await updateProduct(pid, { status: apiStatus });
@@ -64,11 +66,14 @@ export async function updateProductFromForm(
   values: ProductFormValues
 ): Promise<Product> {
   const apiStatus = uiStatusToApi(values.status);
-  // Vendors may only set draft, pending_review, or hidden.
+  // Vendors may set draft, pending_review, hidden, archived, or published.
+  // published is only allowed when the product is already in published status.
   const vendorControlledStatuses: ApiProductStatus[] = [
     "draft",
     "pending_review",
     "hidden",
+    "archived",
+    "published",
   ];
   const body: Record<string, unknown> = {
     title: values.name.trim(),
@@ -87,8 +92,8 @@ export async function updateProductFromForm(
 }
 
 export async function archiveProductOnGateway(productId: string) {
-  // Vendors cannot PATCH status to "archived"; soft-delete via DELETE is the vendor equivalent.
-  await deleteProduct(productId);
+  // Vendors can PATCH status to "archived" per the API guide.
+  await updateProduct(productId, { status: "archived" });
 }
 
 export async function deleteProductOnGateway(productId: string) {
@@ -147,6 +152,8 @@ export async function bulkPatchProductsOnGateway(
     "draft",
     "pending_review",
     "hidden",
+    "archived",
+    "published",
   ];
   for (const id of productIds) {
     const body: Record<string, unknown> = {};
