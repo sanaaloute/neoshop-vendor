@@ -1,3 +1,5 @@
+import { isAxiosError } from "axios";
+
 import { vendorApiClient } from "@/services/api/client";
 
 import type { UpdateUserMeDto, UserMeResponse, ViewedProduct } from "./types";
@@ -35,8 +37,8 @@ export async function getUserSettings() {
   try {
     const { data } = await vendorApiClient.get<UserSettingsResponse>("/api/v1/users/me/settings");
     return data;
-  } catch (e: any) {
-    if (e?.response?.status === 404) {
+  } catch (e) {
+    if (isAxiosError(e) && e.response?.status === 404) {
       // Endpoint not available yet — return empty defaults so UI still works
       return {} as UserSettingsResponse;
     }
@@ -49,8 +51,8 @@ export async function patchUserSettings(body: UpdateUserSettingsDto) {
   try {
     const { data } = await vendorApiClient.patch<UserSettingsResponse>("/api/v1/users/me/settings", body);
     return data;
-  } catch (e: any) {
-    if (e?.response?.status === 404) {
+  } catch (e) {
+    if (isAxiosError(e) && e.response?.status === 404) {
       // Endpoint not available yet — return body as-is so UI still works
       return body as UserSettingsResponse;
     }
