@@ -414,6 +414,12 @@ export function VariantsHome() {
 
   const selectedRows = variants.filter((v) => selected.has(v.id));
 
+  useEffect(() => {
+    if (selectedProductId) {
+      console.log("Variants:", variants);
+    }
+  }, [variants, selectedProductId]);
+
   return (
     <div className="flex flex-col gap-6">
       <GatewaySyncBanner
