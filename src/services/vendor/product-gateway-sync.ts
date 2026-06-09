@@ -37,7 +37,8 @@ export async function createProductFromForm(
     title: values.name.trim(),
     slug: values.seo.slug.trim().toLowerCase(),
     description: values.description.trim() || undefined,
-    moq: 1,
+    moq: values.moq,
+    bulkPricing: values.bulkPricing.length > 0 ? values.bulkPricing : undefined,
     categoryIds:
       values.categoryIds.length > 0 ? values.categoryIds : undefined,
   });
@@ -73,7 +74,8 @@ export async function updateProductFromForm(
     title: values.name.trim(),
     slug: values.seo.slug.trim().toLowerCase(),
     description: values.description.trim() || undefined,
-    moq: 1,
+    moq: values.moq,
+    bulkPricing: values.bulkPricing.length > 0 ? values.bulkPricing : undefined,
   };
   if (vendorControlledStatuses.includes(apiStatus)) {
     body.status = apiStatus;

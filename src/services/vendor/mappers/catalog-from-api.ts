@@ -84,6 +84,19 @@ export function mapApiProductRowToProduct(
     });
 
   const status = mapProductStatus(String(row.status ?? "draft"));
+  const moq = typeof row.moq === "number" && Number.isFinite(row.moq) ? row.moq : undefined;
+  const rawBulk = Array.isArray(row.bulkPricing) ? row.bulkPricing : [];
+  const bulkPricing = rawBulk
+    .map((b) => {
+      const item = b as Record<string, unknown>;
+      const minQ = typeof item.minQuantity === "number" ? item.minQuantity : Number(item.minQuantity);
+      const uPrice = typeof item.unitPrice === "number" ? item.unitPrice : Number(item.unitPrice);
+      if (Number.isFinite(minQ) && Number.isFinite(uPrice) && minQ >= 1 && uPrice > 0) {
+        return { minQuantity: minQ, unitPrice: uPrice };
+      }
+      return null;
+    })
+    .filter(Boolean) as { minQuantity: number; unitPrice: number }[];
 
   return {
     id: String(row.id),
@@ -91,6 +104,8 @@ export function mapApiProductRowToProduct(
     name: String(row.title ?? row.name ?? "Product"),
     description: String(row.description ?? ""),
     price,
+    ...(moq !== undefined ? { moq } : {}),
+    ...(bulkPricing.length > 0 ? { bulkPricing } : {}),
     categoryIds,
     tags: [],
     seo: {

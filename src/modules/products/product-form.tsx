@@ -58,6 +58,7 @@ import { useCategories } from "@/hooks/use-categories";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
 import { useProductEditorDraftStore } from "@/store/product-editor-draft-store";
 import { cn } from "@/lib/utils";
+import { BulkPricingEditor } from "./bulk-pricing-editor";
 
 import { SUGGESTED_PRODUCT_TAGS } from "./constants";
 import { ProductMediaGallery } from "./product-media-gallery";
@@ -397,7 +398,7 @@ export function ProductForm({
               label="Product Name"
               placeholder="Wholesale ceramic mugs"
             />
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
               <Controller
                 control={form.control}
                 name="price"
@@ -431,7 +432,41 @@ export function ProductForm({
                   </div>
                 )}
               />
+              <Controller
+                control={form.control}
+                name="moq"
+                render={({ field, fieldState }) => (
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={field.name}>MOQ</Label>
+                    <Input
+                      id={field.name}
+                      type="number"
+                      step="1"
+                      min={1}
+                      aria-invalid={fieldState.invalid}
+                      value={
+                        Number.isFinite(field.value) ? String(field.value) : ""
+                      }
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        field.onChange(
+                          raw === "" ? NaN : Number.parseInt(raw, 10)
+                        );
+                      }}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                    />
+                    {fieldState.error?.message ? (
+                      <p className="text-destructive text-xs">
+                        {fieldState.error.message}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+              />
             </div>
+            <BulkPricingEditor control={form.control} />
             <Controller
               control={form.control}
               name="description"

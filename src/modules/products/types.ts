@@ -23,6 +23,11 @@ export type ProductSeo = {
   metaDescription: string;
 };
 
+export type BulkPricingTier = {
+  minQuantity: number;
+  unitPrice: number;
+};
+
 export type Product = {
   id: string;
   /** Backend-generated SKU; the frontend never creates or edits it. */
@@ -30,6 +35,8 @@ export type Product = {
   name: string;
   description: string;
   price: number;
+  moq?: number;
+  bulkPricing?: BulkPricingTier[];
   categoryIds: string[];
   tags: string[];
   seo: ProductSeo;
@@ -45,6 +52,8 @@ export type ProductFormValues = {
   name: string;
   description: string;
   price: number;
+  moq: number;
+  bulkPricing: BulkPricingTier[];
   categoryIds: string[];
   tags: string[];
   seo: ProductSeo;
@@ -58,6 +67,8 @@ export function productToFormValues(p: Product): ProductFormValues {
     name: p.name,
     description: p.description,
     price: p.price,
+    moq: p.moq ?? 1,
+    bulkPricing: p.bulkPricing ? [...p.bulkPricing] : [],
     categoryIds: [...p.categoryIds],
     tags: [...p.tags],
     seo: { ...p.seo },
@@ -74,6 +85,8 @@ export function formValuesToProductPatch(
     name: v.name.trim(),
     description: v.description.trim(),
     price: v.price,
+    moq: v.moq,
+    bulkPricing: v.bulkPricing.length > 0 ? [...v.bulkPricing] : undefined,
     categoryIds: v.categoryIds,
     tags: v.tags.map((t) => t.trim()).filter(Boolean),
     seo: {

@@ -49,7 +49,7 @@ export type VariantGenerationDefaults = {
 export function emptyGenerationDefaults(): VariantGenerationDefaults {
   return {
     moq: 1,
-    stock: 0,
+    stock: 1000000,
     price: 9.99,
     weightGrams: 250,
     lengthCm: 10,

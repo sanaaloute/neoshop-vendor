@@ -18,11 +18,18 @@ const mediaRowSchema = z.object({
   sortIndex: z.number(),
 });
 
+const bulkPricingTierSchema = z.object({
+  minQuantity: z.number().min(1, "Min quantity must be at least 1"),
+  unitPrice: z.number().positive("Unit price must be greater than zero"),
+});
+
 export const productFormSchema = z
   .object({
     name: z.string().min(2, "Name is required"),
     description: z.string().min(10, "Add a short description (min 10 chars)"),
     price: z.number().positive("Price must be greater than zero"),
+    moq: z.number().min(1, "MOQ must be at least 1"),
+    bulkPricing: z.array(bulkPricingTierSchema),
     categoryIds: z.array(z.string()).min(1, "Pick at least one category"),
     tags: z.array(z.string()),
     seo: seoSchema,
