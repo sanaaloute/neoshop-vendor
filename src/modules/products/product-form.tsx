@@ -240,6 +240,7 @@ export function ProductForm({
     productId: string,
     media: ProductFormValues["media"]
   ) => {
+    const uploadedLocalIds: string[] = [];
     for (const m of media) {
       const file = filesByMediaId.current.get(m.id);
       if (!file) continue;
@@ -257,6 +258,7 @@ export function ProductForm({
         isPrimary: m.sortIndex === 0,
       });
       filesByMediaId.current.delete(m.id);
+      uploadedLocalIds.push(m.id);
     }
     for (const mediaId of removedMediaIds.current) {
       try {
@@ -267,9 +269,30 @@ export function ProductForm({
     }
     removedMediaIds.current.clear();
     const refreshed = await getProduct(productId);
-    upsertProduct(
-      mapApiProductRowToProduct(refreshed as Record<string, unknown>)
+    const refreshedProduct = mapApiProductRowToProduct(
+      refreshed as Record<string, unknown>
     );
+    upsertProduct(refreshedProduct);
+    // Replace local IDs with real backend IDs/URLs so the draft stays in sync.
+    form.setValue("media", refreshedProduct.media, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    // Clean up blob previews for the uploaded files.
+    if (uploadedLocalIds.length > 0) {
+      setPreviews((prev) => {
+        const next = { ...prev };
+        for (const id of uploadedLocalIds) {
+          const blobUrl = next[id];
+          if (blobUrl?.startsWith("blob:")) {
+            URL.revokeObjectURL(blobUrl);
+            blobUrls.current.delete(blobUrl);
+          }
+          delete next[id];
+        }
+        return next;
+      });
+    }
   };
 
   const saveToCatalog = form.handleSubmit(async (v) => {
@@ -287,6 +310,7 @@ export function ProductForm({
           const p = await updateProductFromForm(catalogProductId, v);
           upsertProduct(p);
           await syncPendingMedia(catalogProductId, v.media);
+          clearDraft(editorKey);
         } else {
           const p = await createProductFromForm(v);
           upsertProduct(p);

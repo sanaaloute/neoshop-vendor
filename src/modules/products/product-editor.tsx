@@ -19,7 +19,7 @@ import { emptyProductFormValues } from "./defaults";
 import { ProductForm } from "./product-form";
 import { ProductPreviewSheet } from "./product-preview-sheet";
 import { ProductStatusPanel } from "./product-status-panel";
-import type { ProductFormValues } from "./types";
+import type { ProductFormValues, ProductMedia } from "./types";
 import { productToFormValues } from "./types";
 
 type ProductEditorProps = {
@@ -34,16 +34,42 @@ function mergeFetchedProduct(
   if (!target.media.length) {
     return { ...target, media: source.media };
   }
-  // Otherwise merge API URLs into local items by ID, preserving local edits/order
+
   const apiById = new Map(source.media.map((m) => [m.id, m]));
-  return {
-    ...target,
-    media: target.media.map((m) => {
-      const api = apiById.get(m.id);
-      if (!api) return m; // newly added local item
-      return { ...m, url: m.url || api.url || undefined };
-    }),
-  };
+  const apiIds = new Set(source.media.map((m) => m.id));
+
+  // Count how many local items actually match API items by ID.
+  const matchedCount = target.media.filter((m) => apiIds.has(m.id)).length;
+
+  // If fewer than half match, the local state likely has stale temporary IDs
+  // (e.g. from a draft saved before upload completed). Use API as ground truth.
+  if (matchedCount === 0 || matchedCount < target.media.length / 2) {
+    // Preserve any local items that have a real URL (unsaved uploads that
+    // somehow persisted a URL) and aren't already in the API list.
+    const extras = target.media.filter(
+      (m) => m.url && !apiIds.has(m.id)
+    );
+    return { ...target, media: [...source.media, ...extras] };
+  }
+
+  // Normal merge: backfill URLs from API into matching local items,
+  // and append any local-only items (unsaved uploads).
+  const merged: ProductMedia[] = [];
+  for (const m of target.media) {
+    const api = apiById.get(m.id);
+    if (api) {
+      merged.push({ ...m, url: m.url || api.url || undefined });
+    } else {
+      merged.push(m);
+    }
+  }
+  // Append API items that weren't in local target (new backend images)
+  for (const api of source.media) {
+    if (!target.media.some((m) => m.id === api.id)) {
+      merged.push(api);
+    }
+  }
+  return { ...target, media: merged };
 }
 
 export function ProductEditor({ catalogProductId }: ProductEditorProps) {
