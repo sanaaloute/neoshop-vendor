@@ -1,6 +1,6 @@
 "use client";
 
-import { formatCurrency } from "@/lib/format";
+// NOTE: Price is managed at the variant level; preview no longer shows product-level price.
 import { Badge } from "@/components/ui/badge";
 import {
   Sheet,
@@ -55,21 +55,11 @@ export function ProductPreviewSheet({
               <Badge variant="secondary" className="capitalize">
                 {values.status}
               </Badge>
-              {values.tags.slice(0, 4).map((t) => (
-                <Badge key={t} variant="outline" className="capitalize">
-                  {t}
-                </Badge>
-              ))}
             </div>
             <h3 className="text-lg leading-tight font-semibold">
               {values.name.trim() || "Untitled product"}
             </h3>
 
-            <p className="mt-3 text-xl font-semibold tabular-nums">
-              {Number.isFinite(values.price)
-                ? formatCurrency(values.price)
-                : "—"}
-            </p>
             <p className="text-muted-foreground mt-3 line-clamp-4 text-sm">
               {values.description.trim() || "No description yet."}
             </p>
@@ -91,11 +81,10 @@ export function ProductPreviewSheet({
             <p className="text-foreground font-medium">Search preview</p>
             <p className="text-primary mt-2 truncate">{url}</p>
             <p className="text-foreground mt-1 font-medium">
-              {values.seo.metaTitle.trim() || values.name || "Meta title"}
+              {values.name || "Meta title"}
             </p>
             <p className="text-muted-foreground mt-1 line-clamp-3">
-              {values.seo.metaDescription.trim() ||
-                "Meta description will appear here."}
+              {"Meta description will appear here."}
             </p>
           </div>
         </div>

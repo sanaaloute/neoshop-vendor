@@ -72,7 +72,7 @@ export const useProductCatalogStore = create<CatalogState>()(
         const body = formValuesToProductPatch(values);
         set((s) => ({
           products: [
-            { id, ...body, createdAt: ts, updatedAt: ts },
+            { id, ...body, price: 0, tags: [], createdAt: ts, updatedAt: ts },
             ...s.products,
           ],
         }));

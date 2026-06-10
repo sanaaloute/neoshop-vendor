@@ -11,10 +11,8 @@ import {
   ImageIcon,
   Tag,
   FolderOpen,
-  DollarSign,
   Layers,
   Search,
-  ArrowUpRight,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +24,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress, ProgressTrack, ProgressIndicator } from "@/components/ui/progress";
-import { formatCurrency } from "@/lib/format";
 import { useCategoriesStore } from "@/store/categories-store";
 import type { ProductFormValues } from "./types";
 
@@ -101,12 +98,6 @@ export function useProductChecklist(values: ProductFormValues): {
         valid: values.categoryIds.length > 0,
       },
       {
-        key: "price",
-        label: "Price",
-        icon: <DollarSign className="size-3.5" />,
-        valid: Number.isFinite(values.price) && values.price > 0,
-      },
-      {
         key: "description",
         label: "Description",
         icon: <Tag className="size-3.5" />,
@@ -123,9 +114,7 @@ export function useProductChecklist(values: ProductFormValues): {
         key: "seo",
         label: "SEO Settings",
         icon: <Search className="size-3.5" />,
-        valid:
-          values.seo.slug.trim().length >= 2 &&
-          values.seo.metaTitle.trim().length >= 4,
+        valid: values.seo.slug.trim().length >= 2,
         optional: true,
       },
     ];
@@ -302,11 +291,6 @@ export function ProductStatusPanel({
             <div className="p-3 grid gap-1">
               <p className="text-sm font-medium truncate">
                 {values.name.trim() || "Untitled Product"}
-              </p>
-              <p className="text-lg font-semibold tabular-nums">
-                {Number.isFinite(values.price)
-                  ? formatCurrency(values.price)
-                  : "—"}
               </p>
               {categoryNames.length > 0 && (
                 <p className="text-xs text-muted-foreground truncate">

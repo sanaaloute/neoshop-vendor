@@ -8,8 +8,6 @@ const seoSchema = z.object({
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
       "Lowercase letters, numbers, and single hyphens only"
     ),
-  metaTitle: z.string().min(4, "Meta title is required").max(70),
-  metaDescription: z.string().min(10, "Meta description is required").max(320),
 });
 
 const mediaRowSchema = z.object({
@@ -27,11 +25,9 @@ export const productFormSchema = z
   .object({
     name: z.string().min(2, "Name is required"),
     description: z.string().min(10, "Add a short description (min 10 chars)"),
-    price: z.number().positive("Price must be greater than zero"),
     moq: z.number().min(1, "MOQ must be at least 1"),
     bulkPricing: z.array(bulkPricingTierSchema),
     categoryIds: z.array(z.string()).min(1, "Pick at least one category"),
-    tags: z.array(z.string()),
     seo: seoSchema,
     media: z.array(mediaRowSchema),
     status: z.enum([

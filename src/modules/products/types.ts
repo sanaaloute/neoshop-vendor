@@ -51,12 +51,10 @@ export type Product = {
 export type ProductFormValues = {
   name: string;
   description: string;
-  price: number;
   moq: number;
   bulkPricing: BulkPricingTier[];
   categoryIds: string[];
-  tags: string[];
-  seo: ProductSeo;
+  seo: { slug: string };
   media: ProductMedia[];
   status: ProductStatus;
   publishAt: string | null;
@@ -66,12 +64,10 @@ export function productToFormValues(p: Product): ProductFormValues {
   return {
     name: p.name,
     description: p.description,
-    price: p.price,
     moq: p.moq ?? 1,
     bulkPricing: p.bulkPricing ? [...p.bulkPricing] : [],
     categoryIds: [...p.categoryIds],
-    tags: [...p.tags],
-    seo: { ...p.seo },
+    seo: { slug: p.seo.slug },
     media: p.media.map((m) => ({ ...m })),
     status: p.status,
     publishAt: p.publishAt,
@@ -80,19 +76,17 @@ export function productToFormValues(p: Product): ProductFormValues {
 
 export function formValuesToProductPatch(
   v: ProductFormValues
-): Omit<Product, "id" | "createdAt" | "updatedAt" | "sku"> {
+): Omit<Product, "id" | "createdAt" | "updatedAt" | "sku" | "price" | "tags"> {
   return {
     name: v.name.trim(),
     description: v.description.trim(),
-    price: v.price,
     moq: v.moq,
     bulkPricing: v.bulkPricing.length > 0 ? [...v.bulkPricing] : undefined,
     categoryIds: v.categoryIds,
-    tags: v.tags.map((t) => t.trim()).filter(Boolean),
     seo: {
       slug: v.seo.slug.trim().toLowerCase(),
-      metaTitle: v.seo.metaTitle.trim(),
-      metaDescription: v.seo.metaDescription.trim(),
+      metaTitle: "",
+      metaDescription: "",
     },
     media: v.media
       .slice()

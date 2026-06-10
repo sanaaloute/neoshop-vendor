@@ -14,21 +14,16 @@ import {
   ChevronDown,
   ChevronUp,
   FolderOpen,
-  GripVertical,
   ImageIcon,
   Save,
   Search,
   Send,
   Sparkles,
-  Tag,
-  Trash2,
-  Upload,
-  X,
 } from "lucide-react";
 
 import { VendorTextField } from "@/components/forms/vendor-text-field";
 import { VendorMuted } from "@/components/layout/typography";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -61,7 +56,7 @@ import { useProductEditorDraftStore } from "@/store/product-editor-draft-store";
 import { cn } from "@/lib/utils";
 import { BulkPricingEditor } from "./bulk-pricing-editor";
 
-import { SUGGESTED_PRODUCT_TAGS } from "./constants";
+
 import { ProductMediaGallery } from "./product-media-gallery";
 import { productFormSchema } from "./schemas";
 import type { ProductFormValues } from "./types";
@@ -423,40 +418,7 @@ export function ProductForm({
               label="Product Name"
               placeholder="Wholesale ceramic mugs"
             />
-            <div className="grid gap-4 md:grid-cols-3">
-              <Controller
-                control={form.control}
-                name="price"
-                render={({ field, fieldState }) => (
-                  <div className="grid gap-1.5">
-                    <Label htmlFor={field.name}>Price</Label>
-                    <Input
-                      id={field.name}
-                      type="number"
-                      step="0.01"
-                      min={0.01}
-                      aria-invalid={fieldState.invalid}
-                      value={
-                        Number.isFinite(field.value) ? String(field.value) : ""
-                      }
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        field.onChange(
-                          raw === "" ? NaN : Number.parseFloat(raw)
-                        );
-                      }}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
-                    />
-                    {fieldState.error?.message ? (
-                      <p className="text-destructive text-xs">
-                        {fieldState.error.message}
-                      </p>
-                    ) : null}
-                  </div>
-                )}
-              />
+            <div className="grid gap-4 md:grid-cols-1">
               <Controller
                 control={form.control}
                 name="moq"
@@ -526,19 +488,6 @@ export function ProductForm({
           </CardHeader>
           <CardContent>
             <CategorySelector />
-          </CardContent>
-        </Card>
-
-        {/* Tags */}
-        <Card className="glass-card shadow-glass">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <Tag className="size-4 text-primary" />
-              Tags
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <TagSelector />
           </CardContent>
         </Card>
 
@@ -682,105 +631,6 @@ function CategorySelector() {
   );
 }
 
-/* ─── Modern Tag Input ─── */
-function TagSelector() {
-  const { setValue, watch } = useFormContext<ProductFormValues>();
-  const tags = watch("tags") ?? [];
-  const [draft, setDraft] = useState("");
-
-  const addTag = (raw: string) => {
-    const t = raw.trim().toLowerCase();
-    if (!t || tags.includes(t)) return;
-    setValue("tags", [...tags, t], { shouldValidate: true, shouldDirty: true });
-    setDraft("");
-  };
-
-  const removeTag = (t: string) => {
-    setValue(
-      "tags",
-      tags.filter((x) => x !== t),
-      { shouldValidate: true, shouldDirty: true }
-    );
-  };
-
-  return (
-    <div className="grid gap-3">
-      {/* Suggested tags */}
-      <div className="flex flex-wrap gap-2">
-        {SUGGESTED_PRODUCT_TAGS.map((t) => {
-          const on = tags.includes(t);
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => {
-                if (on) {
-                  removeTag(t);
-                } else {
-                  setValue("tags", [...tags, t], {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  });
-                }
-              }}
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium capitalize transition-all",
-                on
-                  ? "border-primary/30 bg-primary/15 text-primary"
-                  : "border-border/60 bg-background/40 text-muted-foreground hover:bg-muted/50"
-              )}
-            >
-              {on ? "✓" : "+"} {t}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Active tags */}
-      {tags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {tags.map((t) => (
-            <Badge
-              key={t}
-              variant="secondary"
-              className="cursor-pointer gap-1 capitalize pr-1.5 hover:bg-destructive/10 hover:text-destructive transition-colors"
-              onClick={() => removeTag(t)}
-            >
-              {t}
-              <X className="size-3" />
-            </Badge>
-          ))}
-        </div>
-      )}
-
-      {/* Custom tag input */}
-      <div className="flex gap-2">
-        <Input
-          placeholder="Add custom tag…"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              addTag(draft);
-            }
-          }}
-          className="flex-1"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => addTag(draft)}
-          disabled={!draft.trim()}
-        >
-          Add
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 /* ─── Collapsible SEO Section ─── */
 function SeoSection() {
   const [open, setOpen] = useState(false);
@@ -836,36 +686,6 @@ function SeoSection() {
               From name
             </Button>
           </div>
-          <VendorTextField
-            control={control}
-            name="seo.metaTitle"
-            label="Meta Title"
-            placeholder="Shown in search results"
-          />
-          <Controller
-            control={control}
-            name="seo.metaDescription"
-            render={({ field, fieldState }) => (
-              <div className="grid gap-1.5">
-                <Label htmlFor={field.name}>Meta Description</Label>
-                <Textarea
-                  id={field.name}
-                  rows={3}
-                  maxLength={320}
-                  aria-invalid={fieldState.invalid}
-                  {...field}
-                />
-                <div className="text-muted-foreground flex justify-between text-xs">
-                  <span>{field.value?.length ?? 0} / 320</span>
-                  {fieldState.error?.message ? (
-                    <span className="text-destructive">
-                      {fieldState.error.message}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            )}
-          />
         </CardContent>
       )}
     </Card>
