@@ -63,7 +63,13 @@ export function CustomersList({
         }
         return true;
       })
-      .sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));
+      .sort((a, b) => {
+        // Sort by orderCount desc when lastSeen is not available
+        if (!a.lastSeen && !b.lastSeen) return b.orderCount - a.orderCount;
+        if (!a.lastSeen) return 1;
+        if (!b.lastSeen) return -1;
+        return b.lastSeen.localeCompare(a.lastSeen);
+      });
   }, [customers, search, repeatOnly]);
 
   return (
@@ -173,14 +179,16 @@ export function CustomersList({
                       {c.orderCount}
                     </TableCell>
                     <TableCell className="text-right font-medium tabular-nums">
-                      {formatCurrency(c.totalSpend)}
+                      {c.totalSpend > 0 ? formatCurrency(c.totalSpend) : "—"}
                     </TableCell>
                     <TableCell className="text-muted-foreground hidden text-xs sm:table-cell">
-                      {new Date(c.lastSeen).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                      {c.lastSeen
+                        ? new Date(c.lastSeen).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "—"}
                     </TableCell>
                     <TableCell
                       className="text-right"

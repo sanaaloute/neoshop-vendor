@@ -1,4 +1,12 @@
-import type { VendorCustomerFromApi } from "@/services/vendor/types";
+/** Raw customer from GET /orders/vendor/customers */
+export type VendorCustomerFromApi = {
+  userId: string;
+  name: string | null;
+  surname: string | null;
+  email: string | null;
+  phone: string | null;
+  orderCount: number;
+};
 
 export type CommunicationChannel = "email" | "message" | "note";
 
@@ -26,7 +34,7 @@ export type CustomerActivity = {
   detail?: string;
 };
 
-export type { VendorCustomerFromApi };
+
 
 /** Snapshot row for embedded history (enriched in UI from orders store when emails match). */
 export type CustomerOrderSnapshot = {
