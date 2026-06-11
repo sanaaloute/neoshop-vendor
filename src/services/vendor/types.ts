@@ -294,6 +294,14 @@ export type UpdateOrderStatusDto = {
   note?: string;
 };
 
+/** Product in customer's purchase history */
+export type CustomerProductFromApi = {
+  productId: string;
+  title: string;
+  totalQuantity: number;
+  totalSpent: string;
+};
+
 /** GET /orders/vendor/customers — raw customer row with order counts */
 export type VendorCustomerFromApi = {
   userId: string;
@@ -302,6 +310,8 @@ export type VendorCustomerFromApi = {
   email: string | null;
   phone: string | null;
   orderCount: number;
+  totalSpent: string;
+  products: CustomerProductFromApi[];
 };
 
 // --- Payments ---

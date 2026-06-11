@@ -1,100 +1,181 @@
 "use client";
 
-import { useMemo } from "react";
-import { Mail, MessageSquare, ShoppingBag, StickyNote } from "lucide-react";
+import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Mail,
+  Phone,
+  ShoppingBag,
+  TrendingUp,
+  Package,
+  ArrowUpDown,
+  X,
+  User,
+  Wallet,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
 import { formatCurrency } from "@/lib/format";
-import type { OrderStatus } from "@/modules/orders/types";
-import { ORDER_STATUS_FLOW } from "@/modules/orders/types";
-import { statusLabel } from "@/modules/orders/workflow";
-import { useOrdersStore } from "@/store/orders-store";
+import { cn } from "@/lib/utils";
+import { fadeUp } from "@/lib/motion";
 
-import type { VendorCustomer } from "./types";
+import type { VendorCustomer, CustomerProduct } from "./types";
 
-type PurchaseRow = {
-  at: string;
-  reference: string;
-  total: number;
-  status: string;
-};
+type ProductSort = "spend" | "quantity" | "title";
 
-function displayOrderStatus(s: string) {
-  const all = [...ORDER_STATUS_FLOW, "disputed", "refunded"] as const;
-  if ((all as readonly string[]).includes(s)) {
-    return statusLabel(s as OrderStatus);
-  }
-  return s;
+function isRepeatBuyer(tags: string[]) {
+  return tags.some((t) => t.toLowerCase().includes("repeat"));
 }
 
-function mergePurchases(customer: VendorCustomer): PurchaseRow[] {
-  return [...customer.orders]
-    .map((s) => ({
-      at: s.at,
-      reference: s.reference,
-      total: s.total,
-      status: s.status,
-    }))
-    .sort((a, b) => b.at.localeCompare(a.at));
+/** Deterministic gradient from name string */
+function nameGradient(name: string): string {
+  const hash = name.split("").reduce((h, c) => h + c.charCodeAt(0), 0);
+  const gradients = [
+    "from-amber-500 to-orange-600",
+    "from-emerald-500 to-teal-600",
+    "from-sky-500 to-blue-600",
+    "from-violet-500 to-purple-600",
+    "from-rose-500 to-pink-600",
+    "from-cyan-500 to-indigo-600",
+  ];
+  return gradients[hash % gradients.length];
 }
 
-function activityIcon(kind: VendorCustomer["activities"][number]["kind"]) {
-  switch (kind) {
-    case "order_placed":
-      return ShoppingBag;
-    case "email_open":
-      return Mail;
-    case "support":
-      return MessageSquare;
-    default:
-      return StickyNote;
-  }
+function initials(name: string): string {
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+/** Mini KPI pill */
+function KpiPill({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+        <Icon className="text-primary size-4" />
+      </div>
+      <div>
+        <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
+          {label}
+        </p>
+        <p className="text-sm font-semibold tabular-nums">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+/** Product breakdown table row with visual bar */
+function ProductRow({
+  product,
+  maxSpend,
+  index,
+}: {
+  product: CustomerProduct;
+  maxSpend: number;
+  index: number;
+}) {
+  const pct = maxSpend > 0 ? (Number(product.totalSpent) / maxSpend) * 100 : 0;
+
+  return (
+    <motion.div
+      variants={fadeUp}
+      initial="hidden"
+      animate="show"
+      transition={{ delay: index * 0.04 }}
+      className="group/row flex flex-col gap-2 rounded-xl border border-border/40 bg-card/50 p-4 transition-all hover:border-primary/20 hover:bg-card/80"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">{product.title}</p>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            {product.totalQuantity} units sold
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-sm font-semibold tabular-nums">
+            {formatCurrency(Number(product.totalSpent), "CNY", 2)}
+          </p>
+          <p className="text-muted-foreground text-[10px]">
+            {pct.toFixed(0)}% of spend
+          </p>
+        </div>
+      </div>
+      {/* Visual spend bar */}
+      <div className="bg-muted/60 h-1.5 w-full overflow-hidden rounded-full">
+        <motion.div
+          className="h-full rounded-full bg-gradient-to-r from-primary/60 to-primary"
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        />
+      </div>
+    </motion.div>
+  );
 }
 
 type CustomerProfileDrawerProps = {
-  customers: VendorCustomer[];
-  customerId: string | null;
+  customer: VendorCustomer | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
 export function CustomerProfileDrawer({
-  customers,
-  customerId,
+  customer,
   open,
   onOpenChange,
 }: CustomerProfileDrawerProps) {
-  const orders = useOrdersStore((s) => s.orders);
+  const [productSort, setProductSort] = useState<ProductSort>("spend");
 
-  const customer = useMemo(
-    () => (customerId ? customers.find((c) => c.id === customerId) : undefined),
-    [customers, customerId]
-  );
-
-  const purchaseTimeline = useMemo(
-    () => (customer ? mergePurchases(customer) : []),
-    [customer]
-  );
-
-  const liveForCustomer = useMemo(() => {
+  const sortedProducts = useMemo(() => {
     if (!customer) return [];
-    const e = customer.email.toLowerCase();
-    return orders.filter((o) => o.customerEmail.toLowerCase() === e);
-  }, [customer, orders]);
+    const products = [...customer.products];
+    switch (productSort) {
+      case "spend":
+        return products.sort(
+          (a, b) => Number(b.totalSpent) - Number(a.totalSpent)
+        );
+      case "quantity":
+        return products.sort((a, b) => b.totalQuantity - a.totalQuantity);
+      case "title":
+        return products.sort((a, b) => a.title.localeCompare(b.title));
+      default:
+        return products;
+    }
+  }, [customer, productSort]);
 
-  const liveSpend = useMemo(
-    () => liveForCustomer.reduce((s, o) => s + o.total, 0),
-    [liveForCustomer]
-  );
+  const maxSpend = useMemo(() => {
+    if (!customer?.products.length) return 0;
+    return Math.max(...customer.products.map((p) => Number(p.totalSpent)));
+  }, [customer]);
+
+  const totalQuantity = useMemo(() => {
+    return customer?.products.reduce((s, p) => s + p.totalQuantity, 0) ?? 0;
+  }, [customer]);
+
+  const avgOrderValue = useMemo(() => {
+    if (!customer || customer.orderCount === 0) return 0;
+    return customer.totalSpent / customer.orderCount;
+  }, [customer]);
 
   if (!open) return null;
 
@@ -103,241 +184,162 @@ export function CustomerProfileDrawer({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-xl"
+          className="w-full sm:max-w-lg"
           showCloseButton
         >
           <SheetHeader>
-            <SheetTitle>Customer</SheetTitle>
-            <SheetDescription>
-              Select a customer from the list.
-            </SheetDescription>
+            <SheetTitle>Customer Profile</SheetTitle>
           </SheetHeader>
+          <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+            <User className="text-muted-foreground size-12" />
+            <p className="text-muted-foreground text-sm">
+              Select a customer to view their profile
+            </p>
+          </div>
         </SheetContent>
       </Sheet>
     );
   }
 
-  const isRepeat = customer.tags.some((t) =>
-    t.toLowerCase().includes("repeat")
-  );
+  const repeat = isRepeatBuyer(customer.tags);
+  const gradient = nameGradient(customer.name);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-xl"
+        className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-lg"
         showCloseButton
       >
-        <SheetHeader className="border-border border-b px-4 py-4 text-left">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <SheetTitle className="text-lg">{customer.name}</SheetTitle>
-              <SheetDescription className="font-mono text-xs">
-                {customer.email}
-              </SheetDescription>
-            </div>
-            {isRepeat ? (
-              <Badge variant="secondary">Repeat buyer</Badge>
-            ) : (
-              <Badge variant="outline">Account</Badge>
+        {/* Header with avatar */}
+        <SheetHeader className="relative border-b border-border/50 px-6 py-6 text-left">
+          {/* Background gradient */}
+          <div
+            className={cn(
+              "absolute inset-0 bg-gradient-to-br opacity-5",
+              gradient
             )}
-          </div>
-          {customer.company ? (
-            <p className="text-muted-foreground mt-2 text-sm">
-              {customer.company}
-            </p>
-          ) : null}
-          <div className="mt-2 flex flex-wrap gap-1">
-            {customer.tags.map((t) => (
-              <Badge
-                key={t}
-                variant="outline"
-                className="text-[10px] capitalize"
-              >
-                {t}
-              </Badge>
-            ))}
+          />
+
+          <div className="relative flex items-start gap-4">
+            <div
+              className={cn(
+                "flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-lg font-bold text-white shadow-lg",
+                gradient
+              )}
+            >
+              {initials(customer.name)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <SheetTitle className="text-xl font-semibold tracking-tight">
+                {customer.name}
+              </SheetTitle>
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                {customer.email && (
+                  <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
+                    <Mail className="size-3.5" />
+                    <span className="truncate">{customer.email}</span>
+                  </span>
+                )}
+              </div>
+              {customer.phone && (
+                <span className="text-muted-foreground mt-1 inline-flex items-center gap-1 text-xs">
+                  <Phone className="size-3.5" />
+                  {customer.phone}
+                </span>
+              )}
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <Badge
+                  variant={repeat ? "default" : "secondary"}
+                  className={cn(
+                    "h-5 text-[10px] font-medium",
+                    repeat &&
+                      "bg-amber-500/15 text-amber-700 hover:bg-amber-500/20 border-amber-500/30"
+                  )}
+                >
+                  <ShoppingBag className="mr-1 size-3" />
+                  {customer.orderCount} order
+                  {customer.orderCount === 1 ? "" : "s"}
+                </Badge>
+                {repeat && (
+                  <Badge
+                    variant="outline"
+                    className="h-5 text-[10px] border-emerald-500/30 text-emerald-700 bg-emerald-500/10"
+                  >
+                    <TrendingUp className="mr-1 size-3" />
+                    Repeat Buyer
+                  </Badge>
+                )}
+              </div>
+            </div>
           </div>
         </SheetHeader>
 
-        <div className="flex flex-1 flex-col gap-4 px-4 py-4">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Kpi
-              label="Profile LTV"
-              value={formatCurrency(customer.totalSpend)}
-            />
-            <Kpi label="Orders (profile)" value={String(customer.orderCount)} />
-            <Kpi
-              label="Live orders match"
-              value={`${liveForCustomer.length} · ${formatCurrency(liveSpend)}`}
-            />
-            <Kpi
-              label="Last activity"
-              value={new Date(customer.lastSeen).toLocaleDateString(undefined, {
-                month: "short",
-                day: "numeric",
-              })}
-            />
+        {/* KPI Strip */}
+        <div className="grid grid-cols-2 gap-2 px-6 py-4">
+          <KpiPill
+            icon={ShoppingBag}
+            label="Total Orders"
+            value={String(customer.orderCount)}
+          />
+          <KpiPill
+            icon={Wallet}
+            label="Total Spent"
+            value={formatCurrency(customer.totalSpent, "CNY", 2)}
+          />
+          <KpiPill
+            icon={TrendingUp}
+            label="Avg Order Value"
+            value={formatCurrency(avgOrderValue, "CNY", 2)}
+          />
+          <KpiPill
+            icon={Package}
+            label="Products Bought"
+            value={String(totalQuantity)}
+          />
+        </div>
+
+        <Separator className="mx-6 w-auto" />
+
+        {/* Products Breakdown */}
+        <div className="flex flex-col gap-4 px-6 py-5">
+          <div className="flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase">
+              <Package className="text-muted-foreground size-4" />
+              Product Breakdown
+            </h3>
+            <div className="flex items-center gap-1">
+              <span className="text-muted-foreground text-[10px]">Sort:</span>
+              <select
+                value={productSort}
+                onChange={(e) => setProductSort(e.target.value as ProductSort)}
+                className="border-input bg-background h-7 rounded-md border px-2 text-[11px]"
+              >
+                <option value="spend">Spend</option>
+                <option value="quantity">Quantity</option>
+                <option value="title">Name</option>
+              </select>
+            </div>
           </div>
 
-          <Separator />
-
-          <section>
-            <h3 className="text-muted-foreground mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase">
-              <ShoppingBag className="size-3.5" aria-hidden />
-              Purchase timeline
-            </h3>
-            {purchaseTimeline.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No purchases yet.</p>
-            ) : (
-              <ul className="space-y-3">
-                {purchaseTimeline.map((row) => (
-                  <li
-                    key={`${row.reference}-${row.at}`}
-                    className="border-primary/35 relative border-l-2 pl-4"
-                  >
-                    <div className="bg-primary absolute top-1.5 -left-[5px] size-2 rounded-full" />
-                    <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <span className="font-medium">{row.reference}</span>
-                      <span className="font-mono text-sm tabular-nums">
-                        {formatCurrency(row.total)}
-                      </span>
-                    </div>
-                    <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-2 text-xs">
-                      <time dateTime={row.at}>
-                        {new Date(row.at).toLocaleString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </time>
-                      <Badge
-                        variant="outline"
-                        className="h-5 text-[10px] capitalize"
-                      >
-                        {displayOrderStatus(row.status)}
-                      </Badge>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <Separator />
-
-          <section>
-            <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-              Order history (profile)
-            </h3>
-            <ul className="space-y-1.5 text-sm">
-              {customer.orders.map((o) => (
-                <li
-                  key={o.reference}
-                  className="border-border/60 bg-muted/20 flex justify-between gap-2 rounded-md border px-2 py-1.5"
-                >
-                  <span>{o.reference}</span>
-                  <span className="text-muted-foreground tabular-nums">
-                    {formatCurrency(o.total)}
-                  </span>
-                </li>
+          {sortedProducts.length === 0 ? (
+            <div className="text-muted-foreground rounded-xl border border-dashed border-border/50 py-8 text-center text-sm">
+              No product data available
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {sortedProducts.map((product, i) => (
+                <ProductRow
+                  key={product.productId}
+                  product={product}
+                  maxSpend={maxSpend}
+                  index={i}
+                />
               ))}
-            </ul>
-          </section>
-
-          <Separator />
-
-          <section>
-            <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-              Communication history
-            </h3>
-            {customer.communications.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                No logged threads.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {customer.communications.map((c) => (
-                  <Card key={c.id} size="sm" className="border-border/70 p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-muted-foreground text-xs font-medium uppercase">
-                        {c.channel}
-                      </span>
-                      <Badge
-                        variant={c.direction === "in" ? "secondary" : "outline"}
-                      >
-                        {c.direction === "in" ? "Inbound" : "Outbound"}
-                      </Badge>
-                    </div>
-                    <p className="mt-1 leading-snug font-medium">{c.subject}</p>
-                    <p className="text-muted-foreground mt-1 text-xs">
-                      {c.snippet}
-                    </p>
-                    <p className="text-muted-foreground mt-2 text-[10px]">
-                      {new Date(c.at).toLocaleString()}
-                    </p>
-                  </Card>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <Separator />
-
-          <section>
-            <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-              Customer activity
-            </h3>
-            {customer.activities.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                No recent activity events.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {customer.activities.map((a) => {
-                  const Icon = activityIcon(a.kind);
-                  return (
-                    <li
-                      key={a.id}
-                      className="border-border/50 bg-card/60 flex gap-2 rounded-md border px-2 py-2 text-sm"
-                    >
-                      <Icon
-                        className="text-muted-foreground mt-0.5 size-4 shrink-0"
-                        aria-hidden
-                      />
-                      <div>
-                        <p className="leading-snug font-medium">{a.label}</p>
-                        {a.detail ? (
-                          <p className="text-muted-foreground text-xs">
-                            {a.detail}
-                          </p>
-                        ) : null}
-                        <p className="text-muted-foreground mt-1 text-[10px]">
-                          {new Date(a.at).toLocaleString()}
-                        </p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>
-  );
-}
-
-function Kpi({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border-border/70 bg-muted/20 rounded-lg border px-2 py-2">
-      <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
-        {label}
-      </p>
-      <p className="mt-0.5 truncate text-sm font-semibold tabular-nums">
-        {value}
-      </p>
-    </div>
   );
 }

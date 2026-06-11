@@ -1,3 +1,11 @@
+/** Product purchased by a customer with aggregated stats. */
+export type CustomerProduct = {
+  productId: string;
+  title: string;
+  totalQuantity: number;
+  totalSpent: string;
+};
+
 /** Raw customer from GET /orders/vendor/customers */
 export type VendorCustomerFromApi = {
   userId: string;
@@ -6,6 +14,13 @@ export type VendorCustomerFromApi = {
   email: string | null;
   phone: string | null;
   orderCount: number;
+  totalSpent: string;
+  products: CustomerProduct[];
+};
+
+/** API wrapper: { items: VendorCustomerFromApi[] } */
+export type VendorCustomersApiResponse = {
+  items: VendorCustomerFromApi[];
 };
 
 export type CommunicationChannel = "email" | "message" | "note";
@@ -34,9 +49,7 @@ export type CustomerActivity = {
   detail?: string;
 };
 
-
-
-/** Snapshot row for embedded history (enriched in UI from orders store when emails match). */
+/** Snapshot row for embedded history. */
 export type CustomerOrderSnapshot = {
   reference: string;
   total: number;
@@ -44,18 +57,20 @@ export type CustomerOrderSnapshot = {
   status: string;
 };
 
+/** Enriched customer for UI consumption. */
 export type VendorCustomer = {
   id: string;
   name: string;
   email: string;
+  phone: string | null;
   company: string | null;
-  /** e.g. repeat buyer, wholesale */
   tags: string[];
   orderCount: number;
-  totalSpend: number;
+  totalSpent: number;
   firstSeen: string;
   lastSeen: string;
   orders: CustomerOrderSnapshot[];
   communications: CommunicationEntry[];
   activities: CustomerActivity[];
+  products: CustomerProduct[];
 };
