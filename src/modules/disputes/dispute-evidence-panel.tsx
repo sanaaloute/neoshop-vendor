@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { FileIcon, Trash2, Upload } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ export function DisputeEvidencePanel({
   readOnly,
   className,
 }: DisputeEvidencePanelProps) {
+  const t = useTranslations("disputes.evidence");
   const [dragOver, setDragOver] = useState(false);
 
   const ingest = useCallback(
@@ -89,11 +91,8 @@ export function DisputeEvidencePanel({
           tabIndex={0}
         >
           <Upload className="text-muted-foreground size-7" aria-hidden />
-          <p className="text-sm font-medium">Upload evidence</p>
-          <p className="text-muted-foreground text-xs">
-            Images or PDF. Files are attached when your marketplace accepts
-            them.
-          </p>
+          <p className="text-sm font-medium">{t("uploadTitle")}</p>
+          <p className="text-muted-foreground text-xs">{t("uploadHint")}</p>
           <input
             id="dispute-evidence-file-input"
             type="file"
@@ -135,7 +134,7 @@ export function DisputeEvidencePanel({
                   size="icon-xs"
                   className="text-muted-foreground hover:text-destructive shrink-0"
                   onClick={() => onRemove(ev.id)}
-                  aria-label={`Remove ${ev.filename}`}
+                  aria-label={t("removeAria", { filename: ev.filename })}
                 >
                   <Trash2 className="size-3.5" />
                 </Button>
@@ -145,8 +144,7 @@ export function DisputeEvidencePanel({
         </ul>
       ) : (
         <p className="text-muted-foreground text-xs">
-          No files yet
-          {readOnly ? "." : " — add photos or PDFs to strengthen your case."}
+          {readOnly ? t("noFilesReadOnly") : t("noFiles")}
         </p>
       )}
     </div>

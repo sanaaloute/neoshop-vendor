@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
   FileIcon,
@@ -68,10 +69,10 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
-function roleBadge(role: string): string | null {
+function roleBadge(role: string, t: (key: string) => string): string | null {
   const r = role.toLowerCase();
-  if (r === "admin") return "Admin";
-  if (r === "super_admin") return "Super Admin";
+  if (r === "admin") return t("roleAdmin");
+  if (r === "super_admin") return t("roleSuperAdmin");
   return null;
 }
 
@@ -92,6 +93,7 @@ function formatShortTime(iso: string) {
 }
 
 export function MessagingHome() {
+  const t = useTranslations("chat");
   const { loading: chatSyncLoading, error: chatSyncError } =
     useGatewayChatBootstrap();
   const threads = useChatStore((s) => s.threads);
@@ -248,9 +250,7 @@ export function MessagingHome() {
 
     // Vendor-first-message guard
     if (!canVendorSend(selected)) {
-      setSendError(
-        "You cannot send a message until the customer has sent the first message."
-      );
+      setSendError(t("cannotSendFirstMessage"));
       return;
     }
 
@@ -266,7 +266,7 @@ export function MessagingHome() {
       threadId: selectedId,
       authorRole: "vendor",
       senderUserId: vendorUserId ?? undefined,
-      body: text || (attachments?.length ? "Sent attachment(s)." : ""),
+      body: text || (attachments?.length ? t("sentAttachment") : ""),
       sentAt: new Date().toISOString(),
       attachments,
     };
@@ -284,9 +284,7 @@ export function MessagingHome() {
           const status = (e as { response?: { status?: number } })?.response
             ?.status;
           if (status === 403) {
-            setSendError(
-              "You cannot send a message until the customer has sent the first message."
-            );
+            setSendError(t("cannotSendFirstMessage"));
           }
           /* message stays optimistic in thread */
         }
@@ -343,12 +341,12 @@ export function MessagingHome() {
             aria-hidden
           />
           {liveConnected
-            ? "Live"
+            ? t("live")
             : socketIoStatus === "degraded"
-              ? "Degraded"
+              ? t("degraded")
               : getApiBaseUrl()
-                ? "Offline"
-                : "Standard mode"}
+                ? t("offline")
+                : t("standardMode")}
         </Badge>
       </div>
 
@@ -356,24 +354,24 @@ export function MessagingHome() {
         <aside className="border-border/60 flex max-h-[min(520px,55vh)] flex-col border-b lg:max-h-none lg:w-[min(100%,340px)] lg:shrink-0 lg:border-r lg:border-b-0">
           <div className="border-border/60 border-b p-2">
             <Input
-              placeholder="Search conversations…"
-              aria-label="Search chats"
+              placeholder={t("searchConversations")}
+              aria-label={t("searchChatsAria")}
             />
           </div>
           <ScrollArea className="flex-1">
             <ul className="divide-border/60 divide-y p-2">
-              {threads.map((t) => {
-                const active = t.id === selectedId;
-                const unread = unreadCount(t);
-                const preview = t.messages[t.messages.length - 1];
-                const peer = Object.values(t.participantMap).find(
+              {threads.map((threadItem) => {
+                const active = threadItem.id === selectedId;
+                const unread = unreadCount(threadItem);
+                const preview = threadItem.messages[threadItem.messages.length - 1];
+                const peer = Object.values(threadItem.participantMap).find(
                   (p) => p.role !== "vendor"
                 );
                 return (
-                  <li key={t.id}>
+                  <li key={threadItem.id}>
                     <button
                       type="button"
-                      onClick={() => selectThread(t.id)}
+                      onClick={() => selectThread(threadItem.id)}
                       className={cn(
                         "flex w-full gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
                         active ? "bg-muted/70" : "hover:bg-muted/40"
@@ -388,14 +386,14 @@ export function MessagingHome() {
                           />
                         ) : (
                           <div className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-full text-xs font-semibold">
-                            {initials(t.customerName)}
+                            {initials(threadItem.customerName)}
                           </div>
                         )}
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate font-medium">
-                            {t.customerName}
+                            {threadItem.customerName}
                           </span>
                           <span className="text-muted-foreground shrink-0 text-[11px] tabular-nums">
                             {preview ? formatShortTime(preview.sentAt) : ""}
@@ -404,7 +402,7 @@ export function MessagingHome() {
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-muted-foreground truncate text-xs">
                             {(() => {
-                              if (!preview) return "No messages yet";
+                              if (!preview) return t("noMessagesYet");
                               const isFromOther = preview.authorRole !== "vendor";
                               if (isFromOther && preview.translatedBody) {
                                 return preview.translatedBody;
@@ -421,9 +419,9 @@ export function MessagingHome() {
                             </Badge>
                           ) : null}
                         </div>
-                        {t.orderRef ? (
+                        {threadItem.orderRef ? (
                           <span className="text-muted-foreground font-mono text-[11px]">
-                            {t.orderRef}
+                            {threadItem.orderRef}
                           </span>
                         ) : null}
                       </div>
@@ -534,8 +532,8 @@ export function MessagingHome() {
             </>
           ) : (
             <SheetHeader className="p-4">
-              <SheetTitle>Messages</SheetTitle>
-              <SheetDescription>Select a conversation.</SheetDescription>
+              <SheetTitle>{t("messages")}</SheetTitle>
+              <SheetDescription>{t("selectConversation")}</SheetDescription>
             </SheetHeader>
           )}
         </SheetContent>
@@ -545,15 +543,15 @@ export function MessagingHome() {
 }
 
 function EmptyConversation() {
+  const t = useTranslations("chat");
   return (
     <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">
       <MessageSquare className="size-10 opacity-70" aria-hidden />
       <p className="text-foreground text-sm font-medium">
-        Select a conversation
+        {t("selectConversationTitle")}
       </p>
       <p className="max-w-xs text-xs">
-        Customer threads appear in the list; unread counts update until you open
-        a chat.
+        {t("selectConversationDescription")}
       </p>
     </div>
   );
@@ -590,12 +588,13 @@ function MessageBubble({
   setHoveredMessageId: (id: string | null) => void;
   onDeleteMessage: (id: string) => void;
 }) {
+  const t = useTranslations("chat");
   const isVendor = m.authorRole === "vendor";
   const sender = m.senderUserId
     ? thread.participantMap[m.senderUserId]
     : undefined;
   const senderName = sender?.name || thread.customerName;
-  const badge = sender ? roleBadge(sender.role) : null;
+  const badge = sender ? roleBadge(sender.role, t) : null;
   const isMine =
     m.senderUserId && currentUserIds.includes(m.senderUserId) ? true : false;
   const hasTranslation = !!m.translatedBody;
@@ -645,7 +644,7 @@ function MessageBubble({
                 type="button"
                 onClick={() => onDeleteMessage(m.id)}
                 className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-100"
-                title="Delete message"
+                title={t("deleteMessage")}
               >
                 <Trash2 className="size-3" />
               </button>
@@ -665,7 +664,7 @@ function MessageBubble({
                 className="inline-flex items-center gap-1 rounded-md bg-background/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground ring-1 ring-border/60 backdrop-blur-sm transition-colors hover:text-foreground"
               >
                 <Languages className="size-2.5" aria-hidden />
-                {showOriginal ? "Show translation" : "Show original"}
+                {showOriginal ? t("showTranslation") : t("showOriginal")}
               </button>
               <TranslationBadge
                 originalLanguage={m.originalLanguage}
@@ -732,6 +731,7 @@ function ConversationBody({
   onDeleteMessage: (messageId: string) => void;
   currentUserIds: string[];
 }) {
+  const t = useTranslations("chat");
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
 
   return (
@@ -782,7 +782,7 @@ function ConversationBody({
           {peerTyping ? (
             <div className="flex justify-start">
               <div className="border-border bg-muted/30 text-muted-foreground rounded-2xl border border-dashed px-3 py-2 text-xs italic">
-                Someone is typing…
+                {t("someoneIsTyping")}
               </div>
             </div>
           ) : null}
@@ -811,13 +811,13 @@ function ConversationBody({
               size="xs"
               onClick={onClearFiles}
             >
-              Clear
+              {t("clear")}
             </Button>
           </div>
         ) : null}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <Textarea
-            placeholder="Write a reply…"
+            placeholder={t("writeReply")}
             value={draft}
             onChange={(e) => onDraftChange(e.target.value)}
             className="min-h-[88px] flex-1 resize-y"
@@ -847,7 +847,7 @@ function ConversationBody({
               onClick={() =>
                 document.getElementById("chat-attach-input")?.click()
               }
-              aria-label="Attach files"
+              aria-label={t("attachFiles")}
             >
               <Paperclip className="size-4" />
             </Button>
@@ -857,13 +857,12 @@ function ConversationBody({
               onClick={onSend}
             >
               <Send className="size-4" aria-hidden />
-              Send
+              {t("send")}
             </Button>
           </div>
         </div>
         <p className="text-muted-foreground mt-2 text-[11px]">
-          Enter sends · Shift+Enter for a new line · Attachments send with your
-          message (large files may take a moment).
+          {t("enterSends")}
         </p>
       </footer>
     </>

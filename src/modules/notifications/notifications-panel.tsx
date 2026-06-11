@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
   Bell,
@@ -50,13 +51,16 @@ function passesFilter(
   return true;
 }
 
-const FILTER_TABS: { id: NotificationFilter; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "unread", label: "Unread" },
-  { id: "orders", label: "Orders" },
-  { id: "finance", label: "Finance" },
-  { id: "system", label: "System" },
-];
+function useFilterTabs() {
+  const t = useTranslations("notifications");
+  return [
+    { id: "all" as const, label: t("all") },
+    { id: "unread" as const, label: t("unread") },
+    { id: "orders" as const, label: t("orders") },
+    { id: "finance" as const, label: t("finance") },
+    { id: "system" as const, label: t("system") },
+  ];
+}
 
 type NotificationsPanelProps = {
   variant?: "compact" | "full";
@@ -67,12 +71,14 @@ export function NotificationsPanel({
   variant = "compact",
   className,
 }: NotificationsPanelProps) {
+  const t = useTranslations("notifications");
   const items = useNotificationsStore((s) => s.items);
   const filter = useNotificationsStore((s) => s.filter);
   const setFilter = useNotificationsStore((s) => s.setFilter);
   const markRead = useNotificationsStore((s) => s.markRead);
   const markAllRead = useNotificationsStore((s) => s.markAllRead);
   const unreadCount = useNotificationsStore((s) => s.unreadCount);
+  const filterTabs = useFilterTabs();
 
   const filtered = useMemo(
     () =>
@@ -110,13 +116,13 @@ export function NotificationsPanel({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Bell className="text-muted-foreground size-4" aria-hidden />
-          <span className="text-sm font-semibold">Notifications</span>
+          <span className="text-sm font-semibold">{t("notifications")}</span>
           {unreadCount > 0 ? (
             <Badge variant="secondary" className="tabular-nums">
-              {unreadCount > 99 ? "99+" : unreadCount} new
+              {unreadCount > 99 ? "99+" : unreadCount} {t("new")}
             </Badge>
           ) : (
-            <span className="text-muted-foreground text-xs">Caught up</span>
+            <span className="text-muted-foreground text-xs">{t("caughtUp")}</span>
           )}
         </div>
         <Button
@@ -126,16 +132,16 @@ export function NotificationsPanel({
           disabled={unreadCount === 0}
           onClick={handleMarkAllRead}
         >
-          Mark all read
+          {t("markAllRead")}
         </Button>
       </div>
 
       <div
         className="flex flex-wrap gap-1"
         role="tablist"
-        aria-label="Notification filters"
+        aria-label={t("filterAria")}
       >
-        {FILTER_TABS.map((tab) => (
+        {filterTabs.map((tab) => (
           <Button
             key={tab.id}
             type="button"
@@ -159,7 +165,7 @@ export function NotificationsPanel({
         <ul className={cn("space-y-1 pr-3", dense ? "pb-1" : "pb-2")}>
           {filtered.length === 0 ? (
             <li className="border-border/70 text-muted-foreground rounded-lg border border-dashed px-4 py-10 text-center text-sm">
-              No notifications for this filter.
+              {t("noNotificationsForFilter")}
             </li>
           ) : (
             filtered.map((row) => {

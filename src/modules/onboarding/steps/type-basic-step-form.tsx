@@ -3,33 +3,20 @@
 import { useEffect } from "react";
 import { User, Building2, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 import { VendorForm, VendorTextField, VendorCountrySelect } from "@/components/forms";
 import { useOnboardingWizardStore } from "@/store/onboarding-wizard-store";
 import { useVendorProfileStore } from "@/store/vendor-profile-store";
-import { basicInfoSchema } from "@/modules/onboarding/schemas";
+import { createBasicInfoSchema } from "@/modules/onboarding/schemas";
 import type { BasicInfoSchema } from "@/modules/onboarding/schemas";
 import { ONBOARDING_STEP_FORM_ID } from "@/modules/onboarding/onboarding-step-forms";
 import { syncRegisterStep, shouldHydrateFromProfile } from "@/modules/onboarding/onboarding-api";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-const vendorTypeOptions = [
-  {
-    value: "INDIVIDUAL" as const,
-    label: "Individual",
-    description: "Solo sellers, artisans, freelancers",
-    icon: User,
-  },
-  {
-    value: "COMPANY" as const,
-    label: "Company",
-    description: "Registered businesses, LLCs, corporations",
-    icon: Building2,
-  },
-];
-
 export function TypeBasicStepForm() {
+  const t = useTranslations("onboarding");
   const draft = useOnboardingWizardStore((s) => s.draft);
   const setStep = useOnboardingWizardStore((s) => s.setStep);
   const setApiBusy = useOnboardingWizardStore((s) => s.setApiBusy);
@@ -38,6 +25,23 @@ export function TypeBasicStepForm() {
   const setRegistered = useOnboardingWizardStore((s) => s.setRegistered);
   const registered = useOnboardingWizardStore((s) => s.registered);
   const profile = useVendorProfileStore((s) => s.profile);
+
+  const basicInfoSchema = createBasicInfoSchema((key: string) => t(key));
+
+  const vendorTypeOptions = [
+    {
+      value: "INDIVIDUAL" as const,
+      label: t("steps.typeBasic.individualLabel"),
+      description: t("steps.typeBasic.individualDescription"),
+      icon: User,
+    },
+    {
+      value: "COMPANY" as const,
+      label: t("steps.typeBasic.companyLabel"),
+      description: t("steps.typeBasic.companyDescription"),
+      icon: Building2,
+    },
+  ];
 
   const defaultValues: BasicInfoSchema = {
     vendorType: (draft.vendorType || "INDIVIDUAL") as "INDIVIDUAL" | "COMPANY",
@@ -159,15 +163,15 @@ export function TypeBasicStepForm() {
               <VendorTextField
                 control={form.control}
                 name="legalBusinessName"
-                label="Legal Business Name"
-                description={watchType === "INDIVIDUAL" ? "Can be your personal name or trade name" : "Registered business name"}
-                placeholder="Amina's Handmade Crafts"
+                label={t("steps.typeBasic.legalBusinessNameLabel")}
+                description={watchType === "INDIVIDUAL" ? t("steps.typeBasic.legalBusinessNameDescriptionIndividual") : t("steps.typeBasic.legalBusinessNameDescriptionCompany")}
+                placeholder={t("steps.typeBasic.legalBusinessNamePlaceholder")}
               />
               <VendorTextField
                 control={form.control}
                 name="tradeName"
-                label="Trade Name (Optional)"
-                placeholder="Amina Crafts"
+                label={t("steps.typeBasic.tradeNameLabel")}
+                placeholder={t("steps.typeBasic.tradeNamePlaceholder")}
               />
             </div>
 
@@ -175,24 +179,24 @@ export function TypeBasicStepForm() {
               <VendorTextField
                 control={form.control}
                 name="businessEmail"
-                label="Business Email"
+                label={t("steps.typeBasic.businessEmailLabel")}
                 type="email"
-                placeholder="contact@example.com"
+                placeholder={t("steps.typeBasic.businessEmailPlaceholder")}
               />
               <VendorTextField
                 control={form.control}
                 name="businessPhone"
-                label="Business Phone"
+                label={t("steps.typeBasic.businessPhoneLabel")}
                 type="tel"
-                placeholder="+22501234567"
+                placeholder={t("steps.typeBasic.businessPhonePlaceholder")}
               />
             </div>
 
             <VendorCountrySelect
               control={form.control}
               name="countryCode"
-              label="Country"
-              placeholder="Select country"
+              label={t("steps.typeBasic.countryLabel")}
+              placeholder={t("steps.typeBasic.countryPlaceholder")}
             />
           </div>
         );

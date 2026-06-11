@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -7,12 +8,15 @@ import { Card } from "@/components/ui/card";
 
 import type { AnalyticsDatePreset } from "./types";
 
-const PRESETS: { id: AnalyticsDatePreset; label: string }[] = [
-  { id: "7d", label: "7 days" },
-  { id: "30d", label: "30 days" },
-  { id: "90d", label: "90 days" },
-  { id: "12m", label: "12 months" },
-];
+function usePresetLabels() {
+  const t = useTranslations("analytics");
+  return [
+    { id: "7d" as const, label: t("preset7d") },
+    { id: "30d" as const, label: t("preset30d") },
+    { id: "90d" as const, label: t("preset90d") },
+    { id: "12m" as const, label: t("preset12m") },
+  ];
+}
 
 type AnalyticsToolbarProps = {
   preset: AnalyticsDatePreset;
@@ -27,17 +31,19 @@ export function AnalyticsToolbar({
   onExportCsv,
   rangeLabel,
 }: AnalyticsToolbarProps) {
+  const t = useTranslations("analytics");
+  const presets = usePresetLabels();
   return (
     <Card className="border-border/80 shadow-vendor-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between md:p-5">
       <div>
         <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-          Date range
+          {t("dateRange")}
         </p>
         <p className="text-muted-foreground mt-1 text-sm">{rangeLabel}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <div className="bg-muted/50 flex flex-wrap gap-1.5 rounded-lg p-1">
-          {PRESETS.map((p) => (
+          {presets.map((p) => (
             <Button
               key={p.id}
               type="button"
@@ -58,7 +64,7 @@ export function AnalyticsToolbar({
           onClick={onExportCsv}
         >
           <Download className="size-4" aria-hidden />
-          Export CSV
+          {t("exportCsv")}
         </Button>
       </div>
     </Card>

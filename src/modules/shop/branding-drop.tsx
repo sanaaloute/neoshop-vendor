@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { VendorMuted } from "@/components/layout/typography";
 import { cn } from "@/lib/utils";
 import { ImageIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type BrandingDropProps = {
   label: string;
@@ -27,6 +28,7 @@ export function BrandingDrop({
   onClear,
   tall,
 }: BrandingDropProps) {
+  const t = useTranslations("shop.brandingDrop");
   const inputId = `shop-brand-${label.replace(/\s/g, "-").toLowerCase()}`;
 
   return (
@@ -81,11 +83,11 @@ export function BrandingDrop({
               size="sm"
               onClick={() => document.getElementById(inputId)?.click()}
             >
-              Upload
+              {t("upload")}
             </Button>
             {preview ? (
               <Button type="button" variant="ghost" size="sm" onClick={onClear}>
-                Remove
+                {t("remove")}
               </Button>
             ) : null}
           </div>

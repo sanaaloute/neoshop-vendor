@@ -105,15 +105,15 @@ export function draftIsComplete(draft: OnboardingDraft): boolean {
 export function missingFields(draft: OnboardingDraft): string[] {
   const missing: string[] = [];
   const t = draft.vendorType;
-  if (!t) missing.push("Vendor type");
+  if (!t) missing.push("vendorType");
   const b = draft.basicInfo;
-  if (!b.legalBusinessName) missing.push("Legal business name");
-  if (!b.businessEmail) missing.push("Business email");
-  if (!b.businessPhone) missing.push("Business phone");
-  if (!b.countryCode) missing.push("Country");
+  if (!b.legalBusinessName) missing.push("legalBusinessName");
+  if (!b.businessEmail) missing.push("businessEmail");
+  if (!b.businessPhone) missing.push("businessPhone");
+  if (!b.countryCode) missing.push("country");
   const a = draft.addressInfo;
-  if (!a.addressLine1) missing.push("Address");
-  if (t === "COMPANY" && !a.postalCode) missing.push("Postal code");
-  if (draft.documents.filter((d) => d.status === "done").length === 0) missing.push("At least one verification document");
+  if (!a.addressLine1) missing.push("address");
+  if (t === "COMPANY" && !a.postalCode) missing.push("postalCode");
+  if (draft.documents.filter((d) => d.status === "done").length === 0) missing.push("documents");
   return missing;
 }

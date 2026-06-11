@@ -12,6 +12,7 @@ import {
   ImageIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 import { useOnboardingWizardStore } from "@/store/onboarding-wizard-store";
 import { ONBOARDING_STEP_FORM_ID } from "@/modules/onboarding/onboarding-step-forms";
@@ -22,14 +23,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-
-const DOCUMENT_TYPES: { value: VendorDocumentType; label: string; description: string }[] = [
-  { value: "ID_CARD", label: "ID Card", description: "Passport, national ID, driver's licence" },
-  { value: "BUSINESS_LICENSE", label: "Business License", description: "Business licence, registration certificate" },
-  { value: "TAX_DOCUMENT", label: "Tax Document", description: "Tax ID certificate, VAT registration" },
-  { value: "ADDRESS_PROOF", label: "Address Proof", description: "Utility bill, bank statement, lease agreement" },
-  { value: "OTHER", label: "Other", description: "Any other supporting document" },
-];
 
 const UI_LIMITS = {
   ONBOARDING_FILE_MAX_BYTES: 10 * 1024 * 1024, // 10MB
@@ -42,6 +35,7 @@ function fileIconFromMime(mime: string) {
 
 
 export function DocumentsStepForm() {
+  const t = useTranslations("onboarding");
   const draft = useOnboardingWizardStore((s) => s.draft);
   const documents = draft.documents;
   const setStep = useOnboardingWizardStore((s) => s.setStep);
@@ -50,6 +44,14 @@ export function DocumentsStepForm() {
   const updateDocument = useOnboardingWizardStore((s) => s.updateDocument);
   const replaceDocument = useOnboardingWizardStore((s) => s.replaceDocument);
   const removeDocument = useOnboardingWizardStore((s) => s.removeDocument);
+
+  const documentTypes: { value: VendorDocumentType; label: string; description: string }[] = [
+    { value: "ID_CARD", label: t("steps.documents.idCardLabel"), description: t("steps.documents.idCardDescription") },
+    { value: "BUSINESS_LICENSE", label: t("steps.documents.businessLicenseLabel"), description: t("steps.documents.businessLicenseDescription") },
+    { value: "TAX_DOCUMENT", label: t("steps.documents.taxDocumentLabel"), description: t("steps.documents.taxDocumentDescription") },
+    { value: "ADDRESS_PROOF", label: t("steps.documents.addressProofLabel"), description: t("steps.documents.addressProofDescription") },
+    { value: "OTHER", label: t("steps.documents.otherLabel"), description: t("steps.documents.otherDescription") },
+  ];
 
   const [selectedType, setSelectedType] = useState<VendorDocumentType>("ID_CARD");
   const [dragActive, setDragActive] = useState(false);
@@ -67,7 +69,7 @@ export function DocumentsStepForm() {
       const validFiles: File[] = [];
       for (const file of Array.from(files)) {
         if (file.size > UI_LIMITS.ONBOARDING_FILE_MAX_BYTES) {
-          setGlobalError(`"${file.name}" exceeds 10MB limit.`);
+          setGlobalError(t("steps.documents.exceedsLimit", { fileName: file.name }));
           continue;
         }
         validFiles.push(file);
@@ -119,19 +121,19 @@ export function DocumentsStepForm() {
         }
 
         if (result.failed.length > 0) {
-          setGlobalError(`${result.failed.length} file(s) failed to upload.`);
+          setGlobalError(t("steps.documents.filesFailed", { count: result.failed.length }));
         }
       } catch {
         // Mark all temp docs as error on unexpected failure
         for (const tempDoc of tempDocs) {
           updateDocument(tempDoc.id, { status: "error" });
         }
-        setGlobalError("Upload failed. Please try again.");
+        setGlobalError(t("steps.documents.uploadFailed"));
       } finally {
         setApiBusy(false);
       }
     },
-    [selectedType, addDocument, updateDocument, replaceDocument, setApiBusy]
+    [selectedType, addDocument, updateDocument, replaceDocument, setApiBusy, t]
   );
 
   const handleDelete = async (doc: DraftDocument) => {
@@ -173,7 +175,7 @@ export function DocumentsStepForm() {
     <div className="flex flex-col gap-5">
       {/* Document type selector */}
       <div className="flex flex-wrap gap-2">
-        {DOCUMENT_TYPES.map((dt) => (
+        {documentTypes.map((dt) => (
           <button
             key={dt.value}
             type="button"
@@ -198,7 +200,7 @@ export function DocumentsStepForm() {
       </div>
 
       <p className="text-muted-foreground text-xs">
-        {DOCUMENT_TYPES.find((d) => d.value === selectedType)?.description}
+        {documentTypes.find((d) => d.value === selectedType)?.description}
       </p>
 
       {/* Upload zone */}
@@ -226,8 +228,8 @@ export function DocumentsStepForm() {
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted group-hover:bg-primary/10">
           <UploadCloud className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
         </div>
-        <p className="text-sm font-medium">Click or drag files to upload</p>
-        <p className="text-muted-foreground text-xs">PDF, PNG, JPG up to 10MB</p>
+        <p className="text-sm font-medium">{t("steps.documents.clickOrDrag")}</p>
+        <p className="text-muted-foreground text-xs">{t("steps.documents.fileTypes")}</p>
       </div>
 
       {globalError && (
@@ -268,7 +270,7 @@ export function DocumentsStepForm() {
                   <div className="flex items-center gap-2">
                     <span className="truncate text-sm font-medium">{doc.fileName}</span>
                     <Badge variant="outline" className="text-[10px]">
-                      {DOCUMENT_TYPES.find((d) => d.value === doc.type)?.label}
+                      {documentTypes.find((d) => d.value === doc.type)?.label}
                     </Badge>
                   </div>
                   {doc.status === "uploading" && (
@@ -279,12 +281,12 @@ export function DocumentsStepForm() {
                   )}
                   {doc.status === "done" && (
                     <span className="flex items-center gap-1 text-emerald-400 text-[10px]">
-                      <CheckCircle2 className="h-3 w-3" /> Uploaded
+                      <CheckCircle2 className="h-3 w-3" /> {t("steps.documents.uploaded")}
                     </span>
                   )}
                   {doc.status === "error" && (
                     <span className="flex items-center gap-1 text-destructive text-[10px]">
-                      <XCircle className="h-3 w-3" /> Failed
+                      <XCircle className="h-3 w-3" /> {t("steps.documents.failed")}
                     </span>
                   )}
                 </div>
@@ -306,8 +308,8 @@ export function DocumentsStepForm() {
         {documents.length === 0 && (
           <div className="flex flex-col items-center gap-1 rounded-lg border border-dashed border-border/40 py-6 text-muted-foreground text-xs">
             <FileText className="h-5 w-5 opacity-40" />
-            <p>No documents uploaded yet</p>
-            <p className="text-[10px] opacity-60">At least one document is required</p>
+            <p>{t("steps.documents.noDocuments")}</p>
+            <p className="text-[10px] opacity-60">{t("steps.documents.atLeastOneRequired")}</p>
           </div>
         )}
       </div>
@@ -324,10 +326,10 @@ export function DocumentsStepForm() {
         {uploadingDocs.length > 0 ? (
           <span className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Uploading…
+            {t("steps.documents.uploading")}
           </span>
         ) : (
-          "Continue"
+          t("steps.documents.continue")
         )}
       </Button>
     </div>

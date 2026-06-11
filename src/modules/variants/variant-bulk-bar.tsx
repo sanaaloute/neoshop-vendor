@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -17,6 +18,7 @@ export function VariantBulkBar({
   selected,
   onClearSelection,
 }: VariantBulkBarProps) {
+  const t = useTranslations("variants");
   const bulkUpdateVariants = useVariantWorkbenchStore(
     (s) => s.bulkUpdateVariants
   );
@@ -52,14 +54,14 @@ export function VariantBulkBar({
     <Card className="border-primary/30 bg-primary/5 shadow-vendor-card p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <p className="text-sm font-medium">
-          Bulk update ({selected.size} selected)
+          {t("bulkUpdate", { count: selected.size })}
         </p>
         <div className="flex flex-wrap items-end gap-3">
-          <Field label="Stock" value={stock} onChange={setStock} />
-          <Field label="Price" value={price} onChange={setPrice} />
-          <Field label="Weight g (optional)" value={weight} onChange={setWeight} />
+          <Field label={t("stock")} value={stock} onChange={setStock} />
+          <Field label={t("price")} value={price} onChange={setPrice} />
+          <Field label={t("weightOptional")} value={weight} onChange={setWeight} />
           <div className="grid min-w-[8rem] gap-1">
-            <Label className="text-xs">Barcode (optional)</Label>
+            <Label className="text-xs">{t("barcodeOptional")}</Label>
             <Input
               className="h-9 text-xs"
               value={barcode}
@@ -68,7 +70,7 @@ export function VariantBulkBar({
             />
           </div>
           <Button type="button" size="sm" onClick={() => apply()}>
-            Apply
+            {t("apply")}
           </Button>
           <Button
             type="button"
@@ -76,7 +78,7 @@ export function VariantBulkBar({
             variant="ghost"
             onClick={onClearSelection}
           >
-            Clear
+            {t("clear")}
           </Button>
         </div>
       </div>

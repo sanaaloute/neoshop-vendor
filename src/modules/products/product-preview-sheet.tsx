@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 // NOTE: Price is managed at the variant level; preview no longer shows product-level price.
 import { Badge } from "@/components/ui/badge";
 import {
@@ -31,6 +32,7 @@ export function ProductPreviewSheet({
   onOpenChange,
   values,
 }: ProductPreviewSheetProps) {
+  const t = useTranslations("products");
   const categories = useCategoriesStore((s) => s.categories);
   const cats = categoryLabels(values.categoryIds, categories);
   const url = values.seo.slug
@@ -44,9 +46,9 @@ export function ProductPreviewSheet({
         className="w-full gap-0 overflow-y-auto sm:max-w-md"
       >
         <SheetHeader className="border-border border-b text-left">
-          <SheetTitle>Product preview</SheetTitle>
+          <SheetTitle>{t("productPreview")}</SheetTitle>
           <SheetDescription>
-            Buyer-facing summary — compare with published catalog when previewing.
+            {t("buyerFacingSummary")}
           </SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-4 p-4">
@@ -57,34 +59,33 @@ export function ProductPreviewSheet({
               </Badge>
             </div>
             <h3 className="text-lg leading-tight font-semibold">
-              {values.name.trim() || "Untitled product"}
+              {values.name.trim() || t("untitledProduct")}
             </h3>
 
             <p className="text-muted-foreground mt-3 line-clamp-4 text-sm">
-              {values.description.trim() || "No description yet."}
+              {values.description.trim() || t("noDescriptionYet")}
             </p>
             {cats ? (
               <p className="text-muted-foreground mt-3 text-xs">
                 <span className="text-foreground font-medium">
-                  Categories:{" "}
+                  {t("categories")}:{" "}
                 </span>
                 {cats}
               </p>
             ) : null}
             <p className="text-muted-foreground mt-2 text-xs">
-              {values.media.length} media file
-              {values.media.length === 1 ? "" : "s"}
+              {t("mediaFiles", { count: values.media.length })}
             </p>
           </div>
 
           <div className="border-border/80 bg-muted/30 rounded-lg border border-dashed p-3 text-xs">
-            <p className="text-foreground font-medium">Search preview</p>
+            <p className="text-foreground font-medium">{t("searchPreview")}</p>
             <p className="text-primary mt-2 truncate">{url}</p>
             <p className="text-foreground mt-1 font-medium">
-              {values.name || "Meta title"}
+              {values.name || t("metaTitle")}
             </p>
             <p className="text-muted-foreground mt-1 line-clamp-3">
-              {"Meta description will appear here."}
+              {t("metaDescription")}
             </p>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/lib/utils";
 
@@ -15,7 +16,16 @@ type DisputeWorkflowProps = {
   className?: string;
 };
 
+const stepKeyMap: Record<(typeof DISPUTE_WORKFLOW_STEPS)[number]["key"], string> = {
+  opened: "opened",
+  investigation: "investigation",
+  mediation: "mediation",
+  escalated: "escalated",
+  resolved: "resolved",
+};
+
 export function DisputeWorkflow({ status, className }: DisputeWorkflowProps) {
+  const t = useTranslations("disputes.workflow");
   const activeIndex = disputeWorkflowStepIndex(status);
   const terminal = status === "resolved";
 
@@ -49,18 +59,20 @@ export function DisputeWorkflow({ status, className }: DisputeWorkflowProps) {
               >
                 {complete ? <Check className="size-3.5" aria-hidden /> : i + 1}
               </span>
-              <span className="truncate font-medium">{step.label}</span>
+              <span className="truncate font-medium">
+                {t(`steps.${stepKeyMap[step.key]}`)}
+              </span>
             </li>
           );
         })}
       </ol>
       {terminal ? (
         <p className="text-muted-foreground mt-2 text-xs">
-          This dispute has been resolved — messaging is read-only.
+          {t("resolvedNote")}
         </p>
       ) : (
         <p className="text-muted-foreground mt-2 text-xs">
-          Respond within deadlines to avoid automatic decisions.
+          {t("respondNote")}
         </p>
       )}
     </div>

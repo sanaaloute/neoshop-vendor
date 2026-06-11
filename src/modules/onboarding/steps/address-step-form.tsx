@@ -1,10 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 import { VendorForm, VendorTextField } from "@/components/forms";
 import { useOnboardingWizardStore } from "@/store/onboarding-wizard-store";
-import { addressInfoSchema } from "@/modules/onboarding/schemas";
+import { createAddressInfoSchema } from "@/modules/onboarding/schemas";
 import type { AddressInfoSchema } from "@/modules/onboarding/schemas";
 import { ONBOARDING_STEP_FORM_ID } from "@/modules/onboarding/onboarding-step-forms";
 import { syncAddressStep } from "@/modules/onboarding/onboarding-api";
@@ -12,10 +13,13 @@ import { isFieldRequired } from "@/modules/onboarding/types";
 import { AlertTriangle } from "lucide-react";
 
 export function AddressStepForm() {
+  const t = useTranslations("onboarding");
   const draft = useOnboardingWizardStore((s) => s.draft);
   const setStep = useOnboardingWizardStore((s) => s.setStep);
   const setApiBusy = useOnboardingWizardStore((s) => s.setApiBusy);
   const patchAddressInfo = useOnboardingWizardStore((s) => s.patchAddressInfo);
+
+  const addressInfoSchema = createAddressInfoSchema((key: string) => t(key));
 
   const vendorType = draft.vendorType;
 
@@ -69,7 +73,7 @@ export function AddressStepForm() {
             >
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
               <p className="text-xs leading-relaxed">
-                As a registered company, you must provide a postal code. Business registration or tax certificate documents are recommended.
+                {t("steps.address.companyNotice")}
               </p>
             </motion.div>
           )}
@@ -78,29 +82,29 @@ export function AddressStepForm() {
             <VendorTextField
               control={form.control}
               name="region"
-              label="Region / State"
-              placeholder="Abidjan"
+              label={t("steps.address.regionLabel")}
+              placeholder={t("steps.address.regionPlaceholder")}
             />
             <VendorTextField
               control={form.control}
               name="city"
-              label="City"
-              placeholder="Cocody"
+              label={t("steps.address.cityLabel")}
+              placeholder={t("steps.address.cityPlaceholder")}
             />
           </div>
 
           <VendorTextField
             control={form.control}
             name="addressLine1"
-            label="Street Address"
-            placeholder="Rue des Jardins, Lot 42"
+            label={t("steps.address.streetAddressLabel")}
+            placeholder={t("steps.address.streetAddressPlaceholder")}
           />
 
           <VendorTextField
             control={form.control}
             name="postalCode"
-            label={isFieldRequired("postalCode", vendorType) ? "Postal Code *" : "Postal Code (Optional)"}
-            placeholder="01 BP 1234"
+            label={isFieldRequired("postalCode", vendorType) ? t("steps.address.postalCodeRequired") : t("steps.address.postalCodeOptional")}
+            placeholder={t("steps.address.postalCodePlaceholder")}
           />
         </div>
       )}

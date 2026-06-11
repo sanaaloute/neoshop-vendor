@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Radio } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ function toApi(s: OrderStatus): ApiOrderStatus {
 }
 
 export function OrdersHome() {
+  const t = useTranslations("orders");
   const { canWriteOrders } = useVendorWritesAllowed();
   const orders = useOrdersStore((s) => s.orders);
   const refetch = useRefetchVendorOrders();
@@ -77,7 +79,7 @@ export function OrdersHome() {
   const runBulkAdvance = async () => {
     if (!canWriteOrders) return;
     if (!getApiBaseUrl()) {
-      setBulkError("Marketplace connection is not available. You can’t update orders right now.");
+      setBulkError(t("marketplaceUnavailable"));
       return;
     }
     setBulkBusy(true);
@@ -94,7 +96,7 @@ export function OrdersHome() {
       setSelected(new Set());
     } catch (e) {
       setBulkError(
-        httpErrorMessageForUser(e, "Could not advance selected orders.")
+        httpErrorMessageForUser(e, t("couldNotAdvance"))
       );
     } finally {
       setBulkBusy(false);
@@ -104,7 +106,7 @@ export function OrdersHome() {
   const runBulkRefund = async () => {
     if (!canWriteOrders) return;
     if (!getApiBaseUrl()) {
-      setBulkError("Marketplace connection is not available. You can’t update orders right now.");
+      setBulkError(t("marketplaceUnavailable"));
       return;
     }
     setBulkBusy(true);
@@ -113,14 +115,14 @@ export function OrdersHome() {
       for (const id of selectedIds) {
         await patchOrderStatus(id, {
           status: "refunded",
-          note: "Bulk refund from vendor orders list",
+          note: t("bulkRefundFromList"),
         });
       }
       await refetch();
       setSelected(new Set());
     } catch (e) {
       setBulkError(
-        httpErrorMessageForUser(e, "Could not refund selected orders.")
+        httpErrorMessageForUser(e, t("couldNotRefund"))
       );
     } finally {
       setBulkBusy(false);
@@ -135,14 +137,14 @@ export function OrdersHome() {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-8">
           {(
             [
-              ["Pending", orderStats.pending],
-              ["Paid", orderStats.paid],
-              ["Processing", orderStats.processing],
-              ["Shipped", orderStats.shipped],
-              ["Delivered", orderStats.delivered],
-              ["Disputed", orderStats.disputed],
-              ["Refunded", orderStats.refunded],
-              ["Cancelled", orderStats.cancelled],
+              [t("status.pending"), orderStats.pending],
+              [t("status.paid"), orderStats.paid],
+              [t("status.processing"), orderStats.processing],
+              [t("status.shipped"), orderStats.shipped],
+              [t("status.delivered"), orderStats.delivered],
+              [t("status.disputed"), orderStats.disputed],
+              [t("status.refunded"), orderStats.refunded],
+              [t("status.cancelled"), orderStats.cancelled],
             ] as const
           ).map(([label, count]) => (
             <div
@@ -166,7 +168,7 @@ export function OrdersHome() {
             className="gap-1.5 font-normal tabular-nums"
           >
             <Radio className="size-3.5 text-green-500" aria-hidden />
-            Orders
+            {t("title")}
           </Badge>
         </div>
         <Button
@@ -176,7 +178,7 @@ export function OrdersHome() {
           disabled={!getApiBaseUrl() || gatewayLoading}
           onClick={() => void refetch()}
         >
-          Refresh
+          {t("refresh")}
         </Button>
       </div>
 
@@ -188,7 +190,7 @@ export function OrdersHome() {
         <Card className="border-primary/30 bg-primary/5 shadow-vendor-card p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-medium">
-              Bulk actions ({selected.size} selected)
+              {t("bulkActions", { count: selected.size })}
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -199,7 +201,7 @@ export function OrdersHome() {
                 }
                 onClick={() => void runBulkAdvance()}
               >
-                Advance workflow
+                {t("advanceWorkflow")}
               </Button>
               <Button
                 type="button"
@@ -210,7 +212,7 @@ export function OrdersHome() {
                 }
                 onClick={() => void runBulkRefund()}
               >
-                Refund selected
+                {t("refundSelected")}
               </Button>
               <Button
                 type="button"
@@ -218,7 +220,7 @@ export function OrdersHome() {
                 variant="ghost"
                 onClick={() => setSelected(new Set())}
               >
-                Clear selection
+                {t("clearSelection")}
               </Button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ComponentProps } from "react";
+import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -16,18 +17,18 @@ import { cn } from "@/lib/utils";
 
 import type { StockMovement, StockMovementType, Warehouse } from "./types";
 
-function typeLabel(t: StockMovementType) {
+function typeLabel(t: StockMovementType): string {
   switch (t) {
     case "receipt":
-      return "Receipt";
+      return "inventory.movementTypes.receipt";
     case "shipment":
-      return "Shipment";
+      return "inventory.movementTypes.shipment";
     case "adjustment":
-      return "Adjustment";
+      return "inventory.movementTypes.adjustment";
     case "transfer_in":
-      return "Transfer in";
+      return "inventory.movementTypes.transfer_in";
     case "transfer_out":
-      return "Transfer out";
+      return "inventory.movementTypes.transfer_out";
     default:
       return t;
   }
@@ -54,10 +55,12 @@ export function InventoryHistory({
   movements,
   warehouses,
 }: InventoryHistoryProps) {
+  const t = useTranslations("inventory");
+
   if (!movements.length) {
     return (
       <Card className="border-border/80 bg-muted/15 text-muted-foreground border-dashed p-8 text-center text-sm">
-        No movements match the history filters.
+        {t("noLinesMatch")}
       </Card>
     );
   }
@@ -66,23 +69,23 @@ export function InventoryHistory({
     <Card className="border-border/80 shadow-vendor-card overflow-hidden">
       <div className="border-border bg-muted/30 border-b px-4 py-3">
         <h2 className="text-sm font-semibold tracking-tight">
-          Inventory history
+          {t("inventoryHistory")}
         </h2>
         <p className="text-muted-foreground text-xs">
-          Stock movements and balances (newest first).
+          {t("historySubtitle")}
         </p>
       </div>
       <div className="max-h-[420px] overflow-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[150px]">When</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead className="hidden sm:table-cell">Warehouse</TableHead>
-              <TableHead className="text-right">Δ</TableHead>
-              <TableHead className="text-right">Balance</TableHead>
-              <TableHead className="hidden lg:table-cell">Note</TableHead>
+              <TableHead className="w-[150px]">{t("when")}</TableHead>
+              <TableHead>{t("type")}</TableHead>
+              <TableHead>{t("sku")}</TableHead>
+              <TableHead className="hidden sm:table-cell">{t("warehouse")}</TableHead>
+              <TableHead className="text-right">{t("delta")}</TableHead>
+              <TableHead className="text-right">{t("balance")}</TableHead>
+              <TableHead className="hidden lg:table-cell">{t("note")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -101,7 +104,7 @@ export function InventoryHistory({
                     variant={typeBadgeVariant(m.type)}
                     className="text-[10px]"
                   >
-                    {typeLabel(m.type)}
+                    {t(typeLabel(m.type) as any)}
                   </Badge>
                 </TableCell>
                 <TableCell>

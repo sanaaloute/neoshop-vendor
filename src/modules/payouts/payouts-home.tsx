@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { MetricCard } from "@/components/cards/metric-card";
 import {
@@ -31,51 +32,51 @@ import type {
   WalletTransaction,
 } from "@/services/vendor/types";
 
-function txnTypeLabel(type: WalletTransaction["type"]): string {
+function txnTypeLabel(type: WalletTransaction["type"], t: (key: string) => string): string {
   switch (type) {
     case "deposit":
-      return "Deposit";
+      return t("payouts.txnType.deposit");
     case "withdrawal":
-      return "Withdrawal";
+      return t("payouts.txnType.withdrawal");
     case "payment":
-      return "Payment";
+      return t("payouts.txnType.payment");
     case "payout":
-      return "Payout";
+      return t("payouts.txnType.payout");
     case "refund":
-      return "Refund";
+      return t("payouts.txnType.refund");
     case "hold":
-      return "Hold";
+      return t("payouts.txnType.hold");
     case "release":
-      return "Release";
+      return t("payouts.txnType.release");
     default:
       return type;
   }
 }
 
-function statusBadge(status: WalletTransaction["status"]) {
+function statusBadge(status: WalletTransaction["status"], t: (key: string) => string) {
   switch (status) {
     case "completed":
       return (
         <Badge variant="secondary" className="font-normal tabular-nums">
-          Completed
+          {t("payouts.txnStatus.completed")}
         </Badge>
       );
     case "pending":
       return (
         <Badge variant="outline" className="font-normal tabular-nums">
-          Pending
+          {t("payouts.txnStatus.pending")}
         </Badge>
       );
     case "failed":
       return (
         <Badge variant="destructive" className="font-normal tabular-nums">
-          Failed
+          {t("payouts.txnStatus.failed")}
         </Badge>
       );
     case "cancelled":
       return (
         <Badge variant="outline" className="font-normal tabular-nums">
-          Cancelled
+          {t("payouts.txnStatus.cancelled")}
         </Badge>
       );
     default:
@@ -91,6 +92,7 @@ function signedCurrency(n: number, currency = "CNY") {
 }
 
 export function PayoutsHome() {
+  const t = useTranslations();
   const { currentRate, fetchRate } = useExchangeRates();
   const [balance, setBalance] = useState<WalletBalanceResponse | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
@@ -121,14 +123,14 @@ export function PayoutsHome() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           index={0}
-          label="Available balance"
+          label={t("payouts.home.availableBalance")}
           value={
             balance ? formatCurrency(balance.balance, balance.currency) : "—"
           }
         />
         <MetricCard
           index={1}
-          label="Held balance"
+          label={t("payouts.home.heldBalance")}
           value={
             balance
               ? formatCurrency(balance.heldBalance, balance.currency)
@@ -137,11 +139,11 @@ export function PayoutsHome() {
         />
         <MetricCard
           index={2}
-          label="Exchange rate"
+          label={t("payouts.home.exchangeRate")}
           value={
             currentRate
               ? `1 ${currentRate.from} = ${currentRate.rate.toFixed(4)} ${currentRate.to}`
-              : "—"
+              : t("payouts.home.noRate")
           }
         />
       </div>
@@ -162,10 +164,10 @@ export function PayoutsHome() {
       <DashboardCard className="gap-0 py-0">
         <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
           <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-            History
+            {t("payouts.home.history")}
           </DashboardCardDescription>
           <DashboardCardTitle className="text-base">
-            Transaction history
+            {t("payouts.home.transactionHistory")}
           </DashboardCardTitle>
         </DashboardCardHeader>
         <DashboardCardContent className="px-0 pt-0 pb-2">
@@ -173,11 +175,11 @@ export function PayoutsHome() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="pl-4">Date</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="pr-4 text-right">Amount</TableHead>
+                  <TableHead className="pl-4">{t("payouts.home.table.date")}</TableHead>
+                  <TableHead>{t("payouts.home.table.type")}</TableHead>
+                  <TableHead>{t("payouts.home.table.description")}</TableHead>
+                  <TableHead>{t("payouts.home.table.status")}</TableHead>
+                  <TableHead className="pr-4 text-right">{t("payouts.home.table.amount")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -187,7 +189,7 @@ export function PayoutsHome() {
                       colSpan={5}
                       className="text-muted-foreground py-10 text-center"
                     >
-                      Loading transactions…
+                      {t("payouts.home.loadingTransactions")}
                     </TableCell>
                   </TableRow>
                 ) : transactions.length === 0 ? (
@@ -196,33 +198,33 @@ export function PayoutsHome() {
                       colSpan={5}
                       className="text-muted-foreground py-10 text-center"
                     >
-                      No transactions yet.
+                      {t("payouts.home.noTransactions")}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  transactions.map((t) => (
-                    <TableRow key={t.id}>
+                  transactions.map((txn) => (
+                    <TableRow key={txn.id}>
                       <TableCell className="text-muted-foreground pl-4 tabular-nums">
-                        {new Date(t.createdAt).toLocaleDateString()}
+                        {new Date(txn.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="font-normal">
-                          {txnTypeLabel(t.type)}
+                          {txnTypeLabel(txn.type, t)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground max-w-[200px] truncate">
-                        {t.description ?? "—"}
+                        {txn.description ?? "—"}
                       </TableCell>
-                      <TableCell>{statusBadge(t.status)}</TableCell>
+                      <TableCell>{statusBadge(txn.status, t)}</TableCell>
                       <TableCell
                         className={cn(
                           "pr-4 text-right font-medium tabular-nums",
-                          t.amount >= 0
+                          txn.amount >= 0
                             ? "text-green-600 dark:text-green-400"
                             : ""
                         )}
                       >
-                        {signedCurrency(t.amount, t.currency)}
+                        {signedCurrency(txn.amount, txn.currency)}
                       </TableCell>
                     </TableRow>
                   ))

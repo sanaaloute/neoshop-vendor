@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { formatCurrency } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -27,6 +28,8 @@ export function VariantPreviewSheet({
   attributes,
   rows,
 }: VariantPreviewSheetProps) {
+  const t = useTranslations("variants");
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -36,13 +39,12 @@ export function VariantPreviewSheet({
         <SheetHeader className="border-border border-b text-left">
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>
-            Preview how variants and options look on packing and fulfillment
-            views.
+            {t("previewDescription")}
           </SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-3 p-4">
           {rows.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Nothing to preview.</p>
+            <p className="text-muted-foreground text-sm">{t("nothingToPreview")}</p>
           ) : (
             rows.map((row) => (
               <div
@@ -69,31 +71,31 @@ export function VariantPreviewSheet({
                 ) : null}
                 <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                   <div>
-                    <dt className="text-muted-foreground">Stock</dt>
+                    <dt className="text-muted-foreground">{t("stock")}</dt>
                     <dd className="font-medium tabular-nums">{row.stock}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Price</dt>
+                    <dt className="text-muted-foreground">{t("price")}</dt>
                     <dd className="font-medium tabular-nums">
                       {formatCurrency(row.price)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Weight</dt>
+                    <dt className="text-muted-foreground">{t("weightG")}</dt>
                     <dd className="font-medium tabular-nums">
                       {row.weightGrams} g
                     </dd>
                   </div>
                   <div className="col-span-2">
                     <dt className="text-muted-foreground">
-                      Dimensions (L×W×H)
+                      {t("dimensions")}
                     </dt>
                     <dd className="font-medium tabular-nums">
                       {row.lengthCm} × {row.widthCm} × {row.heightCm} cm
                     </dd>
                   </div>
                   <div className="col-span-2">
-                    <dt className="text-muted-foreground">Barcode</dt>
+                    <dt className="text-muted-foreground">{t("barcode")}</dt>
                     <dd className="font-mono text-xs">
                       {row.barcode.trim() || "—"}
                     </dd>

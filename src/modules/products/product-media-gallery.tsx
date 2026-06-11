@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   GripVertical,
   ImageIcon,
@@ -61,6 +62,7 @@ export function ProductMediaGallery({
   onRemove,
   mutationsDisabled = false,
 }: ProductMediaGalleryProps) {
+  const t = useTranslations("products.media");
   const [dragOver, setDragOver] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
@@ -129,12 +131,11 @@ export function ProductMediaGallery({
         <div className="grid gap-1">
           <p className="text-sm font-medium">
             {mutationsDisabled
-              ? "Media changes are locked until your vendor account is approved"
-              : "Drag images here or click to upload"}
+              ? t("mediaLocked")
+              : t("dragImagesHere")}
           </p>
           <p className="text-muted-foreground text-xs">
-            Images only (JPG or PNG recommended). Files upload securely when you
-            save or publish.
+            {t("imagesOnly")}
           </p>
         </div>
         <input
@@ -208,7 +209,7 @@ export function ProductMediaGallery({
                   {isPrimary && (
                     <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-sm">
                       <Star className="size-3 fill-current" />
-                      Primary
+                      {t("primary")}
                     </div>
                   )}
                 </div>
@@ -234,7 +235,7 @@ export function ProductMediaGallery({
                       variant="ghost"
                       size="icon-xs"
                       className="size-6 text-muted-foreground hover:text-primary"
-                      title="Set as primary"
+                      title={t("setAsPrimary")}
                       onClick={() => onChange(setPrimary(media, m.id))}
                     >
                       <Star className="size-3.5" />

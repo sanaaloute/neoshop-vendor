@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { AlertTriangle } from "lucide-react";
 
 import type { VendorLifecycleStatus } from "@/services/vendor/types";
@@ -13,19 +14,21 @@ export function VendorWriteGuardBanner({
   area,
   status,
 }: VendorWriteGuardBannerProps) {
+  const t = useTranslations("vendorWriteGuard");
+
   if (status === "APPROVED") return null;
 
   const title =
     status === "SUSPENDED"
-      ? "Account suspended"
-      : "Awaiting Barkosem approval";
+      ? t("accountSuspended")
+      : t("awaitingApproval");
 
   const body =
     status === "SUSPENDED"
-      ? "This account cannot change catalog or orders. Contact support if this is unexpected."
+      ? t("suspendedBody")
       : area === "catalog"
-        ? "You can review the catalog UI, but creating, editing, publishing, or deleting products stays disabled until your vendor account is approved."
-        : "You can open orders and print documents, but status changes and fulfillment updates stay disabled until your vendor account is approved.";
+        ? t("catalogBody")
+        : t("ordersBody");
 
   return (
     <div
@@ -37,7 +40,7 @@ export function VendorWriteGuardBanner({
         <p className="font-medium">{title}</p>
         <p className="mt-1 opacity-90">{body}</p>
         {status ? (
-          <p className="mt-2 text-xs opacity-75">Status: {status}</p>
+          <p className="mt-2 text-xs opacity-75">{t("status", { status })}</p>
         ) : null}
       </div>
     </div>

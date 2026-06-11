@@ -49,23 +49,25 @@ import {
   answerQaThread,
 } from "@/services/vendor/qa-api";
 import type { QaThread } from "@/services/vendor/qa-api";
+import { useTranslations } from "next-intl";
 
 type ProductOption = {
   id: string;
   name: string;
 };
 
-function answeredBadge(answered: boolean) {
+function AnsweredBadge({ answered }: { answered: boolean }) {
+  const t = useTranslations("qa");
   return answered ? (
     <Badge
       variant="secondary"
       className="border-green-500/40 bg-green-500/15 font-normal text-green-800 dark:text-green-200"
     >
-      Answered
+      {t("answered")}
     </Badge>
   ) : (
     <Badge variant="outline" className="font-normal">
-      Unanswered
+      {t("unanswered")}
     </Badge>
   );
 }
@@ -77,6 +79,7 @@ function ThreadDetailPanel({
   thread: QaThread;
   onAnswerPosted: () => void;
 }) {
+  const t = useTranslations("qa");
   const [answer, setAnswer] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -90,7 +93,7 @@ function ThreadDetailPanel({
       setAnswer("");
       onAnswerPosted();
     } catch (e) {
-      setSubmitError(httpErrorMessageForUser(e, "Failed to post answer."));
+      setSubmitError(httpErrorMessageForUser(e, t("failedToPostAnswer")));
     } finally {
       setSubmitting(false);
     }
@@ -100,7 +103,7 @@ function ThreadDetailPanel({
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
       <div className="shrink-0 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          {answeredBadge(thread.answers.length > 0)}
+          <AnsweredBadge answered={thread.answers.length > 0} />
           <span className="text-muted-foreground text-xs tabular-nums">
             {new Date(thread.createdAt).toLocaleDateString(undefined, {
               month: "short",
@@ -119,7 +122,7 @@ function ThreadDetailPanel({
         {thread.answers.length > 0 && (
           <div className="space-y-3">
             <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-              Answers
+              {t("answers")}
             </p>
             {thread.answers.map((a) => (
               <DashboardCard
@@ -152,7 +155,7 @@ function ThreadDetailPanel({
           <p className="text-destructive text-xs">{submitError}</p>
         ) : null}
         <Textarea
-          placeholder="Write your answer…"
+          placeholder={t("writeYourAnswer")}
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
           className="min-h-[100px] resize-none"
@@ -166,10 +169,10 @@ function ThreadDetailPanel({
             {submitting ? (
               <>
                 <Loader2 className="mr-1 size-3.5 animate-spin" />
-                Posting…
+                {t("posting")}
               </>
             ) : (
-              "Post Answer"
+              t("postAnswer")
             )}
           </Button>
         </div>
@@ -179,6 +182,7 @@ function ThreadDetailPanel({
 }
 
 export function QaHome() {
+  const t = useTranslations("qa");
   const [products, setProducts] = useState<ProductOption[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
@@ -208,12 +212,12 @@ export function QaHome() {
         if (cancelled) return;
         const items = (res.items ?? []) as Array<{ id: string; name: string }>;
         setProducts(
-          items.map((p) => ({ id: p.id, name: p.name || "Untitled product" }))
+          items.map((p) => ({ id: p.id, name: p.name || t("untitledProduct") }))
         );
       } catch (e) {
         if (cancelled) return;
         setProductsError(
-          httpErrorMessageForUser(e, "Could not load products.")
+          httpErrorMessageForUser(e, t("couldNotLoadProducts"))
         );
       } finally {
         if (!cancelled) setProductsLoading(false);
@@ -223,7 +227,7 @@ export function QaHome() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   // Load QA threads when product changes
   useEffect(() => {
@@ -242,7 +246,7 @@ export function QaHome() {
       } catch (e) {
         if (cancelled) return;
         setThreadsError(
-          httpErrorMessageForUser(e, "Could not load questions.")
+          httpErrorMessageForUser(e, t("couldNotLoadQuestions"))
         );
       } finally {
         if (!cancelled) setThreadsLoading(false);
@@ -252,7 +256,7 @@ export function QaHome() {
     return () => {
       cancelled = true;
     };
-  }, [selectedProductId]);
+  }, [selectedProductId, t]);
 
   // Auto-select first thread on desktop
   useEffect(() => {
@@ -283,17 +287,17 @@ export function QaHome() {
       const data = await listProductQa(selectedProductId);
       setThreads(data);
     } catch (e) {
-      setThreadsError(httpErrorMessageForUser(e, "Could not refresh questions."));
+      setThreadsError(httpErrorMessageForUser(e, t("couldNotRefreshQuestions")));
     } finally {
       setThreadsLoading(false);
     }
-  }, [selectedProductId]);
+  }, [selectedProductId, t]);
 
   if (productsLoading) {
     return (
       <div className="flex min-h-[420px] flex-col items-center justify-center gap-3">
         <Loader2 className="text-muted-foreground size-8 animate-spin" />
-        <p className="text-muted-foreground text-sm">Loading products…</p>
+        <p className="text-muted-foreground text-sm">{t("loadingProducts")}</p>
       </div>
     );
   }
@@ -302,7 +306,7 @@ export function QaHome() {
     return (
       <div className="flex min-h-[420px] flex-col items-center justify-center gap-3">
         <p className="text-destructive text-sm font-medium">
-          Failed to load products
+          {t("failedToLoadProducts")}
         </p>
         <p className="text-muted-foreground max-w-sm text-center text-xs">
           {productsError}
@@ -312,7 +316,7 @@ export function QaHome() {
           size="sm"
           variant="outline"
         >
-          Retry
+          {t("retry")}
         </Button>
       </div>
     );
@@ -323,9 +327,9 @@ export function QaHome() {
       {/* Product selector */}
       <DashboardCard className="max-w-xl">
         <DashboardCardHeader>
-          <DashboardCardTitle>Select a product</DashboardCardTitle>
+          <DashboardCardTitle>{t("selectProduct")}</DashboardCardTitle>
           <DashboardCardDescription>
-            Choose a product to view and answer customer questions.
+            {t("selectProductDescription")}
           </DashboardCardDescription>
         </DashboardCardHeader>
         <DashboardCardContent>
@@ -336,8 +340,8 @@ export function QaHome() {
               setSelectedThreadId(null);
             }}
           >
-            <SelectTrigger className="w-full" aria-label="Select product">
-              <SelectValue placeholder="Select a product…" />
+            <SelectTrigger className="w-full" aria-label={t("selectProduct")}>
+              <SelectValue placeholder={t("selectProductPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
               {products.map((p) => (
@@ -356,19 +360,19 @@ export function QaHome() {
         <aside className="lg:border-border/60 flex flex-col lg:w-[min(100%,380px)] lg:shrink-0 lg:border-r">
           <div className="border-border/60 border-b p-3">
             <p className="text-muted-foreground text-xs font-medium">
-              Questions
+              {t("questions")}
             </p>
           </div>
           <div className="max-h-[480px] overflow-y-auto lg:max-h-[calc(100vh-320px)]">
             {threadsLoading && threads.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 py-12">
                 <Loader2 className="text-muted-foreground size-6 animate-spin" />
-                <p className="text-muted-foreground text-xs">Loading…</p>
+                <p className="text-muted-foreground text-xs">{t("loading")}</p>
               </div>
             ) : threadsError && threads.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 py-12 px-4 text-center">
                 <p className="text-destructive text-xs font-medium">
-                  Failed to load questions
+                  {t("failedToLoadQuestions")}
                 </p>
                 <p className="text-muted-foreground text-xs">{threadsError}</p>
               </div>
@@ -379,11 +383,10 @@ export function QaHome() {
                   aria-hidden
                 />
                 <p className="text-sm font-medium">
-                  Select a product to view questions
+                  {t("selectProductToView")}
                 </p>
                 <p className="text-muted-foreground max-w-xs text-xs">
-                  Choose a product from the dropdown above to see customer
-                  questions.
+                  {t("selectProductHint")}
                 </p>
               </div>
             ) : threads.length === 0 ? (
@@ -393,18 +396,18 @@ export function QaHome() {
                   aria-hidden
                 />
                 <p className="text-sm font-medium">
-                  No questions yet for this product
+                  {t("noQuestionsYet")}
                 </p>
                 <p className="text-muted-foreground max-w-xs text-xs">
-                  When customers ask questions, they will appear here.
+                  {t("noQuestionsHint")}
                 </p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="pl-3">Question</TableHead>
-                    <TableHead className="pr-3 text-right">Status</TableHead>
+                    <TableHead className="pl-3">{t("question")}</TableHead>
+                    <TableHead className="pr-3 text-right">{t("status")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -440,7 +443,7 @@ export function QaHome() {
                           </p>
                         </TableCell>
                         <TableCell className="pr-3 text-right">
-                          {answeredBadge(answered)}
+                          <AnsweredBadge answered={answered} />
                         </TableCell>
                       </TableRow>
                     );
@@ -457,10 +460,10 @@ export function QaHome() {
             <>
               <div className="shrink-0 space-y-1">
                 <h2 className="text-lg leading-tight font-semibold">
-                  Q&A Detail
+                  {t("qaDetail")}
                 </h2>
                 <p className="text-muted-foreground text-sm">
-                  Thread ID{" "}
+                  {t("threadId")}{" "}
                   <span className="font-mono text-xs">{selectedThread.id}</span>
                 </p>
               </div>
@@ -477,13 +480,13 @@ export function QaHome() {
               />
               <p className="text-sm font-medium">
                 {selectedProductId
-                  ? "Select a question"
-                  : "Select a product to view questions"}
+                  ? t("selectQuestion")
+                  : t("selectProductToViewQuestions")}
               </p>
               <p className="text-muted-foreground max-w-sm text-xs">
                 {selectedProductId
-                  ? "Choose a row in the list to view the full question and respond."
-                  : "Choose a product from the dropdown above to see customer questions."}
+                  ? t("selectQuestionHint")
+                  : t("selectProductHint")}
               </p>
             </div>
           )}
@@ -506,13 +509,13 @@ export function QaHome() {
             <>
               <SheetHeader className="border-border/60 shrink-0 border-b text-left">
                 <SheetTitle className="pr-8 leading-snug">
-                  Q&A Detail
+                  {t("qaDetail")}
                 </SheetTitle>
                 <SheetDescription className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-xs">
                     {selectedThread.id}
                   </span>
-                  {answeredBadge(selectedThread.answers.length > 0)}
+                  <AnsweredBadge answered={selectedThread.answers.length > 0} />
                 </SheetDescription>
               </SheetHeader>
               <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
@@ -527,7 +530,7 @@ export function QaHome() {
                   }}
                 >
                   <ArrowLeft className="size-4" aria-hidden />
-                  Back to list
+                  {t("backToList")}
                 </Button>
                 <ThreadDetailPanel
                   thread={selectedThread}
@@ -539,7 +542,7 @@ export function QaHome() {
             <SheetHeader>
               <SheetTitle>Q&A</SheetTitle>
               <SheetDescription>
-                Select a question from the list.
+                {t("selectQuestion")}
               </SheetDescription>
             </SheetHeader>
           )}

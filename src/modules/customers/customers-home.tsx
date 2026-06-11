@@ -12,6 +12,7 @@ import { formatCurrency, formatCompact } from "@/lib/format";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
 import { getApiBaseUrl } from "@/config/auth";
 import { fadeUp, staggerContainer } from "@/lib/motion";
+import { useTranslations } from "next-intl";
 
 import { CustomerProfileDrawer } from "./customer-profile-drawer";
 import { CustomerCardGrid } from "./customer-card-grid";
@@ -58,6 +59,7 @@ function AnimatedValue({
 }
 
 export function CustomersHome() {
+  const t = useTranslations("customers");
   const [customers, setCustomers] = useState<VendorCustomer[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +79,7 @@ export function CustomersHome() {
         if (!cancelled) setCustomers(data);
       } catch (e) {
         if (!cancelled) {
-          setError(httpErrorMessageForUser(e, "Could not load customers."));
+          setError(httpErrorMessageForUser(e, t("couldNotLoadCustomers")));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -87,7 +89,7 @@ export function CustomersHome() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   const stats = useMemo(() => {
     const count = customers.length;
@@ -123,7 +125,7 @@ export function CustomersHome() {
       >
         <motion.div variants={fadeUp}>
           <MetricCard
-            label="Total Customers"
+            label={t("totalCustomers")}
             value={
               <AnimatedValue
                 value={stats.count}
@@ -131,11 +133,11 @@ export function CustomersHome() {
               />
             }
             index={0}
-            hint={`${stats.repeatCount} repeat buyers`}
+            hint={t("customersWith2PlusOrders", { count: stats.repeatCount })}
             delta={
               stats.repeatRate > 0
                 ? {
-                    label: `${stats.repeatRate.toFixed(1)}% repeat rate`,
+                    label: t("repeatRate", { rate: stats.repeatRate.toFixed(1) }),
                     positive: stats.repeatRate >= 30,
                   }
                 : undefined
@@ -145,7 +147,7 @@ export function CustomersHome() {
 
         <motion.div variants={fadeUp}>
           <MetricCard
-            label="Total Revenue"
+            label={t("totalRevenue")}
             value={
               <AnimatedValue
                 value={stats.totalRevenue}
@@ -153,11 +155,11 @@ export function CustomersHome() {
               />
             }
             index={1}
-            hint={`${stats.totalOrders} total orders`}
+            hint={t("totalOrders", { count: stats.totalOrders })}
             delta={
               stats.totalRevenue > 0
                 ? {
-                    label: "From all customers",
+                    label: t("fromAllCustomers"),
                     positive: true,
                   }
                 : undefined
@@ -167,7 +169,7 @@ export function CustomersHome() {
 
         <motion.div variants={fadeUp}>
           <MetricCard
-            label="Repeat Buyers"
+            label={t("repeatBuyers")}
             value={
               <AnimatedValue
                 value={stats.repeatCount}
@@ -175,11 +177,11 @@ export function CustomersHome() {
               />
             }
             index={2}
-            hint="Customers with 2+ orders"
+            hint={t("customersWith2PlusOrders")}
             delta={
               stats.repeatCount > 0
                 ? {
-                    label: `${formatCompact(stats.totalRevenue / Math.max(1, stats.repeatCount))} avg LTV`,
+                    label: `${formatCompact(stats.totalRevenue / Math.max(1, stats.repeatCount))} ${t("avgLtv")}`,
                     positive: true,
                   }
                 : undefined
@@ -189,7 +191,7 @@ export function CustomersHome() {
 
         <motion.div variants={fadeUp}>
           <MetricCard
-            label="Avg Order Value"
+            label={t("avgOrderValue")}
             value={
               <AnimatedValue
                 value={stats.avgOrderValue}
@@ -197,7 +199,7 @@ export function CustomersHome() {
               />
             }
             index={3}
-            hint="Per order average"
+            hint={t("perOrderAverage")}
           />
         </motion.div>
       </motion.div>

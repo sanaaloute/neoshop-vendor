@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { useRouter } from "@/i18n/routing";
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { vendorShouldUseOnboardingWizard } from "@/lib/vendor-lifecycle";
 import { useVendorProfileStore } from "@/store/vendor-profile-store";
@@ -14,6 +15,7 @@ type OnboardingRedirectGateProps = { children: ReactNode };
 
 export function OnboardingRedirectGate({ children }: OnboardingRedirectGateProps) {
   const router = useRouter();
+  const t = useTranslations("onboarding");
   const profile = useVendorProfileStore((s) => s.profile);
   const loading = useVendorProfileStore((s) => s.loading);
   const fetched = useVendorProfileStore((s) => s.fetched);
@@ -42,7 +44,7 @@ export function OnboardingRedirectGate({ children }: OnboardingRedirectGateProps
     return (
       <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-muted-foreground text-sm">
         <Loader2 className="h-5 w-5 animate-spin" />
-        Checking vendor profile…
+        {t("redirectGate.checkingProfile")}
       </div>
     );
   }
@@ -51,7 +53,7 @@ export function OnboardingRedirectGate({ children }: OnboardingRedirectGateProps
     return (
       <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-muted-foreground text-sm">
         <Loader2 className="h-5 w-5 animate-spin" />
-        Redirecting to dashboard…
+        {t("redirectGate.redirecting")}
       </div>
     );
   }
@@ -63,7 +65,7 @@ export function OnboardingRedirectGate({ children }: OnboardingRedirectGateProps
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
           <div className="flex flex-col gap-1">
             <span className="font-semibold text-amber-200 text-sm">
-              Previous submission rejected
+              {t("redirectGate.previousSubmissionRejected")}
             </span>
             <span className="text-amber-100/80 text-xs leading-relaxed">
               {profile.rejectionReason}

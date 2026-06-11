@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 
 import { MetricCard } from "@/components/cards/metric-card";
 import { formatCompact } from "@/lib/format";
@@ -17,6 +18,8 @@ export function InventoryAnalytics({
   lines,
   liveKey,
 }: InventoryAnalyticsProps) {
+  const t = useTranslations("inventory");
+
   const stats = useMemo(() => {
     const totalOnHand = lines.reduce((s, l) => s + l.onHand, 0);
     const totalReserved = lines.reduce((s, l) => s + l.reserved, 0);
@@ -31,35 +34,35 @@ export function InventoryAnalytics({
   return (
     <div key={liveKey} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <MetricCard
-        label="On hand (filtered)"
+        label={t("onHandFiltered")}
         value={formatCompact(stats.totalOnHand)}
-        hint="Units physically in selected scope."
+        hint={t("onHandHint")}
         index={0}
       />
       <MetricCard
-        label="Available to promise"
+        label={t("availableToPromise")}
         value={formatCompact(stats.available)}
-        hint="On hand minus reservations."
+        hint={t("atpHint")}
         index={1}
       />
       <MetricCard
-        label="Reserved"
+        label={t("reserved")}
         value={formatCompact(stats.totalReserved)}
-        hint="Allocated to open orders / holds."
+        hint={t("reservedHint")}
         index={2}
       />
       <MetricCard
-        label="Low-stock SKUs"
+        label={t("lowStockSkus")}
         value={stats.low}
         hint={
           stats.critical > 0
-            ? `${stats.critical} critical vs buffer`
-            : "Within buffer"
+            ? t("criticalVsBuffer", { count: stats.critical })
+            : t("withinBuffer")
         }
         delta={
           stats.low > 0
-            ? { label: "Review cards below", positive: false }
-            : { label: "All above reorder", positive: true }
+            ? { label: t("reviewCards"), positive: false }
+            : { label: t("allAboveReorder"), positive: true }
         }
         index={3}
       />

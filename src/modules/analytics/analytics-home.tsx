@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
 import { DashboardAreaChart } from "@/components/charts/dashboard-area-chart";
@@ -25,6 +26,7 @@ import { GeoPieChart } from "./geo-pie-chart";
 import type { AnalyticsDatePreset, AnalyticsReport } from "./types";
 
 export function AnalyticsHome() {
+  const t = useTranslations("analytics");
   const [preset, setPreset] = useState<AnalyticsDatePreset>("30d");
   const [chartsReady, setChartsReady] = useState(false);
   const [report, setReport] = useState<AnalyticsReport>(() =>
@@ -81,17 +83,17 @@ export function AnalyticsHome() {
       <div className="flex flex-wrap items-center justify-end gap-2">
         {fetchState === "pending" && (
           <Badge variant="secondary" className="font-normal tabular-nums">
-            Syncing…
+            {t("syncing")}
           </Badge>
         )}
         {fetchState === "live" && (
           <Badge variant="secondary" className="font-normal tabular-nums">
-            Live data
+            {t("liveData")}
           </Badge>
         )}
         {fetchState === "fallback" && (
           <Badge variant="outline" className="font-normal">
-            Data unavailable
+            {t("dataUnavailable")}
           </Badge>
         )}
       </div>
@@ -99,29 +101,33 @@ export function AnalyticsHome() {
       <AnalyticsToolbar
         preset={preset}
         onPresetChange={setPreset}
-        rangeLabel={report.rangeLabel}
+        rangeLabel={
+          report.rangeLabel === "Report unavailable"
+            ? t("reportUnavailable")
+            : report.rangeLabel
+        }
         onExportCsv={() => downloadAnalyticsCsv(report)}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           index={0}
-          label="Revenue (range)"
+          label={t("revenueRange")}
           value={formatCurrency(revenueTotal)}
         />
         <MetricCard
           index={1}
-          label="Conversion rate"
+          label={t("conversionRate")}
           value={formatPercent(report.conversionRate, 2)}
         />
         <MetricCard
           index={2}
-          label="Order volume"
+          label={t("orderVolume")}
           value={ordersTotal.toLocaleString()}
         />
         <MetricCard
           index={3}
-          label="Avg retention score"
+          label={t("avgRetentionScore")}
           value={formatPercent(avgRetention, 1)}
         />
       </div>
@@ -130,10 +136,10 @@ export function AnalyticsHome() {
         <DashboardCard className="gap-0 py-0">
           <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
             <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-              Revenue
+              {t("revenue")}
             </DashboardCardDescription>
             <DashboardCardTitle className="text-base">
-              Revenue trend
+              {t("revenueTrend")}
             </DashboardCardTitle>
           </DashboardCardHeader>
           <DashboardCardContent className="px-2 pt-4 pb-2 sm:px-4">
@@ -157,10 +163,10 @@ export function AnalyticsHome() {
         <DashboardCard className="gap-0 py-0">
           <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
             <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-              Orders
+              {t("orders")}
             </DashboardCardDescription>
             <DashboardCardTitle className="text-base">
-              Order volume
+              {t("orderVolume")}
             </DashboardCardTitle>
           </DashboardCardHeader>
           <DashboardCardContent className="px-2 pt-4 pb-2 sm:px-4">
@@ -187,10 +193,10 @@ export function AnalyticsHome() {
         <DashboardCard className="gap-0 py-0 lg:col-span-2">
           <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
             <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-              Catalog
+              {t("catalog")}
             </DashboardCardDescription>
             <DashboardCardTitle className="text-base">
-              Top performing products
+              {t("topPerformingProducts")}
             </DashboardCardTitle>
           </DashboardCardHeader>
           <DashboardCardContent className="px-2 pt-4 pb-4 sm:px-4">
@@ -211,8 +217,8 @@ export function AnalyticsHome() {
 
         <AnalyticsWidget
           index={0}
-          subtitle="Funnel"
-          title="Conversion"
+          subtitle={t("funnel")}
+          title={t("conversion")}
           primaryProgress={conversionProgress}
           series={report.conversionTrend.slice(0, 6).map((p) => ({
             label: p.label,
@@ -225,10 +231,10 @@ export function AnalyticsHome() {
         <DashboardCard className="gap-0 py-0">
           <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
             <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-              Products
+              {t("products")}
             </DashboardCardDescription>
             <DashboardCardTitle className="text-base">
-              Top selling products
+              {t("topSellingProducts")}
             </DashboardCardTitle>
           </DashboardCardHeader>
           <DashboardCardContent className="px-4 py-4">
@@ -245,10 +251,10 @@ export function AnalyticsHome() {
         <DashboardCard className="gap-0 py-0">
           <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
             <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-              Geography
+              {t("geography")}
             </DashboardCardDescription>
             <DashboardCardTitle className="text-base">
-              Geographic sales
+              {t("geographicSales")}
             </DashboardCardTitle>
           </DashboardCardHeader>
           <DashboardCardContent className="px-2 pt-4 pb-4 sm:px-4">
@@ -268,10 +274,10 @@ export function AnalyticsHome() {
         <DashboardCard className="gap-0 py-0">
           <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
             <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-              Retention
+              {t("retention")}
             </DashboardCardDescription>
             <DashboardCardTitle className="text-base">
-              Customer retention index
+              {t("customerRetentionIndex")}
             </DashboardCardTitle>
           </DashboardCardHeader>
           <DashboardCardContent className="px-2 pt-4 pb-2 sm:px-4">
@@ -296,10 +302,10 @@ export function AnalyticsHome() {
         <DashboardCard className="gap-0 py-0">
           <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
             <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-              Inventory
+              {t("inventory")}
             </DashboardCardDescription>
             <DashboardCardTitle className="text-base">
-              Inventory velocity
+              {t("inventoryVelocity")}
             </DashboardCardTitle>
           </DashboardCardHeader>
           <DashboardCardContent className="px-2 pt-4 pb-2 sm:px-4">

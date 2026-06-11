@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Send } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -36,6 +37,7 @@ export function DisputeThread({
   busy,
   className,
 }: DisputeThreadProps) {
+  const t = useTranslations("disputes.thread");
   const [draft, setDraft] = useState("");
 
   const flat = useMemo(
@@ -88,7 +90,7 @@ export function DisputeThread({
       {!readOnly ? (
         <div className="border-border/60 bg-card/40 space-y-2 rounded-lg border p-3">
           <Textarea
-            placeholder="Write a message to the buyer and platform…"
+            placeholder={t("placeholder")}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             className="min-h-[88px] resize-y"
@@ -102,7 +104,7 @@ export function DisputeThread({
           />
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-muted-foreground text-[11px]">
-              ⌘/Ctrl + Enter to send.
+              {t("sendHint")}
             </span>
             <Button
               type="button"
@@ -112,7 +114,7 @@ export function DisputeThread({
               disabled={!draft.trim() || busy}
             >
               <Send className="size-3.5" aria-hidden />
-              Send
+              {t("send")}
             </Button>
           </div>
         </div>

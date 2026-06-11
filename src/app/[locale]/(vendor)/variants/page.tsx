@@ -1,9 +1,12 @@
+import { getTranslations } from "next-intl/server";
+
 import { FeaturePageShell } from "@/components/layout/feature-page-shell";
 import { VariantsHome } from "@/modules/variants";
 
-export default function VariantsRoutePage() {
+export default async function VariantsRoutePage() {
+  const t = await getTranslations("navigation");
   return (
-    <FeaturePageShell title="Variants" className="max-w-6xl">
+    <FeaturePageShell title={t("variants")} className="max-w-6xl">
       <VariantsHome />
     </FeaturePageShell>
   );

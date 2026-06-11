@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { Loader2, Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -63,6 +64,7 @@ export function OrdersList({
   syncLoading = false,
   allowBulkSelection = true,
 }: OrdersListProps) {
+  const t = useTranslations("orders");
   const orders = useOrdersStore((s) => s.orders);
   const api = getApiBaseUrl();
 
@@ -94,20 +96,20 @@ export function OrdersList({
         <div className="grid gap-4 lg:grid-cols-12 lg:items-end">
           <div className="relative lg:col-span-5">
             <Label htmlFor="order-search" className="sr-only">
-              Search orders
+              {t("searchLabel")}
             </Label>
             <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
             <Input
               id="order-search"
               className="h-9 pl-9"
-              placeholder="Search reference, customer, SKU…"
+              placeholder={t("searchPlaceholder")}
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
             />
           </div>
           <div className="grid gap-1.5 lg:col-span-4">
             <Label htmlFor="order-status" className="text-xs">
-              Status
+              {t("statusFilter")}
             </Label>
             <select
               id="order-status"
@@ -117,14 +119,14 @@ export function OrdersList({
                 onStatusFilterChange(e.target.value as OrderStatus | "all")
               }
             >
-              <option value="all">All statuses</option>
+              <option value="all">{t("allStatuses")}</option>
               {ORDER_STATUS_FLOW.map((s) => (
                 <option key={s} value={s}>
-                  {statusLabel(s)}
+                  {t(statusLabel(s) as any)}
                 </option>
               ))}
-              <option value="disputed">{statusLabel("disputed")}</option>
-              <option value="refunded">{statusLabel("refunded")}</option>
+              <option value="disputed">{t(statusLabel("disputed") as any)}</option>
+              <option value="refunded">{t(statusLabel("refunded") as any)}</option>
             </select>
           </div>
         </div>
@@ -138,14 +140,14 @@ export function OrdersList({
                 className="text-primary size-8 animate-spin"
                 aria-hidden
               />
-              <span>Loading…</span>
+              <span>{t("loading")}</span>
             </span>
           ) : !syncLoading && orders.length === 0 && api && !hasFilters ? (
-            <span>No orders yet.</span>
+            <span>{t("noOrdersYet")}</span>
           ) : !syncLoading && orders.length === 0 && !api ? (
-            <span>Connect to your marketplace.</span>
+            <span>{t("connectMarketplace")}</span>
           ) : (
-            <span>No matches.</span>
+            <span>{t("noMatches")}</span>
           )}
         </Card>
       ) : (
@@ -169,17 +171,17 @@ export function OrdersList({
                           filtered.map((o) => o.id)
                         )
                       }
-                      aria-label="Select all"
+                      aria-label={t("selectAll")}
                     />
                   </TableHead>
-                  <TableHead>Reference</TableHead>
+                  <TableHead>{t("reference")}</TableHead>
                   <TableHead className="hidden md:table-cell">
-                    Customer
+                    {t("customer")}
                   </TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead>{t("statusFilter")}</TableHead>
+                  <TableHead className="text-right">{t("total")}</TableHead>
                   <TableHead className="hidden sm:table-cell">
-                    Updated
+                    {t("updated")}
                   </TableHead>
                   <TableHead className="text-right"> </TableHead>
                 </TableRow>
@@ -202,7 +204,7 @@ export function OrdersList({
                         disabled={!allowBulkSelection}
                         checked={selected.has(o.id)}
                         onChange={() => onToggle(o.id)}
-                        aria-label={`Select ${o.reference}`}
+                        aria-label={t("selectAll")}
                       />
                     </TableCell>
                     <TableCell>
@@ -219,7 +221,7 @@ export function OrdersList({
                         variant={rowBadge(o.status)}
                         className="capitalize"
                       >
-                        {statusLabel(o.status)}
+                        {t(statusLabel(o.status) as any)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-medium tabular-nums">
@@ -245,7 +247,7 @@ export function OrdersList({
                         )}
                         onClick={() => onOpenOrder(o.id)}
                       >
-                        Details
+                        {t("details")}
                       </button>
                     </TableCell>
                   </TableRow>

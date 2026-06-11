@@ -26,6 +26,7 @@ import {
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fadeUp } from "@/lib/motion";
+import { useTranslations } from "next-intl";
 
 import type { VendorCustomer, CustomerProduct } from "./types";
 
@@ -94,6 +95,7 @@ function ProductRow({
   maxSpend: number;
   index: number;
 }) {
+  const t = useTranslations("customers");
   const pct = maxSpend > 0 ? (Number(product.totalSpent) / maxSpend) * 100 : 0;
 
   return (
@@ -108,7 +110,7 @@ function ProductRow({
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{product.title}</p>
           <p className="text-muted-foreground mt-0.5 text-xs">
-            {product.totalQuantity} units sold
+            {product.totalQuantity} {t("unitsSold")}
           </p>
         </div>
         <div className="text-right">
@@ -116,7 +118,7 @@ function ProductRow({
             {formatCurrency(Number(product.totalSpent), "CNY", 2)}
           </p>
           <p className="text-muted-foreground text-[10px]">
-            {pct.toFixed(0)}% of spend
+            {pct.toFixed(0)}{t("percentOfSpend")}
           </p>
         </div>
       </div>
@@ -144,6 +146,7 @@ export function CustomerProfileDrawer({
   open,
   onOpenChange,
 }: CustomerProfileDrawerProps) {
+  const t = useTranslations("customers");
   const [productSort, setProductSort] = useState<ProductSort>("spend");
 
   const sortedProducts = useMemo(() => {
@@ -188,12 +191,12 @@ export function CustomerProfileDrawer({
           showCloseButton
         >
           <SheetHeader>
-            <SheetTitle>Customer Profile</SheetTitle>
+            <SheetTitle>{t("customerProfile")}</SheetTitle>
           </SheetHeader>
           <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
             <User className="text-muted-foreground size-12" />
             <p className="text-muted-foreground text-sm">
-              Select a customer to view their profile
+              {t("selectCustomerToView")}
             </p>
           </div>
         </SheetContent>
@@ -258,8 +261,7 @@ export function CustomerProfileDrawer({
                   )}
                 >
                   <ShoppingBag className="mr-1 size-3" />
-                  {customer.orderCount} order
-                  {customer.orderCount === 1 ? "" : "s"}
+                  {customer.orderCount} {t("order", { count: customer.orderCount })}
                 </Badge>
                 {repeat && (
                   <Badge
@@ -267,7 +269,7 @@ export function CustomerProfileDrawer({
                     className="h-5 text-[10px] border-emerald-500/30 text-emerald-700 bg-emerald-500/10"
                   >
                     <TrendingUp className="mr-1 size-3" />
-                    Repeat Buyer
+                    {t("repeatBuyer")}
                   </Badge>
                 )}
               </div>
@@ -279,22 +281,22 @@ export function CustomerProfileDrawer({
         <div className="grid grid-cols-2 gap-2 px-6 py-4">
           <KpiPill
             icon={ShoppingBag}
-            label="Total Orders"
+            label={t("totalOrdersKpi")}
             value={String(customer.orderCount)}
           />
           <KpiPill
             icon={Wallet}
-            label="Total Spent"
+            label={t("totalSpent")}
             value={formatCurrency(customer.totalSpent, "CNY", 2)}
           />
           <KpiPill
             icon={TrendingUp}
-            label="Avg Order Value"
+            label={t("avgOrderValue")}
             value={formatCurrency(avgOrderValue, "CNY", 2)}
           />
           <KpiPill
             icon={Package}
-            label="Products Bought"
+            label={t("productsBought")}
             value={String(totalQuantity)}
           />
         </div>
@@ -306,25 +308,25 @@ export function CustomerProfileDrawer({
           <div className="flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase">
               <Package className="text-muted-foreground size-4" />
-              Product Breakdown
+              {t("productBreakdown")}
             </h3>
             <div className="flex items-center gap-1">
-              <span className="text-muted-foreground text-[10px]">Sort:</span>
+              <span className="text-muted-foreground text-[10px]">{t("sort")}</span>
               <select
                 value={productSort}
                 onChange={(e) => setProductSort(e.target.value as ProductSort)}
                 className="border-input bg-background h-7 rounded-md border px-2 text-[11px]"
               >
-                <option value="spend">Spend</option>
-                <option value="quantity">Quantity</option>
-                <option value="title">Name</option>
+                <option value="spend">{t("spend")}</option>
+                <option value="quantity">{t("quantity")}</option>
+                <option value="title">{t("name")}</option>
               </select>
             </div>
           </div>
 
           {sortedProducts.length === 0 ? (
             <div className="text-muted-foreground rounded-xl border border-dashed border-border/50 py-8 text-center text-sm">
-              No product data available
+              {t("noProductData")}
             </div>
           ) : (
             <div className="space-y-2">

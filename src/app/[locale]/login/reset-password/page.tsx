@@ -60,16 +60,16 @@ export default function ResetPasswordPage() {
     <main className="flex min-h-dvh items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle>Create new password</CardTitle>
+          <CardTitle>{t("createNewPasswordTitle")}</CardTitle>
           <CardDescription>
-            Enter a new password for your account.
+            {t("createNewPasswordDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {!token ? (
             <div className="space-y-4">
               <VendorMuted className="text-destructive text-center">
-                Invalid or missing reset token. Please request a new password reset link.
+                {t("invalidResetToken")}
               </VendorMuted>
               <Button
                 type="button"
@@ -77,7 +77,7 @@ export default function ResetPasswordPage() {
                 className="w-full"
                 onClick={() => router.push("/login/forgot-password")}
               >
-                Request new link
+                {t("requestNewLink")}
               </Button>
             </div>
           ) : success ? (
@@ -110,11 +110,9 @@ export default function ResetPasswordPage() {
                     token: token!,
                     newPassword: values.password,
                   });
-                  setSuccess(
-                    "Your password has been reset. Please sign in with your new password."
-                  );
+                  setSuccess(t("passwordResetSuccess"));
                 } catch (e) {
-                  const msg = getAuthErrorMessage(e) || "Could not reset password. Try again.";
+                  const msg = getAuthErrorMessage(e) || t("couldNotResetPassword");
                   if (msg.includes("Too many requests")) {
                     setError(te("tooManyRequests"));
                   } else {
@@ -155,7 +153,7 @@ export default function ResetPasswordPage() {
                       ? t("saving")
                       : !rateLimit.canRequest
                         ? t("retryIn", { seconds: rateLimit.remainingSeconds })
-                        : "Reset password"}
+                        : t("resetPasswordButton")}
                   </Button>
                   <Button
                     type="button"

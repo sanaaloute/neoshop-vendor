@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -35,25 +36,27 @@ export function InventoryFilters({
   onMovementTypeChange,
   onResetDemo,
 }: InventoryFiltersProps) {
+  const t = useTranslations("inventory");
+
   return (
     <Card className="border-border/80 shadow-vendor-card p-4 md:p-5">
       <div className="grid gap-4 lg:grid-cols-12 lg:items-end">
         <div className="relative lg:col-span-4">
           <Label htmlFor="inv-search" className="sr-only">
-            Search SKU or product
+            {t("searchLabel")}
           </Label>
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
           <Input
             id="inv-search"
             className="h-9 pl-9"
-            placeholder="Search SKU or product…"
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
         <div className="grid gap-1.5 lg:col-span-3">
           <Label htmlFor="inv-wh" className="text-xs">
-            Warehouse
+            {t("warehouse")}
           </Label>
           <select
             id="inv-wh"
@@ -61,7 +64,7 @@ export function InventoryFilters({
             value={warehouseId}
             onChange={(e) => onWarehouseChange(e.target.value)}
           >
-            <option value="all">All warehouses</option>
+            <option value="all">{t("allWarehouses")}</option>
             {warehouses.map((w) => (
               <option key={w.id} value={w.id}>
                 {w.code} · {w.name}
@@ -71,7 +74,7 @@ export function InventoryFilters({
         </div>
         <div className="grid gap-1.5 lg:col-span-3">
           <Label htmlFor="inv-mov" className="text-xs">
-            History movement type
+            {t("historyMovementType")}
           </Label>
           <select
             id="inv-mov"
@@ -81,12 +84,12 @@ export function InventoryFilters({
               onMovementTypeChange(e.target.value as MovementFilterType)
             }
           >
-            <option value="all">All types</option>
-            <option value="receipt">Receipt</option>
-            <option value="shipment">Shipment</option>
-            <option value="adjustment">Adjustment</option>
-            <option value="transfer_in">Transfer in</option>
-            <option value="transfer_out">Transfer out</option>
+            <option value="all">{t("allTypes")}</option>
+            <option value="receipt">{t("movementTypes.receipt")}</option>
+            <option value="shipment">{t("movementTypes.shipment")}</option>
+            <option value="adjustment">{t("movementTypes.adjustment")}</option>
+            <option value="transfer_in">{t("movementTypes.transfer_in")}</option>
+            <option value="transfer_out">{t("movementTypes.transfer_out")}</option>
           </select>
         </div>
         <div className="flex flex-wrap items-center gap-3 lg:col-span-2">
@@ -97,14 +100,14 @@ export function InventoryFilters({
               checked={lowOnly}
               onChange={(e) => onLowOnlyChange(e.target.checked)}
             />
-            Low stock only
+            {t("lowStockOnly")}
           </label>
         </div>
       </div>
       {onResetDemo ? (
         <div className="border-border mt-3 flex justify-end border-t pt-3">
           <Button type="button" variant="ghost" size="sm" onClick={onResetDemo}>
-            Reset filters
+            {t("resetFilters")}
           </Button>
         </div>
       ) : null}

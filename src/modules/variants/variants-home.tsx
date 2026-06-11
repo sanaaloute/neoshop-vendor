@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Eye, Loader2, Save } from "lucide-react";
 
@@ -36,6 +37,7 @@ import type { VariantAttributeDefinition, VariantRow } from "./types";
 import { VariantTable } from "./variant-table";
 
 export function VariantsHome() {
+  const t = useTranslations("variants");
   const searchParams = useSearchParams();
   const urlProductId = searchParams.get("productId");
 
@@ -51,7 +53,7 @@ export function VariantsHome() {
   );
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewRows, setPreviewRows] = useState<VariantRow[]>([]);
-  const [previewTitle, setPreviewTitle] = useState("Variant preview");
+  const [previewTitle, setPreviewTitle] = useState(t("variantPreview"));
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const saveMessageTimerRef = useRef<number | undefined>(undefined);
@@ -167,7 +169,7 @@ export function VariantsHome() {
       await deleteVariant(selectedProductId, variantId);
     } catch (e) {
       setSaveMessage(
-        httpErrorMessageForUser(e, "Could not delete variant. Try again.")
+        httpErrorMessageForUser(e, t("couldNotDeleteVariant"))
       );
       if (saveMessageTimerRef.current !== undefined) {
         window.clearTimeout(saveMessageTimerRef.current);
@@ -272,11 +274,11 @@ export function VariantsHome() {
 
   const saveRows = async (rows: VariantRow[]) => {
     if (!getApiBaseUrl()) {
-      setSaveMessage("Marketplace connection is not available.");
+      setSaveMessage(t("marketplaceUnavailable"));
       return;
     }
     if (!selectedProductId) {
-      setSaveMessage("Choose a product before saving variants.");
+      setSaveMessage(t("chooseProductBeforeSaving"));
       return;
     }
     setSaveBusy(true);
@@ -314,7 +316,7 @@ export function VariantsHome() {
       const skippedCount = rowsToSave.length - validRows.length;
       if (validRows.length === 0 && rowsToSave.length > 0) {
         throw new Error(
-          "No variants could be saved because the attribute values could not be resolved. Please refresh the page and try again."
+          t("attributeValuesNotResolved")
         );
       }
 
@@ -433,15 +435,15 @@ export function VariantsHome() {
       }
 
       setSelected(new Set());
-      let msg = `${validRows.length} variant${validRows.length === 1 ? "" : "s"} saved.`;
+      let msg = t("variantsSaved", { count: validRows.length });
       if (skippedCount > 0) {
-        msg += ` ${skippedCount} row${skippedCount === 1 ? "" : "s"} skipped because attribute values could not be synced.`;
+        msg += " " + t("rowsSkipped", { count: skippedCount });
       }
       setSaveMessage(msg);
       resetWorkbench();
     } catch (e) {
       setSaveMessage(
-        httpErrorMessageForUser(e, "Could not save variants. Try again.")
+        httpErrorMessageForUser(e, t("couldNotSaveVariants"))
       );
     } finally {
       setSaveBusy(false);
@@ -469,7 +471,7 @@ export function VariantsHome() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="grid gap-1.5 sm:min-w-72">
-          <Label htmlFor="variant-product">Product</Label>
+          <Label htmlFor="variant-product">{t("title")}</Label>
           <select
             id="variant-product"
             className="border-input bg-background h-9 rounded-lg border px-3 text-sm"
@@ -481,7 +483,7 @@ export function VariantsHome() {
               resetWorkbench();
             }}
           >
-            <option value="">Choose a product</option>
+            <option value="">{t("chooseProduct")}</option>
             {products.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -528,7 +530,7 @@ export function VariantsHome() {
             ) : (
               <Save className="size-4" aria-hidden />
             )}
-            Save selected
+            {t("saveSelected")}
           </Button>
           <Button
             type="button"
@@ -542,7 +544,7 @@ export function VariantsHome() {
             }
             onClick={() => void saveRows(variants)}
           >
-            Save all
+            {t("saveAll")}
           </Button>
           <Button
             type="button"
@@ -552,22 +554,22 @@ export function VariantsHome() {
             onClick={() =>
               openPreview(
                 variants.filter((v) => selected.has(v.id)),
-                "Selected variants"
+                t("selectedVariants")
               )
             }
           >
             <Eye className="size-4" aria-hidden />
-            Preview selected
+            {t("previewSelected")}
           </Button>
           <Button
             type="button"
             variant="outline"
             size="sm"
             disabled={!variants.length}
-            onClick={() => openPreview(variants, "All variants")}
+            onClick={() => openPreview(variants, t("allVariants"))}
           >
             <Eye className="size-4" aria-hidden />
-            Preview all
+            {t("previewAll")}
           </Button>
         </div>
       </div>
@@ -575,20 +577,20 @@ export function VariantsHome() {
       {variants.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span className="font-medium text-foreground">
-            {variants.filter((v) => !v.isLocalOnly).length} saved
+            {t("saved", { count: variants.filter((v) => !v.isLocalOnly).length })}
           </span>
           {variants.some((v) => v.isLocalOnly) && (
             <>
               <span>·</span>
               <span className="font-medium text-amber-600">
-                {variants.filter((v) => v.isLocalOnly).length} new
+                {t("new", { count: variants.filter((v) => v.isLocalOnly).length })}
               </span>
             </>
           )}
           {attributes.length > 0 && (
             <>
               <span>·</span>
-              <span>{attributes.length} attribute{attributes.length === 1 ? "" : "s"}</span>
+              <span>{t("attributes", { count: attributes.length })}</span>
             </>
           )}
         </div>
@@ -597,10 +599,10 @@ export function VariantsHome() {
       {productImages.length > 0 && (
         <div className="border-border/80 bg-card shadow-vendor-card rounded-xl border p-4">
           <h3 className="text-sm font-semibold tracking-tight">
-            Product images
+            {t("productImages")}
           </h3>
           <p className="text-muted-foreground mt-1 text-xs">
-            Click an image in a variant row to associate it with that variant.
+            {t("clickImageHint")}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {productImages.map((img) => (

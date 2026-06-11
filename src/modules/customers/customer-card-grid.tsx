@@ -21,6 +21,7 @@ import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fadeUp, staggerContainer } from "@/lib/motion";
 import { DashboardCard } from "@/components/cards/dashboard-card";
+import { useTranslations } from "next-intl";
 
 import type { VendorCustomer, CustomerProduct } from "./types";
 
@@ -69,6 +70,7 @@ function initials(name: string): string {
 
 /** Mini product bars for card preview */
 function ProductMiniBars({ products }: { products: CustomerProduct[] }) {
+  const t = useTranslations("customers");
   const top = useMemo(
     () =>
       [...products]
@@ -83,7 +85,7 @@ function ProductMiniBars({ products }: { products: CustomerProduct[] }) {
   return (
     <div className="mt-3 space-y-2">
       <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
-        Top Products
+        {t("topProducts")}
       </p>
       {top.map((p) => (
         <div key={p.productId} className="group/bar">
@@ -119,6 +121,7 @@ function CustomerCard({
   index: number;
   onOpenProfile: (id: string) => void;
 }) {
+  const t = useTranslations("customers");
   const repeat = isRepeatBuyer(customer.tags);
   const gradient = nameGradient(customer.name);
   const textColor = nameTextColor(customer.name);
@@ -189,7 +192,7 @@ function CustomerCard({
               )}
             >
               <ShoppingBag className="mr-1 size-3" />
-              {customer.orderCount} order{customer.orderCount === 1 ? "" : "s"}
+              {customer.orderCount} {t("order", { count: customer.orderCount })}
             </Badge>
             {repeat && (
               <Badge
@@ -197,7 +200,7 @@ function CustomerCard({
                 className="h-5 text-[10px] border-emerald-500/30 text-emerald-700 bg-emerald-500/10"
               >
                 <TrendingUp className="mr-1 size-3" />
-                Repeat
+                {t("repeat")}
               </Badge>
             )}
           </div>
@@ -205,7 +208,7 @@ function CustomerCard({
           {/* Total Spent */}
           <div className="mt-3">
             <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
-              Total Spent
+              {t("totalSpent")}
             </p>
             <p className="mt-0.5 text-2xl font-semibold tabular-nums tracking-tight">
               {formatCurrency(customer.totalSpent, "CNY", 2)}
@@ -225,7 +228,7 @@ function CustomerCard({
               className="h-8 w-full justify-between text-xs font-medium hover:bg-primary/5"
               onClick={() => onOpenProfile(customer.id)}
             >
-              <span>View Profile</span>
+              <span>{t("viewProfile")}</span>
               <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
             </Button>
           </div>
@@ -276,6 +279,7 @@ export function CustomerCardGrid({
   syncError = null,
   onOpenProfile,
 }: CustomerCardGridProps) {
+  const t = useTranslations("customers");
   const api = getApiBaseUrl();
   const [search, setSearch] = useState("");
   const [repeatOnly, setRepeatOnly] = useState(false);
@@ -327,7 +331,7 @@ export function CustomerCardGrid({
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
             className="h-10 pl-10 text-sm"
-            placeholder="Search by name, email, phone..."
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -344,16 +348,16 @@ export function CustomerCardGrid({
             )}
           >
             <TrendingUp className="size-3.5" />
-            Repeat Buyers
+            {t("repeatBuyers")}
           </button>
           <select
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
             className="border-input bg-background h-9 rounded-lg border px-3 text-xs"
           >
-            <option value="spend">Sort by Spend</option>
-            <option value="orders">Sort by Orders</option>
-            <option value="name">Sort by Name</option>
+            <option value="spend">{t("sortBySpend")}</option>
+            <option value="orders">{t("sortByOrders")}</option>
+            <option value="name">{t("sortByName")}</option>
           </select>
         </div>
       </motion.div>
@@ -361,11 +365,7 @@ export function CustomerCardGrid({
       {/* Results count */}
       {customers.length > 0 && (
         <p className="text-muted-foreground text-xs">
-          Showing{" "}
-          <span className="font-medium text-foreground">{filtered.length}</span>{" "}
-          of{" "}
-          <span className="font-medium text-foreground">{customers.length}</span>{" "}
-          customers
+          {t("showingOf", { filtered: filtered.length, total: customers.length })}
         </p>
       )}
 
@@ -382,7 +382,7 @@ export function CustomerCardGrid({
             <div className="flex flex-col items-center gap-3">
               <User className="text-destructive size-10" />
               <p className="text-destructive text-sm font-medium">
-                Could not load customers
+                {t("couldNotLoadCustomers")}
               </p>
               <p className="text-xs">{syncError}</p>
             </div>
@@ -391,22 +391,21 @@ export function CustomerCardGrid({
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5">
                 <ShoppingBag className="text-primary/60 size-8" />
               </div>
-              <p className="text-sm font-medium">No customers yet</p>
+              <p className="text-sm font-medium">{t("noCustomersYet")}</p>
               <p className="max-w-xs text-xs">
-                When customers place orders for your products, they&apos;ll appear
-                here with their purchase history.
+                {t("noCustomersDescription")}
               </p>
             </div>
           ) : !syncLoading && customers.length === 0 && !api ? (
             <div className="flex flex-col items-center gap-3">
               <User className="text-muted-foreground size-10" />
-              <p className="text-sm font-medium">Connect to your marketplace</p>
+              <p className="text-sm font-medium">{t("connectMarketplace")}</p>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3">
               <Search className="text-muted-foreground size-10" />
-              <p className="text-sm font-medium">No matches</p>
-              <p className="text-xs">Try adjusting your search or filters</p>
+              <p className="text-sm font-medium">{t("noMatches")}</p>
+              <p className="text-xs">{t("tryAdjustingFilters")}</p>
             </div>
           )}
         </div>

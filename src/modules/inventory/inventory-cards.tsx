@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AlertTriangle, Package } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -39,6 +40,7 @@ export function InventoryCards({
   warehouses,
   liveKey,
 }: InventoryCardsProps) {
+  const t = useTranslations("inventory");
   const adjustStock = useInventoryStore((s) => s.adjustStock);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,7 +50,7 @@ export function InventoryCards({
     note?: string
   ) => {
     setError(null);
-    adjustStock(line.id, delta, "adjustment", note ?? "Manual adjustment");
+    adjustStock(line.id, delta, "adjustment", note ?? t("manualAdjustment"));
     if (!getApiBaseUrl()) return;
     try {
       await adjustVariantQuantity(line.id, { delta });
@@ -57,12 +59,12 @@ export function InventoryCards({
         line.id,
         -delta,
         "adjustment",
-        "Reverted failed gateway adjustment"
+        t("revertedFailed")
       );
       setError(
         httpErrorMessageForUser(
           e,
-          `Could not update inventory for ${line.sku}.`
+          t("couldNotUpdate", { sku: line.sku })
         )
       );
     }
@@ -71,7 +73,7 @@ export function InventoryCards({
   if (!lines.length) {
     return (
       <Card className="border-border/80 bg-muted/15 text-muted-foreground border-dashed p-10 text-center text-sm">
-        No lines match your filters. Clear search or switch warehouse.
+        {t("noLinesMatch")}
       </Card>
     );
   }
@@ -102,6 +104,7 @@ function InventoryLineCard({
   warehouseLabel: string;
   onAdjust: (delta: number, note?: string) => void;
 }) {
+  const t = useTranslations("inventory");
   const [deltaInput, setDeltaInput] = useState("");
   const atp = availableToPromise(line);
   const low = isLowStock(line);
@@ -136,7 +139,7 @@ function InventoryLineCard({
           <div className="mt-2 flex items-center gap-1.5 rounded-md bg-red-500/10 px-2 py-1 text-xs text-red-700 dark:text-red-400">
             <AlertTriangle className="size-3.5 shrink-0" aria-hidden />
             <span>
-              At or below reorder ({line.onHand} ≤ {line.reorderPoint})
+              {t("atOrBelowReorder", { onHand: line.onHand, reorderPoint: line.reorderPoint })}
             </span>
           </div>
         ) : null}
@@ -144,7 +147,7 @@ function InventoryLineCard({
       <CardContent className="grid gap-3 pt-3">
         <div>
           <div className="text-muted-foreground mb-1 flex justify-between text-[11px]">
-            <span>Stock level vs buffer</span>
+            <span>{t("stockLevelVsBuffer")}</span>
             <span className="tabular-nums">{fillPct}%</span>
           </div>
           <div className="bg-muted h-2 overflow-hidden rounded-full">
@@ -163,15 +166,15 @@ function InventoryLineCard({
         </div>
         <dl className="grid grid-cols-3 gap-2 text-center text-xs">
           <div className="bg-muted/50 rounded-md py-2">
-            <dt className="text-muted-foreground">On hand</dt>
+            <dt className="text-muted-foreground">{t("onHand")}</dt>
             <dd className="font-semibold tabular-nums">{line.onHand}</dd>
           </div>
           <div className="bg-muted/50 rounded-md py-2">
-            <dt className="text-muted-foreground">Reserved</dt>
+            <dt className="text-muted-foreground">{t("reserved")}</dt>
             <dd className="font-semibold tabular-nums">{line.reserved}</dd>
           </div>
           <div className="bg-muted/50 rounded-md py-2">
-            <dt className="text-muted-foreground">ATP</dt>
+            <dt className="text-muted-foreground">{t("atp")}</dt>
             <dd className="font-semibold tabular-nums">{atp}</dd>
           </div>
         </dl>
@@ -182,7 +185,7 @@ function InventoryLineCard({
             type="button"
             size="sm"
             variant="secondary"
-            onClick={() => onAdjust(5, "Quick +5")}
+            onClick={() => onAdjust(5, t("quickPlus5"))}
           >
             +5
           </Button>
@@ -190,7 +193,7 @@ function InventoryLineCard({
             type="button"
             size="sm"
             variant="secondary"
-            onClick={() => onAdjust(-5, "Quick -5")}
+            onClick={() => onAdjust(-5, t("quickMinus5"))}
           >
             −5
           </Button>
@@ -198,12 +201,12 @@ function InventoryLineCard({
         <div className="flex w-full flex-wrap items-end gap-2">
           <div className="grid min-w-0 flex-1 gap-1">
             <Label className="text-muted-foreground text-[10px]">
-              Adjustment (+/−)
+              {t("adjustment")}
             </Label>
             <Input
               className="h-8 font-mono text-xs tabular-nums"
               inputMode="numeric"
-              placeholder="e.g. -12"
+              placeholder={t("adjustmentPlaceholder")}
               value={deltaInput}
               onChange={(e) => setDeltaInput(e.target.value)}
             />
@@ -220,7 +223,7 @@ function InventoryLineCard({
             }}
           >
             <Package className="size-3.5" aria-hidden />
-            Apply
+            {t("apply")}
           </Button>
         </div>
       </CardFooter>

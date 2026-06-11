@@ -1,6 +1,7 @@
 "use client";
 
 import { Download } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ export function PayoutToolbar({
   onExportTransactions,
   className,
 }: PayoutToolbarProps) {
+  const t = useTranslations("payouts.toolbar");
   return (
     <div
       className={cn(
@@ -31,7 +33,7 @@ export function PayoutToolbar({
         onClick={onExportSnapshot}
       >
         <Download className="size-3.5" aria-hidden />
-        Export full report
+        {t("exportFullReport")}
       </Button>
       <Button
         type="button"
@@ -41,7 +43,7 @@ export function PayoutToolbar({
         onClick={onExportTransactions}
       >
         <Download className="size-3.5" aria-hidden />
-        Export transactions
+        {t("exportTransactions")}
       </Button>
     </div>
   );

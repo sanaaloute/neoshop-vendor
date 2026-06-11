@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ImageIcon, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,8 @@ type VariantImageSelectorProps = {
 };
 
 export function VariantImageSelector({ row }: VariantImageSelectorProps) {
+  const t = useTranslations("variants");
+  const tc = useTranslations("common");
   const [open, setOpen] = useState(false);
   const productImages = useVariantWorkbenchStore((s) => s.productImages);
   const updateVariant = useVariantWorkbenchStore((s) => s.updateVariant);
@@ -40,7 +43,7 @@ export function VariantImageSelector({ row }: VariantImageSelectorProps) {
         type="button"
         onClick={() => setOpen(true)}
         className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border/60 bg-muted/30 hover:bg-muted/50"
-        title={row.imageUrl ? "Change image" : "Select image"}
+        title={row.imageUrl ? t("changeImage") : t("selectImage")}
       >
         {row.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -56,16 +59,15 @@ export function VariantImageSelector({ row }: VariantImageSelectorProps) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Select variant image</DialogTitle>
+            <DialogTitle>{t("selectVariantImage")}</DialogTitle>
             <DialogDescription>
-              Choose one of the product images to associate with this variant.
+              {t("chooseProductImage")}
             </DialogDescription>
           </DialogHeader>
 
           {productImages.length === 0 ? (
             <div className="text-muted-foreground py-6 text-center text-sm">
-              No product images available. Upload images on the product detail
-              page first.
+              {t("noProductImages")}
             </div>
           ) : (
             <div className="grid max-h-[60vh] grid-cols-3 gap-3 overflow-y-auto p-1">
@@ -109,7 +111,7 @@ export function VariantImageSelector({ row }: VariantImageSelectorProps) {
                 onClick={handleClear}
               >
                 <X className="mr-1 size-3.5" />
-                Clear
+                {tc("remove")}
               </Button>
             )}
             <Button
@@ -118,7 +120,7 @@ export function VariantImageSelector({ row }: VariantImageSelectorProps) {
               size="sm"
               onClick={() => setOpen(false)}
             >
-              Cancel
+              {tc("cancel")}
             </Button>
           </div>
         </DialogContent>

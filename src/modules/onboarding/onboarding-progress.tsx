@@ -1,20 +1,29 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 import { useOnboardingWizardStore } from "@/store/onboarding-wizard-store";
-import { ONBOARDING_STEP_LABELS, ONBOARDING_STEP_COUNT } from "./types";
+import { ONBOARDING_STEP_COUNT } from "./types";
 import { cn } from "@/lib/utils";
 
 export function OnboardingProgress() {
+  const t = useTranslations("onboarding");
   const step = useOnboardingWizardStore((s) => s.step);
   const progress = ((step + 1) / ONBOARDING_STEP_COUNT) * 100;
+
+  const labels = [
+    t("progress.stepLabel0"),
+    t("progress.stepLabel1"),
+    t("progress.stepLabel2"),
+    t("progress.stepLabel3"),
+  ];
 
   return (
     <div className="flex flex-col gap-4">
       {/* Step chips */}
       <div className="flex items-center justify-between">
-        {ONBOARDING_STEP_LABELS.map((label, idx) => {
+        {labels.map((label, idx) => {
           const status =
             idx < step ? "done" : idx === step ? "active" : "pending";
           return (
@@ -76,7 +85,7 @@ export function OnboardingProgress() {
       </div>
 
       <p className="text-muted-foreground text-center text-xs">
-        Step {step + 1} of {ONBOARDING_STEP_COUNT}
+        {t("progress.stepOf", { current: step + 1, total: ONBOARDING_STEP_COUNT })}
       </p>
     </div>
   );

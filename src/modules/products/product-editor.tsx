@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "@/i18n/routing";
 import { ArrowLeft, Eye, Package } from "lucide-react";
@@ -73,6 +74,7 @@ function mergeFetchedProduct(
 }
 
 export function ProductEditor({ catalogProductId }: ProductEditorProps) {
+  const t = useTranslations("products");
   const router = useRouter();
   const editorKey = catalogProductId ?? "new";
 
@@ -159,7 +161,7 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
                 )}
               >
                 <ArrowLeft className="size-4 mr-1.5" aria-hidden />
-                Products
+                {t("title")}
               </Link>
               <div className="flex items-center gap-2">
                 <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
@@ -167,15 +169,15 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
                 </div>
                 <div>
                   <h1 className="text-base font-semibold tracking-tight">
-                    {catalogProductId ? "Edit Product" : "Create Product"}
+                    {catalogProductId ? t("editProduct") : t("createProduct")}
                   </h1>
                   {savedAt ? (
                     <VendorMuted className="text-[11px] tabular-nums leading-none">
-                      Last saved {savedAt}
+                      {t("lastSaved", { time: savedAt })}
                     </VendorMuted>
                   ) : (
                     <VendorMuted className="text-[11px] leading-none">
-                      Draft
+                      {t("draft")}
                     </VendorMuted>
                   )}
                 </div>
@@ -190,7 +192,7 @@ export function ProductEditor({ catalogProductId }: ProductEditorProps) {
                 onClick={() => setPreviewOpen(true)}
               >
                 <Eye className="size-4" aria-hidden />
-                Preview
+                {t("preview")}
               </Button>
             </div>
           </div>

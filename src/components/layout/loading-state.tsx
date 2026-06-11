@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 import { Shimmer } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
@@ -22,13 +23,15 @@ type LoadingStateProps = {
 };
 
 export function LoadingState({
-  label = "Loading…",
+  label,
   rows = 4,
   className,
   header,
   showSpinner = true,
   variant = "default",
 }: LoadingStateProps) {
+  const t = useTranslations("common");
+  const displayLabel = label ?? t("loading");
   const isFullscreen = variant === "fullscreen";
 
   return (
@@ -51,7 +54,7 @@ export function LoadingState({
           variants={fadeUp}
         >
           <Spinner size="xl" />
-          <VendorMuted className="text-sm font-medium">{label}</VendorMuted>
+          <VendorMuted className="text-sm font-medium">{displayLabel}</VendorMuted>
         </motion.div>
       ) : (
         <>
@@ -61,7 +64,7 @@ export function LoadingState({
               {showSpinner && <Spinner size="sm" />}
               <Shimmer className="h-4 w-40" />
             </div>
-            <VendorMuted className="text-xs">{label}</VendorMuted>
+            <VendorMuted className="text-xs">{displayLabel}</VendorMuted>
           </motion.div>
           <motion.div className="space-y-2 pt-1" variants={fadeUp}>
             {Array.from({ length: rows }).map((_, i) => (

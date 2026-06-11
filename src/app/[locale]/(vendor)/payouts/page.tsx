@@ -1,9 +1,12 @@
+import { getTranslations } from "next-intl/server";
+
 import { FeaturePageShell } from "@/components/layout/feature-page-shell";
 import { PayoutsHome } from "@/modules/payouts";
 
-export default function PayoutsRoutePage() {
+export default async function PayoutsRoutePage() {
+  const t = await getTranslations("navigation");
   return (
-    <FeaturePageShell title="Payouts" className="max-w-6xl">
+    <FeaturePageShell title={t("payouts")} className="max-w-6xl">
       <PayoutsHome />
     </FeaturePageShell>
   );

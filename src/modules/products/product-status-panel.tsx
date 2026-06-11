@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -50,28 +51,28 @@ function statusBadgeVariant(status: ProductFormValues["status"]) {
   }
 }
 
-function statusLabel(status: ProductFormValues["status"]) {
+function statusLabel(status: ProductFormValues["status"], t: ReturnType<typeof useTranslations>) {
   switch (status) {
     case "published":
-      return "Published";
+      return t("status.published");
     case "pending_review":
-      return "Pending Review";
+      return t("status.pending_review");
     case "draft":
-      return "Draft";
+      return t("status.draft");
     case "rejected":
-      return "Rejected";
+      return t("status.rejected");
     case "scheduled":
-      return "Scheduled";
+      return t("status.scheduled");
     case "hidden":
-      return "Hidden";
+      return t("status.hidden");
     case "archived":
-      return "Archived";
+      return t("status.archived");
     default:
       return status;
   }
 }
 
-export function useProductChecklist(values: ProductFormValues): {
+export function useProductChecklist(values: ProductFormValues, t: ReturnType<typeof useTranslations>): {
   items: CheckItem[];
   completed: number;
   total: number;
@@ -81,38 +82,38 @@ export function useProductChecklist(values: ProductFormValues): {
     const items: CheckItem[] = [
       {
         key: "name",
-        label: "Product Name",
+        label: t("productNameCheck"),
         icon: <Package className="size-3.5" />,
         valid: values.name.trim().length >= 2,
       },
       {
         key: "images",
-        label: "Images",
+        label: t("images"),
         icon: <ImageIcon className="size-3.5" />,
         valid: values.media.length > 0,
       },
       {
         key: "category",
-        label: "Category",
+        label: t("category"),
         icon: <FolderOpen className="size-3.5" />,
         valid: values.categoryIds.length > 0,
       },
       {
         key: "description",
-        label: "Description",
+        label: t("description"),
         icon: <Tag className="size-3.5" />,
         valid: values.description.trim().length >= 10,
       },
       {
         key: "variants",
-        label: "Variants",
+        label: t("variants"),
         icon: <Layers className="size-3.5" />,
         valid: true, // optional for now
         optional: true,
       },
       {
         key: "seo",
-        label: "SEO Settings",
+        label: t("seo"),
         icon: <Search className="size-3.5" />,
         valid: values.seo.slug.trim().length >= 2,
         optional: true,
@@ -122,7 +123,7 @@ export function useProductChecklist(values: ProductFormValues): {
     const completed = items.filter((i) => i.valid).length;
     const percent = Math.round((completed / total) * 100);
     return { items, completed, total, percent };
-  }, [values]);
+  }, [values, t]);
 }
 
 type ProductStatusPanelProps = {
@@ -140,7 +141,8 @@ export function ProductStatusPanel({
   onPreview,
   saving,
 }: ProductStatusPanelProps) {
-  const { items, completed, total, percent } = useProductChecklist(values);
+  const t = useTranslations("products");
+  const { items, completed, total, percent } = useProductChecklist(values, t);
   const categories = useCategoriesStore((s) => s.categories);
 
   const primaryImage = values.media[0];
@@ -154,31 +156,31 @@ export function ProductStatusPanel({
       <Card className="glass-card shadow-glass">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium tracking-wide uppercase text-muted-foreground">
-            Product Status
+            {t("productStatus")}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="flex items-center justify-between">
             <Badge variant={statusBadgeVariant(values.status)} className="capitalize">
-              {statusLabel(values.status)}
+              {statusLabel(values.status, t)}
             </Badge>
             {saving ? (
               <span className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
                 <span className="bg-muted-foreground/60 size-1.5 rounded-full animate-bounce-subtle" style={{ animationDelay: "0ms" }} />
                 <span className="bg-muted-foreground/60 size-1.5 rounded-full animate-bounce-subtle" style={{ animationDelay: "120ms" }} />
                 <span className="bg-muted-foreground/60 size-1.5 rounded-full animate-bounce-subtle" style={{ animationDelay: "240ms" }} />
-                Saving…
+                {t("saving")}
               </span>
             ) : savedAt ? (
               <span className="text-xs text-muted-foreground tabular-nums">
-                Saved {savedAt}
+                {t("lastSaved", { time: savedAt })}
               </span>
             ) : null}
           </div>
 
           <div className="grid gap-1.5">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">{percent}% Complete</span>
+              <span className="font-medium">{t("percentComplete", { percent })}</span>
               <span className="text-muted-foreground text-xs">
                 {completed}/{total}
               </span>
@@ -208,7 +210,7 @@ export function ProductStatusPanel({
               onClick={onPreview}
             >
               <Eye className="size-3.5" />
-              Preview
+              {t("preview")}
             </Button>
             {catalogProductId && (
               <Link
@@ -216,7 +218,7 @@ export function ProductStatusPanel({
                 className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-background/50 px-2.5 py-1.5 text-sm font-medium transition-colors hover:bg-muted/60"
               >
                 <Layers className="size-3.5" />
-                Variants
+                {t("variants")}
               </Link>
             )}
           </div>
@@ -227,7 +229,7 @@ export function ProductStatusPanel({
       <Card className="glass-card shadow-glass">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium tracking-wide uppercase text-muted-foreground">
-            Checklist
+            {t("checklist")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -257,7 +259,7 @@ export function ProductStatusPanel({
                 </span>
                 {item.optional && !item.valid && (
                   <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground/60">
-                    Optional
+                    {t("optional")}
                   </span>
                 )}
               </li>
@@ -270,7 +272,7 @@ export function ProductStatusPanel({
       <Card className="glass-card shadow-glass overflow-hidden">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium tracking-wide uppercase text-muted-foreground">
-            Live Preview
+            {t("livePreview")}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
@@ -279,7 +281,7 @@ export function ProductStatusPanel({
               {primaryImage?.url ? (
                 <img
                   src={primaryImage.url}
-                  alt={values.name || "Product"}
+                  alt={values.name || t("untitledProduct")}
                   className="size-full object-cover"
                 />
               ) : (
@@ -290,7 +292,7 @@ export function ProductStatusPanel({
             </div>
             <div className="p-3 grid gap-1">
               <p className="text-sm font-medium truncate">
-                {values.name.trim() || "Untitled Product"}
+                {values.name.trim() || t("untitledProduct")}
               </p>
               {categoryNames.length > 0 && (
                 <p className="text-xs text-muted-foreground truncate">

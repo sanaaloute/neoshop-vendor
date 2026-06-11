@@ -27,22 +27,22 @@ export function isTerminalStatus(s: OrderStatus) {
   return s === "delivered" || s === "disputed" || s === "refunded";
 }
 
-export function statusLabel(s: OrderStatus) {
+export function statusLabel(s: OrderStatus): string {
   switch (s) {
     case "pending":
-      return "Pending";
+      return "orders.status.pending";
     case "paid":
-      return "Paid";
+      return "orders.status.paid";
     case "processing":
-      return "Processing";
+      return "orders.status.processing";
     case "shipped":
-      return "Shipped";
+      return "orders.status.shipped";
     case "delivered":
-      return "Delivered";
+      return "orders.status.delivered";
     case "disputed":
-      return "Disputed";
+      return "orders.status.disputed";
     case "refunded":
-      return "Refunded";
+      return "orders.status.refunded";
     default:
       return s;
   }

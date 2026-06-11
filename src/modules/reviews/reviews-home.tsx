@@ -31,25 +31,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
 import { listVendorReviews, respondToReview } from "@/services/vendor/reviews-api";
 import type { ReviewResponse, ReviewStatus } from "@/services/vendor/types";
+import { useTranslations } from "next-intl";
 
-function statusBadge(status: ReviewStatus) {
+function StatusBadge({ status }: { status: ReviewStatus }) {
+  const t = useTranslations("reviews");
   switch (status) {
     case "approved":
       return (
         <Badge variant="secondary" className="font-normal">
-          Approved
+          {t("approved")}
         </Badge>
       );
     case "pending":
       return (
         <Badge variant="outline" className="font-normal">
-          Pending
+          {t("pending")}
         </Badge>
       );
     case "rejected":
       return (
         <Badge variant="destructive" className="font-normal">
-          Rejected
+          {t("rejected")}
         </Badge>
       );
     default:
@@ -75,6 +77,7 @@ function RatingStars({ rating }: { rating: number }) {
 }
 
 export function ReviewsHome() {
+  const t = useTranslations("reviews");
   const [reviews, setReviews] = useState<ReviewResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +96,7 @@ export function ReviewsHome() {
       const items = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
       setReviews(items as ReviewResponse[]);
     } catch (e) {
-      setError(httpErrorMessageForUser(e, "Could not load reviews."));
+      setError(httpErrorMessageForUser(e, t("couldNotLoad")));
     } finally {
       setLoading(false);
     }
@@ -121,7 +124,7 @@ export function ReviewsHome() {
       setResponseText("");
       await loadReviews();
     } catch (e) {
-      setSubmitError(httpErrorMessageForUser(e, "Could not submit response."));
+      setSubmitError(httpErrorMessageForUser(e, t("couldNotSubmit")));
     } finally {
       setSubmitting(false);
     }
@@ -131,11 +134,11 @@ export function ReviewsHome() {
     <div className="space-y-6">
       <DashboardCard className="gap-0 py-0">
         <DashboardCardHeader className="border-border/50 flex flex-row items-center justify-between border-b px-4 py-3">
-          <DashboardCardTitle className="text-base">All reviews</DashboardCardTitle>
+          <DashboardCardTitle className="text-base">{t("allReviews")}</DashboardCardTitle>
           {loading && reviews.length === 0 ? (
             <span className="text-muted-foreground inline-flex items-center gap-2 text-xs">
               <Loader2 className="size-3.5 animate-spin" />
-              Loading…
+              {t("loading")}
             </span>
           ) : null}
         </DashboardCardHeader>
@@ -149,12 +152,12 @@ export function ReviewsHome() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Rating</TableHead>
-                    <TableHead className="hidden md:table-cell">Review</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="hidden sm:table-cell">Date</TableHead>
+                    <TableHead>{t("product")}</TableHead>
+                    <TableHead>{t("customer")}</TableHead>
+                    <TableHead>{t("rating")}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("review")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
+                    <TableHead className="hidden sm:table-cell">{t("date")}</TableHead>
                     <TableHead className="text-right"> </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -173,7 +176,7 @@ export function ReviewsHome() {
                       <TableCell className="text-muted-foreground hidden max-w-xs truncate text-sm md:table-cell">
                         {r.body}
                       </TableCell>
-                      <TableCell>{statusBadge(r.status)}</TableCell>
+                      <TableCell><StatusBadge status={r.status} /></TableCell>
                       <TableCell className="text-muted-foreground hidden text-xs sm:table-cell">
                         {new Date(r.createdAt).toLocaleDateString(undefined, {
                           month: "short",
@@ -189,11 +192,11 @@ export function ReviewsHome() {
                             size="sm"
                             onClick={() => openRespond(r)}
                           >
-                            Respond
+                            {t("respond")}
                           </Button>
                         ) : (
                           <span className="text-muted-foreground text-xs">
-                            Responded
+                            {t("responded")}
                           </span>
                         )}
                       </TableCell>
@@ -205,7 +208,7 @@ export function ReviewsHome() {
                         colSpan={7}
                         className="text-muted-foreground text-center"
                       >
-                        No reviews yet.
+                        {t("noReviewsYet")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -219,12 +222,11 @@ export function ReviewsHome() {
       <Sheet open={respondSheetOpen} onOpenChange={setRespondSheetOpen}>
         <SheetContent side="right" className="w-full sm:max-w-lg" showCloseButton>
           <SheetHeader>
-            <SheetTitle>Respond to review</SheetTitle>
+            <SheetTitle>{t("respondToReview")}</SheetTitle>
             <SheetDescription>
               {activeReview ? (
                 <>
-                  Replying to <strong>{activeReview.customerName}</strong> for{" "}
-                  <em>{activeReview.productTitle}</em>
+                  {t("replyingTo", { customer: activeReview.customerName, product: activeReview.productTitle })}
                 </>
               ) : null}
             </SheetDescription>
@@ -233,12 +235,12 @@ export function ReviewsHome() {
           <div className="flex flex-1 flex-col gap-4 px-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="response-text">
-                Your response
+                {t("yourResponse")}
               </label>
               <Textarea
                 id="response-text"
                 className="min-h-[140px]"
-                placeholder="Write a helpful response…"
+                placeholder={t("placeholderResponse")}
                 value={responseText}
                 onChange={(e) => setResponseText(e.target.value)}
               />
@@ -254,7 +256,7 @@ export function ReviewsHome() {
               variant="outline"
               onClick={() => setRespondSheetOpen(false)}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button
               type="button"
@@ -264,10 +266,10 @@ export function ReviewsHome() {
               {submitting ? (
                 <>
                   <Loader2 className="mr-1 size-3.5 animate-spin" />
-                  Saving…
+                  {t("saving")}
                 </>
               ) : (
-                "Submit response"
+                t("submitResponse")
               )}
             </Button>
           </SheetFooter>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Plus, Sparkles, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -16,14 +17,17 @@ import { CATEGORY_ATTRIBUTE_PRESETS } from "./category-attribute-presets";
 import type { VariantAttributeKind } from "./types";
 import { emptyGenerationDefaults } from "./types";
 
-const KIND_OPTIONS: { value: VariantAttributeKind; label: string }[] = [
-  { value: "color", label: "Color" },
-  { value: "size", label: "Size" },
-  { value: "type", label: "Type" },
-  { value: "custom", label: "Custom" },
-];
+function useKindOptions(t: ReturnType<typeof useTranslations>): { value: VariantAttributeKind; label: string }[] {
+  return [
+    { value: "color", label: t("kindColor") },
+    { value: "size", label: t("kindSize") },
+    { value: "type", label: t("kindType") },
+    { value: "custom", label: t("kindCustom") },
+  ];
+}
 
 export function VariantMatrixPanel() {
+  const t = useTranslations("variants");
   const productId = useVariantWorkbenchStore((s) => s.productId);
   const attributes = useVariantWorkbenchStore((s) => s.attributes);
   const addAttribute = useVariantWorkbenchStore((s) => s.addAttribute);
@@ -42,7 +46,9 @@ export function VariantMatrixPanel() {
 
   const [defaults, setDefaults] = useState(emptyGenerationDefaults);
   const [valueDraft, setValueDraft] = useState<Record<string, string>>({});
-  const [newAttrName, setNewAttrName] = useState("Color");
+  const [newAttrName, setNewAttrName] = useState("");
+
+  const KIND_OPTIONS = useKindOptions(t);
 
   const canGenerate =
     attributes.length > 0 && attributes.every((a) => a.values.length > 0);
@@ -100,11 +106,11 @@ export function VariantMatrixPanel() {
       <div className="border-border flex flex-col gap-2 border-b pb-4 md:flex-row md:items-start md:justify-between">
         <div>
           <h2 className="text-base font-semibold tracking-tight">
-            Matrix generator
+            {t("matrixGenerator")}
           </h2>
           {productCategoryNames.length > 0 && (
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <span className="text-muted-foreground text-xs">Categories:</span>
+              <span className="text-muted-foreground text-xs">{t("categories")}:</span>
               {productCategoryNames.map((name) => (
                 <Badge
                   key={name}
@@ -124,7 +130,7 @@ export function VariantMatrixPanel() {
             size="sm"
             onClick={() => resetWorkbench()}
           >
-            Reset to defaults
+            {t("resetToDefaults")}
           </Button>
         </div>
       </div>
@@ -132,25 +138,25 @@ export function VariantMatrixPanel() {
       <div className="mt-4">
         <div className="border-border/80 bg-muted/20 rounded-lg border border-dashed p-3">
           <p className="text-foreground text-xs font-medium">
-            Defaults for generated rows
+            {t("defaultsForGeneratedRows")}
           </p>
           <div className="mt-2 flex flex-wrap items-end gap-2">
             <DefaultNum
-              label="Stock"
+              label={t("stock")}
               value={defaults.stock}
               onChange={(stock) => setDefaults((d) => ({ ...d, stock }))}
               min={0}
               step={1}
             />
             <DefaultNum
-              label="Price"
+              label={t("price")}
               value={defaults.price}
               onChange={(price) => setDefaults((d) => ({ ...d, price }))}
               min={0.01}
               step={0.01}
             />
             <DefaultNum
-              label="Weight g"
+              label={t("weightG")}
               value={defaults.weightGrams}
               onChange={(weightGrams) =>
                 setDefaults((d) => ({ ...d, weightGrams }))
@@ -159,21 +165,21 @@ export function VariantMatrixPanel() {
               step={1}
             />
             <DefaultNum
-              label="L cm"
+              label={t("lengthCm")}
               value={defaults.lengthCm}
               onChange={(lengthCm) => setDefaults((d) => ({ ...d, lengthCm }))}
               min={0}
               step={0.1}
             />
             <DefaultNum
-              label="W cm"
+              label={t("widthCm")}
               value={defaults.widthCm}
               onChange={(widthCm) => setDefaults((d) => ({ ...d, widthCm }))}
               min={0}
               step={0.1}
             />
             <DefaultNum
-              label="H cm"
+              label={t("heightCm")}
               value={defaults.heightCm}
               onChange={(heightCm) => setDefaults((d) => ({ ...d, heightCm }))}
               min={0}
@@ -181,7 +187,7 @@ export function VariantMatrixPanel() {
             />
             <div className="grid gap-0.5">
               <Label className="text-muted-foreground text-[10px] tracking-wide uppercase">
-                Barcode
+                {t("barcode")}
               </Label>
               <Input
                 className="h-8 w-28 text-xs"
@@ -189,7 +195,7 @@ export function VariantMatrixPanel() {
                 onChange={(e) =>
                   setDefaults((d) => ({ ...d, barcode: e.target.value }))
                 }
-                placeholder="EAN-13"
+                placeholder={t("ean13")}
               />
             </div>
           </div>
@@ -200,7 +206,7 @@ export function VariantMatrixPanel() {
       {suggestedAttributes.length > 0 && (
         <div className="mt-4">
           <p className="text-foreground mb-2 text-xs font-medium">
-            Suggested attributes for this product
+            {t("suggestedAttributes")}
           </p>
           <div className="flex flex-wrap gap-2">
             {suggestedAttributes.map((preset) => (
@@ -219,7 +225,7 @@ export function VariantMatrixPanel() {
                 <Plus className="size-3.5 text-primary" />
                 <span className="font-medium">{preset.name}</span>
                 <span className="text-muted-foreground">
-                  ({preset.values.length} values)
+                  {t("values", { count: preset.values.length })}
                 </span>
               </button>
             ))}
@@ -239,7 +245,7 @@ export function VariantMatrixPanel() {
                   className="h-8 max-w-[140px] text-sm font-medium"
                   value={attr.name}
                   onChange={(e) => renameAttribute(attr.id, e.target.value)}
-                  aria-label="Attribute name"
+                  aria-label={t("newAttributeName")}
                 />
                 <select
                   className="border-input bg-background h-8 rounded-md border px-2 text-xs"
@@ -264,7 +270,7 @@ export function VariantMatrixPanel() {
                 size="icon-sm"
                 className="text-destructive"
                 onClick={() => removeAttribute(attr.id)}
-                title="Remove attribute"
+                title={t("removeAttribute")}
               >
                 <Trash2 className="size-4" aria-hidden />
               </Button>
@@ -286,7 +292,7 @@ export function VariantMatrixPanel() {
             <div className="mt-2 flex gap-2">
               <Input
                 className="h-8 flex-1 text-sm"
-                placeholder="New value"
+                placeholder={t("newValue")}
                 value={valueDraft[attr.id] ?? ""}
                 onChange={(e) =>
                   setValueDraft((d) => ({ ...d, [attr.id]: e.target.value }))
@@ -309,7 +315,7 @@ export function VariantMatrixPanel() {
                   setValueDraft((d) => ({ ...d, [attr.id]: "" }));
                 }}
               >
-                Add
+                {t("add")}
               </Button>
             </div>
           </div>
@@ -320,7 +326,7 @@ export function VariantMatrixPanel() {
         <div className="flex flex-1 flex-wrap gap-2">
           <Input
             className="h-9 max-w-xs"
-            placeholder="New attribute name"
+            placeholder={t("newAttributeName")}
             value={newAttrName}
             onChange={(e) => setNewAttrName(e.target.value)}
           />
@@ -330,19 +336,19 @@ export function VariantMatrixPanel() {
             size="sm"
             className="h-9"
             onClick={() => {
-              addAttribute(newAttrName || "Color", "color");
-              setNewAttrName("Color");
+              addAttribute(newAttrName || t("kindColor"), "color");
+              setNewAttrName("");
             }}
           >
             <Plus className="size-4" aria-hidden />
-            Add attribute
+            {t("addAttribute")}
           </Button>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-muted-foreground text-xs">
             {canGenerate
-              ? `${expectedCount} combination${expectedCount === 1 ? "" : "s"}`
-              : "Each attribute needs at least one value."}
+              ? t("combinations", { count: expectedCount })
+              : t("eachAttributeNeedsValue")}
           </span>
           <Button
             type="button"
@@ -351,15 +357,14 @@ export function VariantMatrixPanel() {
             className="gap-1.5"
           >
             <Sparkles className="size-4" aria-hidden />
-            Generate matrix
+            {t("generateMatrix")}
           </Button>
         </div>
       </div>
 
       {variants.length > 0 ? (
         <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
-          Generating replaces all {variants.length} existing variant rows with a
-          fresh matrix from the current axes.
+          {t("generateReplacesWarning", { count: variants.length })}
         </p>
       ) : null}
     </Card>

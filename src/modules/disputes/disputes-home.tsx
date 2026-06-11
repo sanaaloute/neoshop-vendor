@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Loader2, MessageSquare } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import {
   DashboardCard,
@@ -44,42 +45,42 @@ import { toDisputeCase } from "./types";
 
 import { useIsDesktop } from "@/hooks/use-is-desktop";
 
-function statusBadge(status: DisputeStatus) {
+function statusBadge(status: DisputeStatus, t: ReturnType<typeof useTranslations>) {
   switch (status) {
     case "open":
       return (
         <Badge variant="outline" className="font-normal">
-          Open
+          {t("disputes.status.open")}
         </Badge>
       );
     case "investigating":
       return (
         <Badge variant="secondary" className="font-normal">
-          Investigating
+          {t("disputes.status.investigating")}
         </Badge>
       );
     case "awaiting_customer":
       return (
         <Badge variant="secondary" className="font-normal">
-          Awaiting customer
+          {t("disputes.status.awaiting_customer")}
         </Badge>
       );
     case "awaiting_vendor":
       return (
         <Badge variant="secondary" className="font-normal">
-          Awaiting vendor
+          {t("disputes.status.awaiting_vendor")}
         </Badge>
       );
     case "mediation":
       return (
         <Badge variant="secondary" className="font-normal">
-          Mediation
+          {t("disputes.status.mediation")}
         </Badge>
       );
     case "escalated":
       return (
         <Badge variant="destructive" className="font-normal">
-          Escalated
+          {t("disputes.status.escalated")}
         </Badge>
       );
     case "resolved":
@@ -88,7 +89,7 @@ function statusBadge(status: DisputeStatus) {
           variant="secondary"
           className="border-green-500/40 bg-green-500/15 font-normal text-green-800 dark:text-green-200"
         >
-          Resolved
+          {t("disputes.status.resolved")}
         </Badge>
       );
     default:
@@ -105,11 +106,13 @@ function DisputeCasePanel({
   onSendMessage,
   sending,
   sendError,
+  t,
 }: {
   dispute: DisputeCase;
   onSendMessage: (body: string) => void;
   sending?: boolean;
   sendError?: string | null;
+  t: ReturnType<typeof useTranslations>;
 }) {
   const locked = isTerminal(dispute.status);
 
@@ -117,9 +120,9 @@ function DisputeCasePanel({
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
       <div className="shrink-0 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          {statusBadge(dispute.status)}
+          {statusBadge(dispute.status, t)}
           <span className="text-muted-foreground text-xs tabular-nums">
-            Due {new Date(dispute.dueAt).toLocaleDateString()}
+            {t("disputes.home.due", { date: new Date(dispute.dueAt).toLocaleDateString() })}
           </span>
         </div>
         <DisputeWorkflow status={dispute.status} />
@@ -131,9 +134,11 @@ function DisputeCasePanel({
       <DashboardCard className="flex min-h-0 flex-1 flex-col gap-0 py-0">
         <DashboardCardHeader className="border-border/50 shrink-0 border-b px-4 py-3">
           <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-            Communication
+            {t("disputes.home.communication")}
           </DashboardCardDescription>
-          <DashboardCardTitle className="text-base">Conversation</DashboardCardTitle>
+          <DashboardCardTitle className="text-base">
+            {t("disputes.home.conversation")}
+          </DashboardCardTitle>
         </DashboardCardHeader>
         <DashboardCardContent className="flex min-h-0 flex-1 flex-col px-4 py-4">
           <DisputeThread
@@ -149,6 +154,7 @@ function DisputeCasePanel({
 }
 
 export function DisputesHome() {
+  const t = useTranslations();
   const [cases, setCases] = useState<DisputeCase[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -174,7 +180,7 @@ export function DisputesHome() {
       } catch (err) {
         if (cancelled) return;
         setListError(
-          err instanceof Error ? err.message : "Failed to load disputes"
+          err instanceof Error ? err.message : t("disputes.home.loadError")
         );
       } finally {
         if (!cancelled) setListLoading(false);
@@ -184,7 +190,7 @@ export function DisputesHome() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!selectedId) {
@@ -207,7 +213,7 @@ export function DisputesHome() {
       } catch (err) {
         if (cancelled) return;
         setDetailError(
-          err instanceof Error ? err.message : "Failed to load dispute"
+          err instanceof Error ? err.message : t("disputes.home.loadDetailsError")
         );
       } finally {
         if (!cancelled) setDetailLoading(false);
@@ -217,7 +223,7 @@ export function DisputesHome() {
     return () => {
       cancelled = true;
     };
-  }, [selectedId]);
+  }, [selectedId, t]);
 
   useEffect(() => {
     if (desktop && !selectedId && cases[0]) {
@@ -265,13 +271,13 @@ export function DisputesHome() {
         );
       } catch (err) {
         setSendError(
-          err instanceof Error ? err.message : "Failed to send message"
+          err instanceof Error ? err.message : t("disputes.home.loadDetailsError")
         );
       } finally {
         setSendLoading(false);
       }
     },
-    [selectedId]
+    [selectedId, t]
   );
 
   const panelProps = selected
@@ -280,6 +286,7 @@ export function DisputesHome() {
         onSendMessage: handleSendMessage,
         sending: sendLoading,
         sendError,
+        t,
       }
     : null;
 
@@ -287,7 +294,9 @@ export function DisputesHome() {
     return (
       <div className="flex min-h-[420px] flex-col items-center justify-center gap-3">
         <Loader2 className="text-muted-foreground size-8 animate-spin" />
-        <p className="text-muted-foreground text-sm">Loading disputes…</p>
+        <p className="text-muted-foreground text-sm">
+          {t("disputes.home.loading")}
+        </p>
       </div>
     );
   }
@@ -296,7 +305,7 @@ export function DisputesHome() {
     return (
       <div className="flex min-h-[420px] flex-col items-center justify-center gap-3">
         <p className="text-destructive text-sm font-medium">
-          Failed to load disputes
+          {t("disputes.home.loadError")}
         </p>
         <p className="text-muted-foreground max-w-sm text-center text-xs">
           {listError}
@@ -306,7 +315,7 @@ export function DisputesHome() {
           size="sm"
           variant="outline"
         >
-          Retry
+          {t("disputes.home.retry")}
         </Button>
       </div>
     );
@@ -317,10 +326,9 @@ export function DisputesHome() {
       <div className="flex min-h-[420px] flex-col gap-5">
         <DashboardCard className="max-w-xl">
           <DashboardCardHeader>
-            <DashboardCardTitle>No dispute cases</DashboardCardTitle>
+            <DashboardCardTitle>{t("disputes.home.emptyTitle")}</DashboardCardTitle>
             <DashboardCardDescription>
-              Nothing open right now. Case details will appear here when
-              available.
+              {t("disputes.home.emptyDescription")}
             </DashboardCardDescription>
           </DashboardCardHeader>
         </DashboardCard>
@@ -334,19 +342,19 @@ export function DisputesHome() {
         <aside className="lg:border-border/60 flex flex-col lg:w-[min(100%,380px)] lg:shrink-0 lg:border-r">
           <div className="border-border/60 border-b p-3">
             <Input
-              placeholder="Search case, order…"
+              placeholder={t("disputes.home.searchPlaceholder")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              aria-label="Search disputes"
+              aria-label={t("disputes.home.searchPlaceholder")}
             />
           </div>
           <div className="max-h-[480px] overflow-y-auto lg:max-h-[calc(100vh-220px)]">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="pl-3">Case</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="pr-3">Status</TableHead>
+                  <TableHead className="pl-3">{t("disputes.home.table.case")}</TableHead>
+                  <TableHead className="text-right">{t("disputes.home.table.amount")}</TableHead>
+                  <TableHead className="pr-3">{t("disputes.home.table.status")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -369,7 +377,7 @@ export function DisputesHome() {
                         {formatCurrency(c.amount, c.currency)}
                       </TableCell>
                       <TableCell className="pr-3">
-                        {statusBadge(c.status)}
+                        {statusBadge(c.status, t)}
                       </TableCell>
                     </TableRow>
                   );
@@ -387,8 +395,9 @@ export function DisputesHome() {
                   {selected.title}
                 </h2>
                 <p className="text-muted-foreground text-sm">
-                  Order <span className="font-mono">{selected.orderId}</span>{" "}
-                  · Reason{" "}
+                  {t("disputes.home.orderLabel")}{" "}
+                  <span className="font-mono">{selected.orderId}</span>{" "}
+                  · {t("disputes.home.reasonLabel")}{" "}
                   <Badge
                     variant="outline"
                     className="align-middle font-mono text-xs"
@@ -401,13 +410,13 @@ export function DisputesHome() {
                 <div className="flex flex-1 flex-col items-center justify-center gap-2">
                   <Loader2 className="text-muted-foreground size-8 animate-spin" />
                   <p className="text-muted-foreground text-sm">
-                    Loading case details…
+                    {t("disputes.home.loadingDetails")}
                   </p>
                 </div>
               ) : detailError ? (
                 <div className="border-border flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8 text-center">
                   <p className="text-destructive text-sm font-medium">
-                    Failed to load details
+                    {t("disputes.home.loadDetailsError")}
                   </p>
                   <p className="text-muted-foreground max-w-sm text-xs">
                     {detailError}
@@ -423,10 +432,9 @@ export function DisputesHome() {
                 className="text-muted-foreground size-10"
                 aria-hidden
               />
-              <p className="text-sm font-medium">Select a dispute</p>
+              <p className="text-sm font-medium">{t("disputes.home.selectDisputeTitle")}</p>
               <p className="text-muted-foreground max-w-sm text-xs">
-                Choose a row in the list to open case detail, workflow, and
-                messages.
+                {t("disputes.home.selectDisputeDescription")}
               </p>
             </div>
           )}
@@ -452,7 +460,7 @@ export function DisputesHome() {
                 </SheetTitle>
                 <SheetDescription className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-xs">{selected.orderId}</span>
-                  {statusBadge(selected.status)}
+                  {statusBadge(selected.status, t)}
                 </SheetDescription>
               </SheetHeader>
               <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
@@ -467,19 +475,19 @@ export function DisputesHome() {
                   }}
                 >
                   <ArrowLeft className="size-4" aria-hidden />
-                  Back to list
+                  {t("disputes.home.sheet.backToList")}
                 </Button>
                 {detailLoading ? (
                   <div className="flex flex-1 flex-col items-center justify-center gap-2">
                     <Loader2 className="text-muted-foreground size-8 animate-spin" />
                     <p className="text-muted-foreground text-sm">
-                      Loading case details…
+                      {t("disputes.home.loadingDetails")}
                     </p>
                   </div>
                 ) : detailError ? (
                   <div className="border-border flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8 text-center">
                     <p className="text-destructive text-sm font-medium">
-                      Failed to load details
+                      {t("disputes.home.loadDetailsError")}
                     </p>
                     <p className="text-muted-foreground max-w-sm text-xs">
                       {detailError}
@@ -492,8 +500,8 @@ export function DisputesHome() {
             </>
           ) : (
             <SheetHeader>
-              <SheetTitle>Dispute</SheetTitle>
-              <SheetDescription>Select a case from the list.</SheetDescription>
+              <SheetTitle>{t("disputes.home.sheet.disputeTitle")}</SheetTitle>
+              <SheetDescription>{t("disputes.home.sheet.selectCase")}</SheetDescription>
             </SheetHeader>
           )}
         </SheetContent>

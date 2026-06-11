@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 import { Spinner } from "@/components/ui/spinner";
 import { getApiBaseUrl } from "@/config/auth";
@@ -17,6 +18,7 @@ export function GatewaySyncBanner({
   error,
   className,
 }: GatewaySyncBannerProps) {
+  const t = useTranslations("gatewaySync");
   const api = getApiBaseUrl();
 
   if (!api) {
@@ -30,9 +32,9 @@ export function GatewaySyncBanner({
         )}
       >
         <span className="text-foreground font-medium">
-          Couldn&apos;t connect to your marketplace.
+          {t("couldNotConnect")}
         </span>{" "}
-        Contact your administrator if this continues.
+        {t("contactAdministrator")}
       </motion.div>
     );
   }
@@ -54,7 +56,7 @@ export function GatewaySyncBanner({
           )}
         >
           <Spinner size="sm" variant="primary" />
-          <span>Syncing data from marketplace…</span>
+          <span>{t("syncingData")}</span>
         </motion.div>
       )}
       {error && !loading && (
@@ -68,7 +70,7 @@ export function GatewaySyncBanner({
             className
           )}
         >
-          <span className="font-medium">Something went wrong.</span> {error}
+          <span className="font-medium">{t("somethingWentWrong")}</span> {error}
         </motion.div>
       )}
     </AnimatePresence>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useRouter } from "@/i18n/routing";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -8,6 +10,7 @@ import { Button } from "@/components/ui/button";
 export function OnboardingActions() {
   const router = useRouter();
   const { logout } = useAuth();
+  const t = useTranslations("auth");
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -19,7 +22,7 @@ export function OnboardingActions() {
           router.replace("/login");
         }}
       >
-        Sign out
+        {t("logOut")}
       </Button>
     </div>
   );

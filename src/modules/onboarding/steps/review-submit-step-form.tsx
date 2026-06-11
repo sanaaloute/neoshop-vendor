@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "@/i18n/routing";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
   FileText,
@@ -21,7 +22,7 @@ import { useVendorProfileStore } from "@/store/vendor-profile-store";
 import { ONBOARDING_STEP_FORM_ID } from "@/modules/onboarding/onboarding-step-forms";
 import { syncSubmitVerification } from "@/modules/onboarding/onboarding-api";
 import { missingFields, draftIsComplete } from "@/modules/onboarding/types";
-import { reviewSchema } from "@/modules/onboarding/schemas";
+import { createReviewSchema } from "@/modules/onboarding/schemas";
 import type { ReviewSchema } from "@/modules/onboarding/schemas";
 import { VendorForm } from "@/components/forms";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ const countryName = (code: string) => {
 };
 
 export function ReviewSubmitStepForm() {
+  const t = useTranslations("onboarding");
   const draft = useOnboardingWizardStore((s) => s.draft);
   const apiBusy = useOnboardingWizardStore((s) => s.apiBusy);
   const setApiBusy = useOnboardingWizardStore((s) => s.setApiBusy);
@@ -43,6 +45,8 @@ export function ReviewSubmitStepForm() {
   const profile = useVendorProfileStore((s) => s.profile);
   const loadProfile = useVendorProfileStore((s) => s.load);
   const router = useRouter();
+
+  const reviewSchema = createReviewSchema((key: string) => t(key));
 
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -61,7 +65,7 @@ export function ReviewSubmitStepForm() {
       resetWizard();
       router.replace("/dashboard");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Submission failed. Please try again.";
+      const msg = err instanceof Error ? err.message : t("steps.review.submissionFailed");
       setSubmitError(msg);
     } finally {
       setApiBusy(false);
@@ -87,13 +91,13 @@ export function ReviewSubmitStepForm() {
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
               <div className="flex flex-col gap-1">
                 <span className="font-semibold text-amber-200 text-sm">
-                  Your previous submission was rejected
+                  {t("steps.review.previousSubmissionRejected")}
                 </span>
                 <span className="text-amber-100/80 text-xs leading-relaxed">
                   {rejectionReason}
                 </span>
                 <span className="text-amber-100/60 text-[10px]">
-                  Please update the required information and submit again.
+                  {t("steps.review.updateAndSubmitAgain")}
                 </span>
               </div>
             </motion.div>
@@ -102,40 +106,40 @@ export function ReviewSubmitStepForm() {
           {/* Summary card */}
           <div className="glass-card shadow-glass overflow-hidden rounded-xl">
             <div className="border-b border-border/50 bg-card/60 px-5 py-3">
-              <h3 className="font-semibold text-sm">Application Summary</h3>
+              <h3 className="font-semibold text-sm">{t("steps.review.applicationSummary")}</h3>
             </div>
             <div className="flex flex-col gap-4 p-5">
               {/* Vendor type */}
               <SummaryRow
                 icon={draft.vendorType === "COMPANY" ? Building2 : User}
-                label="Vendor Type"
+                label={t("steps.review.vendorType")}
                 value={draft.vendorType}
               />
 
               {/* Basic info */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <SummaryRow icon={Building2} label="Legal Name" value={draft.basicInfo.legalBusinessName} />
+                <SummaryRow icon={Building2} label={t("steps.review.legalName")} value={draft.basicInfo.legalBusinessName} />
                 {draft.basicInfo.tradeName && (
-                  <SummaryRow icon={Building2} label="Trade Name" value={draft.basicInfo.tradeName} />
+                  <SummaryRow icon={Building2} label={t("steps.review.tradeName")} value={draft.basicInfo.tradeName} />
                 )}
-                <SummaryRow icon={Mail} label="Email" value={draft.basicInfo.businessEmail} />
-                <SummaryRow icon={Phone} label="Phone" value={draft.basicInfo.businessPhone} />
-                <SummaryRow icon={Globe} label="Country" value={countryName(draft.basicInfo.countryCode)} />
+                <SummaryRow icon={Mail} label={t("steps.review.email")} value={draft.basicInfo.businessEmail} />
+                <SummaryRow icon={Phone} label={t("steps.review.phone")} value={draft.basicInfo.businessPhone} />
+                <SummaryRow icon={Globe} label={t("steps.review.country")} value={countryName(draft.basicInfo.countryCode)} />
               </div>
 
               <div className="h-px bg-border/40" />
 
               {/* Address */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <SummaryRow icon={MapPin} label="Address" value={draft.addressInfo.addressLine1} />
+                <SummaryRow icon={MapPin} label={t("steps.review.address")} value={draft.addressInfo.addressLine1} />
                 {draft.addressInfo.city && (
-                  <SummaryRow icon={MapPin} label="City" value={draft.addressInfo.city} />
+                  <SummaryRow icon={MapPin} label={t("steps.review.city")} value={draft.addressInfo.city} />
                 )}
                 {draft.addressInfo.region && (
-                  <SummaryRow icon={MapPin} label="Region" value={draft.addressInfo.region} />
+                  <SummaryRow icon={MapPin} label={t("steps.review.region")} value={draft.addressInfo.region} />
                 )}
                 {draft.addressInfo.postalCode && (
-                  <SummaryRow icon={MapPin} label="Postal Code" value={draft.addressInfo.postalCode} />
+                  <SummaryRow icon={MapPin} label={t("steps.review.postalCode")} value={draft.addressInfo.postalCode} />
                 )}
               </div>
 
@@ -144,7 +148,7 @@ export function ReviewSubmitStepForm() {
               {/* Documents */}
               <div className="flex flex-col gap-2">
                 <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
-                  Documents ({draft.documents.filter((d) => d.status === "done").length})
+                  {t("steps.review.documents", { count: draft.documents.filter((d) => d.status === "done").length })}
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {draft.documents
@@ -169,10 +173,10 @@ export function ReviewSubmitStepForm() {
             <div className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive text-xs">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div className="flex flex-col gap-0.5">
-                <span className="font-medium">Some required information is missing:</span>
+                <span className="font-medium">{t("steps.review.missingInfo")}</span>
                 <ul className="list-disc pl-4">
                   {missing.map((m) => (
-                    <li key={m}>{m}</li>
+                    <li key={m}>{t(`steps.missingFields.${m}` as const)}</li>
                   ))}
                 </ul>
               </div>
@@ -189,10 +193,10 @@ export function ReviewSubmitStepForm() {
             />
             <div className="flex flex-col gap-1">
               <Label htmlFor="acceptedTerms" className="cursor-pointer text-sm font-medium">
-                I confirm the information is accurate
+                {t("steps.review.confirmAccurate")}
               </Label>
               <p className="text-muted-foreground text-xs">
-                By submitting, you agree that all provided information and documents are true and accurate. False information may result in account suspension.
+                {t("steps.review.termsDescription")}
               </p>
               {form.formState.errors.acceptedTerms && (
                 <p className="text-destructive text-xs">{form.formState.errors.acceptedTerms.message}</p>
@@ -219,7 +223,7 @@ export function ReviewSubmitStepForm() {
               onClick={() => useOnboardingWizardStore.getState().setStep(2)}
               className="text-muted-foreground text-sm hover:text-foreground transition-colors"
             >
-              Back
+              {t("wizard.back")}
             </button>
             <button
               type="submit"
@@ -229,12 +233,12 @@ export function ReviewSubmitStepForm() {
               {apiBusy ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Submitting…
+                  {t("steps.review.submitting")}
                 </>
               ) : (
                 <>
                   <Send className="h-4 w-4" />
-                  Submit for Verification
+                  {t("steps.review.submitForVerification")}
                 </>
               )}
             </button>

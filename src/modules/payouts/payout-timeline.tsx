@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Circle } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import {
   DashboardCard,
@@ -25,14 +26,15 @@ type PayoutTimelineProps = {
 };
 
 export function PayoutTimeline({ events, className }: PayoutTimelineProps) {
+  const t = useTranslations("payouts.timeline");
   return (
     <DashboardCard className={cn("gap-0 py-0", className)}>
       <DashboardCardHeader className="border-border/50 border-b px-4 py-3">
         <DashboardCardDescription className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-          Pipeline
+          {t("pipeline")}
         </DashboardCardDescription>
         <DashboardCardTitle className="text-base">
-          Payout timeline
+          {t("title")}
         </DashboardCardTitle>
       </DashboardCardHeader>
       <DashboardCardContent className="px-4 py-4">

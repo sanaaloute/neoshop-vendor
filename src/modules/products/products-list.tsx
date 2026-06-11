@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { useGatewayCatalogBootstrap } from "@/hooks/use-gateway-catalog-bootstrap";
 import Link from "next/link";
-import { useRouter } from "@/i18n/routing";
 import {
   Archive,
   Copy,
@@ -40,6 +40,7 @@ import {
   deleteProductOnGateway,
   duplicateProductOnGateway,
 } from "@/services/vendor/product-gateway-sync";
+import { useRouter } from "@/i18n/routing";
 import { useVendorWritesAllowed } from "@/hooks/use-vendor-writes";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
 import { useVariantWorkbenchStore } from "@/store/variant-workbench-store";
@@ -71,6 +72,8 @@ function categorySummary(
 }
 
 export function ProductsList() {
+  const t = useTranslations("products");
+  const tc = useTranslations("common");
   const router = useRouter();
   const { canWriteCatalog } = useVendorWritesAllowed();
   const { loading: gatewayLoading, error: gatewayError } =
@@ -149,7 +152,7 @@ export function ProductsList() {
         replaceCatalog(updated);
       } catch (e) {
         setListError(
-          httpErrorMessageForUser(e, "Could not update products. Try again.")
+          httpErrorMessageForUser(e, t("list.couldNotUpdateProducts"))
         );
       } finally {
         setListBusy(false);
@@ -177,15 +180,15 @@ export function ProductsList() {
               className="text-primary mx-auto size-8 animate-spin"
               aria-hidden
             />
-            <p className="mt-3">Loading…</p>
+            <p className="mt-3">{tc("loading")}</p>
           </Card>
         ) : (
           <EmptyState
-            title="No products yet"
+            title={t("list.noProductsYet")}
             primaryAction={
               canWriteCatalog
                 ? {
-                    label: "Create product",
+                    label: t("list.createProduct"),
                     onClick: () => router.push("/products/new"),
                   }
                 : undefined
@@ -216,24 +219,24 @@ export function ProductsList() {
           }}
         >
           <Plus className="size-4" aria-hidden />
-          New product
+          {t("list.newProduct")}
         </Link>
       </div>
 
       <Card className="border-border/80 shadow-vendor-card p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="grid flex-1 gap-1">
-            <Label className="text-xs">Search</Label>
+            <Label className="text-xs">{t("list.search")}</Label>
             <input
               type="text"
-              placeholder="Product name or SKU…"
+              placeholder={t("list.searchPlaceholder")}
               className="border-input bg-background h-9 rounded-md border px-2 text-sm"
               value={filterSearch}
               onChange={(e) => setFilterSearch(e.target.value)}
             />
           </div>
           <div className="grid gap-1">
-            <Label className="text-xs">Status</Label>
+            <Label className="text-xs">{t("list.status")}</Label>
             <select
               className="border-input bg-background h-9 rounded-md border px-2 text-sm"
               value={filterStatus}
@@ -241,23 +244,23 @@ export function ProductsList() {
                 setFilterStatus((e.target.value || "") as ProductStatus | "")
               }
             >
-              <option value="">All statuses</option>
-              <option value="draft">Draft</option>
-              <option value="pending_review">In review</option>
-              <option value="published">Published</option>
-              <option value="hidden">Hidden</option>
-              <option value="archived">Archived</option>
-              <option value="rejected">Rejected</option>
+              <option value="">{t("list.allStatuses")}</option>
+              <option value="draft">{t("status.draft")}</option>
+              <option value="pending_review">{t("status.pending_review")}</option>
+              <option value="published">{t("status.published")}</option>
+              <option value="hidden">{t("status.hidden")}</option>
+              <option value="archived">{t("status.archived")}</option>
+              <option value="rejected">{t("status.rejected")}</option>
             </select>
           </div>
           <div className="grid gap-1">
-            <Label className="text-xs">Category</Label>
+            <Label className="text-xs">{t("list.category")}</Label>
             <select
               className="border-input bg-background h-9 min-w-[10rem] rounded-md border px-2 text-sm"
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
             >
-              <option value="">All categories</option>
+              <option value="">{t("list.allCategories")}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -275,7 +278,7 @@ export function ProductsList() {
               setFilterSearch("");
             }}
           >
-            Reset
+            {t("list.reset")}
           </Button>
         </div>
       </Card>
@@ -284,11 +287,11 @@ export function ProductsList() {
         <Card className="border-primary/30 bg-primary/5 shadow-vendor-card p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <p className="text-sm font-medium">
-              Bulk edit ({selected.size} selected)
+              {t("list.bulkEdit", { count: selected.size })}
             </p>
             <div className="flex flex-wrap items-end gap-3">
               <div className="grid gap-1">
-                <Label className="text-xs">Set status</Label>
+                <Label className="text-xs">{t("list.setStatus")}</Label>
                 <select
                   className="border-input bg-background h-9 rounded-md border px-2 text-sm"
                   value={bulkStatus}
@@ -297,13 +300,13 @@ export function ProductsList() {
                   }
                 >
                   <option value="">—</option>
-                  <option value="draft">Draft</option>
-                  <option value="pending_review">Submit for review</option>
-                  <option value="hidden">Hidden</option>
+                  <option value="draft">{t("status.draft")}</option>
+                  <option value="pending_review">{t("status.pending_review")}</option>
+                  <option value="hidden">{t("status.hidden")}</option>
                 </select>
               </div>
               <div className="grid gap-1">
-                <Label className="text-xs">Set primary category</Label>
+                <Label className="text-xs">{t("list.setPrimaryCategory")}</Label>
                 <select
                   className="border-input bg-background h-9 min-w-[10rem] rounded-md border px-2 text-sm"
                   value={bulkCategory}
@@ -323,7 +326,7 @@ export function ProductsList() {
                 disabled={listBusy || !canWriteCatalog}
                 onClick={() => void applyBulk()}
               >
-                Apply
+                {t("list.apply")}
               </Button>
               <Button
                 type="button"
@@ -331,7 +334,7 @@ export function ProductsList() {
                 variant="ghost"
                 onClick={() => setSelected(new Set())}
               >
-                Clear
+                {t("list.clear")}
               </Button>
             </div>
           </div>
@@ -352,17 +355,17 @@ export function ProductsList() {
                       filtered.length > 0 && selected.size === filtered.length
                     }
                     onChange={toggleAll}
-                    aria-label="Select all"
+                    aria-label={t("list.selectAll")}
                   />
                 </TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>SKU</TableHead>
+                <TableHead>{t("list.name")}</TableHead>
+                <TableHead>{t("list.sku")}</TableHead>
                 <TableHead className="hidden md:table-cell">
-                  Categories
+                  {t("list.categories")}
                 </TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("list.price")}</TableHead>
+                <TableHead>{t("list.status")}</TableHead>
+                <TableHead className="text-right">{t("list.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -372,7 +375,7 @@ export function ProductsList() {
                     colSpan={7}
                     className="text-muted-foreground text-center text-sm"
                   >
-                    No products match your filters.
+                    {t("list.noMatches")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -389,7 +392,7 @@ export function ProductsList() {
                         disabled={!canWriteCatalog}
                         checked={selected.has(p.id)}
                         onChange={() => toggle(p.id)}
-                        aria-label={`Select ${p.name}`}
+                        aria-label={t("list.selectAll")}
                       />
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate font-medium">
@@ -421,7 +424,7 @@ export function ProductsList() {
                       <div className="flex flex-wrap justify-end gap-1">
                         <Link
                           href={`/products/${p.id}/edit`}
-                          title="Edit"
+                          title={t("list.edit")}
                           className={buttonVariants({
                             variant: "ghost",
                             size: "icon-sm",
@@ -432,14 +435,14 @@ export function ProductsList() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          title="Preview"
+                          title={t("preview")}
                           onClick={() => openPreview(p)}
                         >
                           <Eye className="size-4" aria-hidden />
                         </Button>
                         <Link
                           href={`/variants?productId=${p.id}`}
-                          title="Edit variants"
+                          title={t("list.editVariants")}
                           className={buttonVariants({
                             variant: "ghost",
                             size: "icon-sm",
@@ -450,7 +453,7 @@ export function ProductsList() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          title="Duplicate"
+                          title={t("list.duplicate")}
                           disabled={listBusy || !canWriteCatalog}
                           onClick={() => {
                             void (async () => {
@@ -471,7 +474,7 @@ export function ProductsList() {
                                   setListError(
                                     httpErrorMessageForUser(
                                       e,
-                                      "Could not duplicate this product."
+                                      t("list.couldNotDuplicate")
                                     )
                                   );
                                 } finally {
@@ -489,7 +492,7 @@ export function ProductsList() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          title="Archive"
+                          title={t("list.archive")}
                           disabled={listBusy || !canWriteCatalog}
                           onClick={() => {
                             void (async () => {
@@ -503,7 +506,7 @@ export function ProductsList() {
                                   setListError(
                                     httpErrorMessageForUser(
                                       e,
-                                      "Could not archive this product."
+                                      t("list.couldNotArchive")
                                     )
                                   );
                                 } finally {
@@ -520,7 +523,7 @@ export function ProductsList() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          title="Delete"
+                          title={t("list.delete")}
                           disabled={listBusy || !canWriteCatalog}
                           onClick={() => {
                             void (async () => {
@@ -536,7 +539,7 @@ export function ProductsList() {
                                   setListError(
                                     httpErrorMessageForUser(
                                       e,
-                                      "Could not delete this product."
+                                      t("list.couldNotDelete")
                                     )
                                   );
                                 } finally {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   Bar,
   BarChart,
@@ -27,6 +28,7 @@ export function CategoryBarChart({
   height = 280,
   valueFormatter = (n) => n.toLocaleString(),
 }: CategoryBarChartProps) {
+  const t = useTranslations("analytics");
   return (
     <div className={cn("w-full", className)} style={{ height }}>
       <ResponsiveContainer
@@ -73,7 +75,7 @@ export function CategoryBarChart({
             }}
             formatter={(value) => {
               const n = typeof value === "number" ? value : Number(value);
-              return [Number.isFinite(n) ? valueFormatter(n) : "", "Revenue"];
+              return [Number.isFinite(n) ? valueFormatter(n) : "", t("revenue")];
             }}
           />
           <Bar

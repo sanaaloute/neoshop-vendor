@@ -3,6 +3,7 @@
 import type { ComponentProps } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight, Ban, FileText, Printer, Truck } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ export function OrderDetailDrawer({
   open,
   onOpenChange,
 }: OrderDetailDrawerProps) {
+  const t = useTranslations("orders");
   const { canWriteOrders } = useVendorWritesAllowed();
   const { methods: shippingMethods } = useShipping();
   const orders = useOrdersStore((s) => s.orders);
@@ -95,13 +97,13 @@ export function OrderDetailDrawer({
         );
       } catch (e) {
         setActionError(
-          httpErrorMessageForUser(e, "Could not load this order. Try again.")
+          httpErrorMessageForUser(e, t("couldNotLoadOrder"))
         );
       } finally {
         setDetailLoading(false);
       }
     },
-    [upsertOrder]
+    [upsertOrder, t]
   );
 
   useEffect(() => {
@@ -115,11 +117,11 @@ export function OrderDetailDrawer({
 
   const runStatusPatch = async (o: VendorOrder, status: OrderStatus, note?: string) => {
     if (!canWriteOrders) {
-      setActionError("Order updates unlock after Barkosem approves your vendor account.");
+      setActionError(t("orderUpdatesLocked"));
       return;
     }
     if (!getApiBaseUrl()) {
-      setActionError("Marketplace connection is not available.");
+      setActionError(t("marketplaceUnavailable"));
       return;
     }
     setActionBusy(true);
@@ -131,7 +133,7 @@ export function OrderDetailDrawer({
       setActionError(
         httpErrorMessageForUser(
           e,
-          "Could not update order status. Try again."
+          t("couldNotUpdateStatus")
         )
       );
     } finally {
@@ -154,11 +156,11 @@ export function OrderDetailDrawer({
           showCloseButton
         >
           <SheetHeader>
-            <SheetTitle>Order</SheetTitle>
+            <SheetTitle>{t("detailTitle")}</SheetTitle>
             <SheetDescription>
               {detailLoading
-                ? "Loading order…"
-                : "Select an order from the list or try again."}
+                ? t("loadingOrder")
+                : t("selectOrderPrompt")}
             </SheetDescription>
           </SheetHeader>
         </SheetContent>
@@ -185,7 +187,7 @@ export function OrderDetailDrawer({
               </SheetDescription>
             </div>
             <Badge variant={badgeVariant(order.status)} className="capitalize">
-              {statusLabel(order.status)}
+              {t(statusLabel(order.status) as any)}
             </Badge>
           </div>
           <p className="text-muted-foreground mt-2 text-sm">
@@ -199,7 +201,7 @@ export function OrderDetailDrawer({
         <div className="flex flex-1 flex-col gap-4 px-4 py-4">
           <section>
             <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-              Status workflow
+              {t("statusWorkflow")}
             </h3>
             <div className="flex flex-wrap gap-1">
               {ORDER_STATUS_FLOW.map((st) => (
@@ -212,7 +214,7 @@ export function OrderDetailDrawer({
                       : "bg-muted/50 text-muted-foreground border-transparent"
                   )}
                 >
-                  {statusLabel(st)}
+                  {t(statusLabel(st) as any)}
                 </span>
               ))}
             </div>
@@ -233,7 +235,7 @@ export function OrderDetailDrawer({
                 }}
               >
                 <ArrowRight className="size-4" aria-hidden />
-                Next: {next ? statusLabel(next) : "—"}
+                {t("nextStatus", { status: next ? t(statusLabel(next) as any) : "—" })}
               </Button>
               <Button
                 type="button"
@@ -246,12 +248,12 @@ export function OrderDetailDrawer({
                   void runStatusPatch(
                     order,
                     "refunded",
-                    "Marked refunded from drawer"
+                    t("markedRefundedFromDrawer")
                   )
                 }
               >
                 <Ban className="size-4" aria-hidden />
-                Cancel order
+                {t("cancelOrder")}
               </Button>
             </div>
           </section>
@@ -260,7 +262,7 @@ export function OrderDetailDrawer({
 
           <section>
             <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-              Lines
+              {t("lines")}
             </h3>
             <ul className="space-y-2 text-sm">
               {order.lines.map((l) => (
@@ -284,19 +286,19 @@ export function OrderDetailDrawer({
               ))}
             </ul>
             <dl className="mt-3 grid grid-cols-2 gap-1 text-xs">
-              <dt className="text-muted-foreground">Subtotal</dt>
+              <dt className="text-muted-foreground">{t("subtotal")}</dt>
               <dd className="text-right tabular-nums">
                 {formatCurrency(order.subtotal)}
               </dd>
-              <dt className="text-muted-foreground">Shipping</dt>
+              <dt className="text-muted-foreground">{t("shipping")}</dt>
               <dd className="text-right tabular-nums">
                 {formatCurrency(order.shipping)}
               </dd>
-              <dt className="text-muted-foreground">Tax</dt>
+              <dt className="text-muted-foreground">{t("tax")}</dt>
               <dd className="text-right tabular-nums">
                 {formatCurrency(order.tax)}
               </dd>
-              <dt className="font-medium">Total</dt>
+              <dt className="font-medium">{t("total")}</dt>
               <dd className="text-right font-medium tabular-nums">
                 {formatCurrency(order.total)}
               </dd>
@@ -308,7 +310,7 @@ export function OrderDetailDrawer({
           <section>
             <h3 className="text-muted-foreground mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide uppercase">
               <Truck className="size-3.5" aria-hidden />
-              Shipping updates
+              {t("shippingUpdates")}
             </h3>
             {shippingMethods.length > 0 ? (
               <div className="mb-2 flex flex-wrap gap-1">
@@ -330,33 +332,33 @@ export function OrderDetailDrawer({
               </p>
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="grid gap-1">
-                  <Label className="text-xs">Carrier</Label>
+                  <Label className="text-xs">{t("carrier")}</Label>
                   <Input
                     className="h-8 text-sm"
                     value={carrier}
                     disabled={!canWriteOrders}
                     onChange={(e) => setCarrier(e.target.value)}
-                    placeholder="DHL, Posti…"
+                    placeholder={t("carrierPlaceholder")}
                   />
                 </div>
                 <div className="grid gap-1">
-                  <Label className="text-xs">Tracking</Label>
+                  <Label className="text-xs">{t("tracking")}</Label>
                   <Input
                     className="h-8 text-sm"
                     value={tracking}
                     disabled={!canWriteOrders}
                     onChange={(e) => setTracking(e.target.value)}
-                    placeholder="Tracking number"
+                    placeholder={t("trackingPlaceholder")}
                   />
                 </div>
                 <div className="grid gap-1 sm:col-span-2">
-                  <Label className="text-xs">Status label</Label>
+                  <Label className="text-xs">{t("statusLabel")}</Label>
                   <Input
                     className="h-8 text-sm"
                     value={shipStatus}
                     disabled={!canWriteOrders}
                     onChange={(e) => setShipStatus(e.target.value)}
-                    placeholder="Picked up, In transit…"
+                    placeholder={t("statusLabelPlaceholder")}
                   />
                 </div>
               </div>
@@ -382,7 +384,7 @@ export function OrderDetailDrawer({
                   resetShipForm();
                 }}
               >
-                Record shipping update
+                {t("recordShippingUpdate")}
               </Button>
             </Card>
             {order.shippingHistory.length ? (
@@ -404,8 +406,7 @@ export function OrderDetailDrawer({
               </ul>
             ) : (
               <p className="text-muted-foreground mt-2 text-xs">
-                Tracking events from your carrier will appear here when they are
-                available for this order.
+                {t("noTrackingEvents")}
               </p>
             )}
           </section>
@@ -414,7 +415,7 @@ export function OrderDetailDrawer({
 
           <section className="min-h-0 flex-1">
             <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-              Order timeline
+              {t("orderTimeline")}
             </h3>
             <ul className="max-h-56 space-y-2 overflow-y-auto pr-1 text-xs">
               {order.timeline.map((ev) => (
@@ -440,8 +441,7 @@ export function OrderDetailDrawer({
             </ul>
             {!order.timeline.length ? (
               <p className="text-muted-foreground text-xs">
-                No timeline rows yet — open this order after status changes to
-                refresh history from the server.
+                {t("noTimeline")}
               </p>
             ) : null}
           </section>
@@ -459,7 +459,7 @@ export function OrderDetailDrawer({
               }
             >
               <FileText className="size-4" aria-hidden />
-              Invoice
+              {t("invoice")}
             </Button>
             <Button
               type="button"
@@ -473,7 +473,7 @@ export function OrderDetailDrawer({
               }
             >
               <Printer className="size-4" aria-hidden />
-              Packing slip
+              {t("packingSlip")}
             </Button>
           </div>
         </div>

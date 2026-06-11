@@ -2,25 +2,32 @@
 
 import type { ReactNode } from "react";
 
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useOnboardingWizardStore } from "@/store/onboarding-wizard-store";
 
 import { ActiveOnboardingStep } from "./onboarding-step-forms";
 import { OnboardingProgress } from "./onboarding-progress";
-import { ONBOARDING_STEP_COUNT, ONBOARDING_STEP_LABELS } from "./types";
+
 
 type OnboardingWizardProps = {
   actionsSlot?: ReactNode;
 };
 
 export function OnboardingWizard({ actionsSlot }: OnboardingWizardProps) {
+  const t = useTranslations("onboarding");
   const step = useOnboardingWizardStore((s) => s.step);
   const setStep = useOnboardingWizardStore((s) => s.setStep);
   const apiBusy = useOnboardingWizardStore((s) => s.apiBusy);
-  const label = ONBOARDING_STEP_LABELS[step] ?? ONBOARDING_STEP_LABELS[0];
   const isFirst = step === 0;
-  const _isLast = step === ONBOARDING_STEP_COUNT - 1;
+
+  const stepDescriptions = [
+    t("wizard.stepDescription0"),
+    t("wizard.stepDescription1"),
+    t("wizard.stepDescription2"),
+    t("wizard.stepDescription3"),
+  ];
 
   return (
     <div className="flex w-full max-w-3xl flex-col gap-6 animate-page-enter">
@@ -33,12 +40,11 @@ export function OnboardingWizard({ actionsSlot }: OnboardingWizardProps) {
       <Card className="glass-card shadow-glass border-border/60 p-5 md:p-7">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex flex-col gap-0.5">
-            <h2 className="text-lg font-semibold tracking-tight">{label}</h2>
+            <h2 className="text-lg font-semibold tracking-tight">
+              {t(`progress.stepLabel${step}`)}
+            </h2>
             <p className="text-muted-foreground text-xs">
-              {step === 0 && "Tell us about your business"}
-              {step === 1 && "Where is your business located?"}
-              {step === 2 && "Upload verification documents"}
-              {step === 3 && "Review and submit your application"}
+              {stepDescriptions[step]}
             </p>
           </div>
         </div>
@@ -54,7 +60,7 @@ export function OnboardingWizard({ actionsSlot }: OnboardingWizardProps) {
               disabled={isFirst || apiBusy}
               onClick={() => setStep(step - 1)}
             >
-              Back
+              {t("wizard.back")}
             </Button>
             <Button
               type="submit"
@@ -64,10 +70,10 @@ export function OnboardingWizard({ actionsSlot }: OnboardingWizardProps) {
               {apiBusy ? (
                 <span className="flex items-center gap-2">
                   <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Saving…
+                  {t("wizard.saving")}
                 </span>
               ) : (
-                "Continue"
+                t("wizard.continue")
               )}
             </Button>
           </div>

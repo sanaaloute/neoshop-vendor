@@ -1,10 +1,12 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useProductStats } from "@/hooks/use-product-stats";
 import { ProductsList } from "./products-list";
 
 export function ProductsHome() {
   const { stats, loading: statsLoading } = useProductStats();
+  const t = useTranslations("products");
 
   return (
     <div className="flex flex-col gap-4">
@@ -12,12 +14,12 @@ export function ProductsHome() {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {(
             [
-              ["Draft", stats.draft],
-              ["Pending", stats.pending_review],
-              ["Published", stats.published],
-              ["Hidden", stats.hidden],
-              ["Archived", stats.archived],
-              ["Rejected", stats.rejected],
+              [t("stats.draft"), stats.draft],
+              [t("stats.pending"), stats.pending_review],
+              [t("stats.published"), stats.published],
+              [t("stats.hidden"), stats.hidden],
+              [t("stats.archived"), stats.archived],
+              [t("stats.rejected"), stats.rejected],
             ] as const
           ).map(([label, count]) => (
             <div

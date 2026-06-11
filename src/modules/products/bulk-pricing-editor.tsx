@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useFieldArray, type Control } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -14,6 +15,7 @@ type BulkPricingEditorProps = {
 };
 
 export function BulkPricingEditor({ control }: BulkPricingEditorProps) {
+  const t = useTranslations("products");
   const { fields, append, remove } = useFieldArray({
     control,
     name: "bulkPricing",
@@ -22,7 +24,7 @@ export function BulkPricingEditor({ control }: BulkPricingEditorProps) {
   return (
     <div className="grid gap-2">
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium">Bulk pricing</Label>
+        <Label className="text-sm font-medium">{t("bulkPricing")}</Label>
         <Button
           type="button"
           variant="outline"
@@ -30,13 +32,13 @@ export function BulkPricingEditor({ control }: BulkPricingEditorProps) {
           onClick={() => append({ minQuantity: 100, unitPrice: 0 })}
         >
           <Plus className="mr-1 size-3.5" />
-          Add tier
+          {t("addTier")}
         </Button>
       </div>
 
       {fields.length === 0 ? (
         <p className="text-muted-foreground text-xs">
-          No bulk pricing tiers. Add tiers to offer volume discounts.
+          {t("noBulkPricingTiers")}
         </p>
       ) : (
         <div className="flex flex-col gap-2">
@@ -44,7 +46,7 @@ export function BulkPricingEditor({ control }: BulkPricingEditorProps) {
             <div key={field.id} className="flex items-end gap-2">
               <div className="grid flex-1 gap-1">
                 <Label className="text-muted-foreground text-[10px] uppercase tracking-wide">
-                  Min qty
+                  {t("minQty")}
                 </Label>
                 <Input
                   type="number"
@@ -59,7 +61,7 @@ export function BulkPricingEditor({ control }: BulkPricingEditorProps) {
               </div>
               <div className="grid flex-1 gap-1">
                 <Label className="text-muted-foreground text-[10px] uppercase tracking-wide">
-                  Unit price
+                  {t("unitPrice")}
                 </Label>
                 <Input
                   type="number"
@@ -78,7 +80,7 @@ export function BulkPricingEditor({ control }: BulkPricingEditorProps) {
                 size="icon-sm"
                 className="text-destructive mb-0.5"
                 onClick={() => remove(index)}
-                title="Remove tier"
+                title={t("removeTier")}
               >
                 <Trash2 className="size-4" />
               </Button>

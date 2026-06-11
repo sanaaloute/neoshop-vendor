@@ -14,11 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-const locales = [
-  { code: "en", label: "English" },
-  { code: "fr", label: "Français" },
-  { code: "zh", label: "中文" },
-] as const;
+const localeCodes = ["en", "fr", "zh"] as const;
 
 export function LanguageSwitcher({ className }: { className?: string }) {
   const router = useRouter();
@@ -47,16 +43,16 @@ export function LanguageSwitcher({ className }: { className?: string }) {
         }
       />
       <DropdownMenuContent align="end">
-        {locales.map((loc) => (
+        {localeCodes.map((loc) => (
           <DropdownMenuItem
-            key={loc.code}
-            onClick={() => switchLocale(loc.code)}
+            key={loc}
+            onClick={() => switchLocale(loc)}
             className={cn(
               "cursor-pointer",
-              locale === loc.code && "bg-primary/10 font-medium"
+              locale === loc && "bg-primary/10 font-medium"
             )}
           >
-            {loc.label}
+            {t(loc)}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

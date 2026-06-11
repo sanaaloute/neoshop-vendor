@@ -2,23 +2,26 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ShieldOff } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import type { VendorPermission } from "@/lib/vendor-permissions";
 
-const LABELS: Record<VendorPermission, string> = {
-  products: "Products & catalog",
-  orders: "Orders",
-  payouts: "Payouts",
-  analytics: "Analytics",
-  chat: "Messages",
-};
-
 export function AccessDeniedContent() {
+  const t = useTranslations("accessDenied");
   const params = useSearchParams();
   const required = params.get("required") as VendorPermission | null;
-  const label = required && LABELS[required] ? LABELS[required] : "this area";
+
+  const labelMap: Record<VendorPermission, string> = {
+    products: t("productsAndCatalog"),
+    orders: t("orders"),
+    payouts: t("payouts"),
+    analytics: t("analytics"),
+    chat: t("chat"),
+  };
+
+  const label = required && labelMap[required] ? labelMap[required] : t("thisArea");
 
   return (
     <div className="mx-auto flex max-w-lg flex-col items-center gap-6 px-4 py-16 text-center">
@@ -27,16 +30,14 @@ export function AccessDeniedContent() {
       </div>
       <div className="space-y-2">
         <h1 className="text-xl font-semibold tracking-tight">
-          You don&apos;t have access
+          {t("title")}
         </h1>
         <p className="text-muted-foreground text-sm">
-          Your role doesn&apos;t include permission for{" "}
-          <span className="text-foreground font-medium">{label}</span>. Ask an
-          owner or manager to update your access.
+          {t("description", { area: label })}
         </p>
       </div>
       <Link href="/dashboard" className={buttonVariants()}>
-        Back to dashboard
+        {t("backToDashboard")}
       </Link>
     </div>
   );

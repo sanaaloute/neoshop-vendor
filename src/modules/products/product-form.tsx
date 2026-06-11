@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Controller,
@@ -78,6 +79,7 @@ export function ProductForm({
   onValuesSnapshot,
   onSavingChange,
 }: ProductFormProps) {
+  const t = useTranslations("products");
   const { canWriteCatalog } = useVendorWritesAllowed();
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
@@ -293,9 +295,7 @@ export function ProductForm({
   const saveToCatalog = form.handleSubmit(async (v) => {
     setSaveError(null);
     if (!canWriteCatalog) {
-      setSaveError(
-        "Catalog changes unlock after Barkosem approves your vendor account."
-      );
+      setSaveError(t("catalogLocked"));
       return;
     }
     if (getApiBaseUrl()) {
@@ -314,7 +314,7 @@ export function ProductForm({
           onSuccess?.(p.id);
         }
       } catch (e) {
-        setSaveError(httpErrorMessageForUser(e, "Could not save. Try again."));
+        setSaveError(httpErrorMessageForUser(e, t("couldNotSave")));
       } finally {
         setSaving(false);
       }
@@ -334,9 +334,7 @@ export function ProductForm({
     form.reset(next);
     setSaveError(null);
     if (!canWriteCatalog) {
-      setSaveError(
-        "Catalog changes unlock after Barkosem approves your vendor account."
-      );
+      setSaveError(t("catalogLocked"));
       return;
     }
     if (getApiBaseUrl()) {
@@ -357,7 +355,7 @@ export function ProductForm({
         }
       } catch (e) {
         setSaveError(
-          httpErrorMessageForUser(e, "Could not submit for review. Try again.")
+          httpErrorMessageForUser(e, t("couldNotSubmitReview"))
         );
       } finally {
         setSaving(false);
@@ -383,7 +381,7 @@ export function ProductForm({
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <ImageIcon className="size-4 text-primary" />
-              Product Gallery
+              {t("productGallery")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -408,14 +406,14 @@ export function ProductForm({
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <Sparkles className="size-4 text-primary" />
-              Product Details
+              {t("productDetails")}
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-5">
             <VendorTextField
               control={form.control}
               name="name"
-              label="Product Name"
+              label={t("productName")}
               placeholder="Wholesale ceramic mugs"
             />
             <div className="grid gap-4 md:grid-cols-1">
@@ -424,7 +422,7 @@ export function ProductForm({
                 name="moq"
                 render={({ field, fieldState }) => (
                   <div className="grid gap-1.5">
-                    <Label htmlFor={field.name}>MOQ</Label>
+                    <Label htmlFor={field.name}>{t("moq")}</Label>
                     <Input
                       id={field.name}
                       type="number"
@@ -459,7 +457,7 @@ export function ProductForm({
               name="description"
               render={({ field, fieldState }) => (
                 <div className="grid gap-1.5">
-                  <Label htmlFor={field.name}>Description</Label>
+                  <Label htmlFor={field.name}>{t("description")}</Label>
                   <Textarea
                     id={field.name}
                     rows={5}
@@ -483,7 +481,7 @@ export function ProductForm({
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <FolderOpen className="size-4 text-primary" />
-              Categories
+              {t("categories")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -503,10 +501,10 @@ export function ProductForm({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <VendorMuted className="text-xs">
                 {saving
-                  ? "Saving…"
+                  ? t("saving")
                   : catalogProductId
-                    ? "Update your product changes."
-                    : "Changes are auto-saved locally. Submit when ready."}
+                    ? t("updateProductChanges")
+                    : t("autoSavedLocally")}
               </VendorMuted>
               <div className="flex flex-wrap gap-2">
                 {catalogProductId ? (
@@ -517,7 +515,7 @@ export function ProductForm({
                     className="gap-1.5"
                   >
                     <Check className="size-4" />
-                    Update
+                    {t("update")}
                   </Button>
                 ) : (
                   <>
@@ -529,7 +527,7 @@ export function ProductForm({
                       className="gap-1.5"
                     >
                       <Save className="size-4" />
-                      Save Draft
+                      {t("saveDraft")}
                     </Button>
                     <Button
                       type="button"
@@ -538,7 +536,7 @@ export function ProductForm({
                       className="gap-1.5"
                     >
                       <Send className="size-4" />
-                      Submit Review
+                      {t("submitReview")}
                     </Button>
                   </>
                 )}
@@ -553,6 +551,7 @@ export function ProductForm({
 
 /* ─── Modern Category Selector ─── */
 function CategorySelector() {
+  const t = useTranslations("products");
   const {
     setValue,
     watch,
@@ -573,7 +572,7 @@ function CategorySelector() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <Input
-          placeholder="Search categories…"
+          placeholder={t("searchCategories")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9"
@@ -582,11 +581,11 @@ function CategorySelector() {
       <div className="flex flex-wrap gap-2">
         {categories.length === 0 ? (
           <p className="text-muted-foreground text-xs">
-            No categories available. Categories are loaded from the server.
+            {t("noCategoriesAvailable")}
           </p>
         ) : filtered.length === 0 ? (
           <p className="text-muted-foreground text-xs">
-            No categories match your search.
+            {t("noCategoriesMatch")}
           </p>
         ) : (
           filtered.map((c) => {
@@ -633,6 +632,7 @@ function CategorySelector() {
 
 /* ─── Collapsible SEO Section ─── */
 function SeoSection() {
+  const t = useTranslations("products");
   const [open, setOpen] = useState(false);
   const { control, setValue, getValues } = useFormContext<ProductFormValues>();
 
@@ -646,10 +646,10 @@ function SeoSection() {
         <div className="flex items-center gap-2">
           <Search className="size-4 text-primary" />
           <CardTitle className="text-base font-semibold">
-            SEO Settings
+            {t("seoSettings")}
           </CardTitle>
           <span className="text-xs text-muted-foreground ml-1">
-            (Optional)
+            ({t("optional")})
           </span>
         </div>
         {open ? (
@@ -665,7 +665,7 @@ function SeoSection() {
               <VendorTextField
                 control={control}
                 name="seo.slug"
-                label="URL Slug"
+                label={t("urlSlug")}
                 placeholder="wholesale-ceramic-mugs"
               />
             </div>
@@ -683,7 +683,7 @@ function SeoSection() {
                 }
               }}
             >
-              From name
+              {t("fromName")}
             </Button>
           </div>
         </CardContent>

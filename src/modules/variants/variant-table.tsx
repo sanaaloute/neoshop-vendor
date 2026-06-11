@@ -1,6 +1,7 @@
 "use client";
 
 import type { ComponentProps } from "react";
+import { useTranslations } from "next-intl";
 
 import { formatCurrency } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
@@ -52,17 +53,17 @@ function ComboBadges({
   );
 }
 
-function StatusBadge({ isLocalOnly }: { isLocalOnly?: boolean }) {
+function StatusBadge({ isLocalOnly, t }: { isLocalOnly?: boolean; t: ReturnType<typeof useTranslations> }) {
   if (isLocalOnly) {
     return (
       <Badge variant="outline" className="text-[10px] font-normal text-amber-600 border-amber-200">
-        New
+        {t("newStatus")}
       </Badge>
     );
   }
   return (
     <Badge variant="outline" className="text-[10px] font-normal text-emerald-600 border-emerald-200">
-      Saved
+      {t("savedStatus")}
     </Badge>
   );
 }
@@ -80,6 +81,7 @@ export function VariantTable({
   onToggleAll,
   onDelete,
 }: VariantTableProps) {
+  const t = useTranslations("variants");
   const variants = useVariantWorkbenchStore((s) => s.variants);
   const attributes = useVariantWorkbenchStore((s) => s.attributes);
   const updateVariant = useVariantWorkbenchStore((s) => s.updateVariant);
@@ -89,8 +91,7 @@ export function VariantTable({
   if (!variants.length) {
     return (
       <Card className="border-border/80 bg-muted/15 text-muted-foreground border-dashed p-8 text-center text-sm shadow-inner">
-        No variants yet. Add attributes above, then click{" "}
-        <strong>Generate matrix</strong>.
+        {t("noVariantsYet", { strong: t("generateMatrix") })}
       </Card>
     );
   }
@@ -107,17 +108,17 @@ export function VariantTable({
                   className="accent-primary size-4"
                   checked={allSelected}
                   onChange={onToggleAll}
-                  aria-label="Select all variants"
+                  aria-label={t("selectAll")}
                 />
               </TableHead>
-              <TableHead className="min-w-[200px]">Combination</TableHead>
-              <TableHead className="w-14">Image</TableHead>
-              <TableHead className="w-20">Stock</TableHead>
-              <TableHead className="w-24">Price</TableHead>
-              <TableHead className="w-20">Weight g (optional)</TableHead>
-              <TableHead className="min-w-[120px]">L×W×H cm (optional)</TableHead>
-              <TableHead className="min-w-[120px]">Barcode (optional)</TableHead>
-              <TableHead className="w-10 text-right">Actions</TableHead>
+              <TableHead className="min-w-[200px]">{t("combination")}</TableHead>
+              <TableHead className="w-14">{t("image")}</TableHead>
+              <TableHead className="w-20">{t("stock")}</TableHead>
+              <TableHead className="w-24">{t("price")}</TableHead>
+              <TableHead className="w-20">{t("weightGramsOptional")}</TableHead>
+              <TableHead className="min-w-[120px]">{t("dimensionsOptional")}</TableHead>
+              <TableHead className="min-w-[120px]">{t("barcodeOptionalCol")}</TableHead>
+              <TableHead className="w-10 text-right">{t("actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -132,13 +133,13 @@ export function VariantTable({
                     className="accent-primary size-4"
                     checked={selected.has(row.id)}
                     onChange={() => onToggle(row.id)}
-                    aria-label="Select variant"
+                    aria-label={t("selectAll")}
                   />
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <ComboBadges row={row} defs={attributes} />
-                    <StatusBadge isLocalOnly={row.isLocalOnly} />
+                    <StatusBadge isLocalOnly={row.isLocalOnly} t={t} />
                   </div>
                 </TableCell>
                 <TableCell>
@@ -198,7 +199,7 @@ export function VariantTable({
                     <Input
                       type="number"
                       className="h-8 w-10 px-0.5 text-center text-[10px] tabular-nums"
-                      title="Length cm"
+                      title={t("lengthCm")}
                       value={row.lengthCm}
                       onChange={(e) =>
                         updateVariant(row.id, {
@@ -212,7 +213,7 @@ export function VariantTable({
                     <Input
                       type="number"
                       className="h-8 w-10 px-0.5 text-center text-[10px] tabular-nums"
-                      title="Width cm"
+                      title={t("widthCm")}
                       value={row.widthCm}
                       onChange={(e) =>
                         updateVariant(row.id, {
@@ -226,7 +227,7 @@ export function VariantTable({
                     <Input
                       type="number"
                       className="h-8 w-10 px-0.5 text-center text-[10px] tabular-nums"
-                      title="Height cm"
+                      title={t("heightCm")}
                       value={row.heightCm}
                       onChange={(e) =>
                         updateVariant(row.id, {
@@ -254,7 +255,7 @@ export function VariantTable({
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      title="Delete variant"
+                      title={t("deleteVariant")}
                       onClick={() => onDelete(row.id)}
                     >
                       <Trash2 className="size-4" aria-hidden />
@@ -267,13 +268,12 @@ export function VariantTable({
         </Table>
       </div>
       <div className="border-border bg-muted/20 text-muted-foreground border-t px-3 py-2 text-xs">
-        {variants.length} row{variants.length === 1 ? "" : "s"} · quick price
-        check:{" "}
+        {t("rowsCount", { count: variants.length })} · {t("quickPriceCheck")}:{" "}
         {formatCurrency(
           variants.reduce((s, r) => s + r.price, 0) /
             Math.max(1, variants.length)
         )}{" "}
-        avg price
+        {t("avgPrice")}
       </div>
     </Card>
   );

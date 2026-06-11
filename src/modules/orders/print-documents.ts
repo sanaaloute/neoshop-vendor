@@ -1,5 +1,4 @@
 import type { VendorOrder } from "./types";
-import { statusLabel } from "./workflow";
 
 function esc(s: string) {
   return s
@@ -16,6 +15,19 @@ function money(n: number) {
   }).format(n);
 }
 
+function printStatusLabel(s: string) {
+  switch (s) {
+    case "pending": return "Pending";
+    case "paid": return "Paid";
+    case "processing": return "Processing";
+    case "shipped": return "Shipped";
+    case "delivered": return "Delivered";
+    case "disputed": return "Disputed";
+    case "refunded": return "Refunded";
+    default: return s;
+  }
+}
+
 export function buildInvoiceHtml(order: VendorOrder) {
   const rows = order.lines
     .map(
@@ -27,7 +39,7 @@ export function buildInvoiceHtml(order: VendorOrder) {
     <h1>Invoice</h1>
     <p><strong>${esc(order.reference)}</strong> · ${esc(order.id)}</p>
     <p>Bill to: ${esc(order.customerName)} &lt;${esc(order.customerEmail)}&gt;</p>
-    <p>Status: ${esc(statusLabel(order.status))}</p>
+    <p>Status: ${esc(printStatusLabel(order.status))}</p>
     <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;margin-top:16px">
       <thead><tr><th>SKU</th><th>Description</th><th align="right">Qty</th><th align="right">Unit</th><th align="right">Line</th></tr></thead>
       <tbody>${rows}</tbody>

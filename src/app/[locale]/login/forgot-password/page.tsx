@@ -39,9 +39,9 @@ export default function ForgotPasswordPage() {
     <main className="flex min-h-dvh items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle>Reset your password</CardTitle>
+          <CardTitle>{t("resetPasswordTitle")}</CardTitle>
           <CardDescription>
-            Enter your email and we&apos;ll send you a reset link.
+            {t("resetPasswordDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -72,9 +72,7 @@ export default function ForgotPasswordPage() {
                 }
                 try {
                   await postAuthForgotPassword({ email: values.email });
-                  setSuccess(
-                    "If an account exists with this email, you will receive a password reset link."
-                  );
+                  setSuccess(t("resetPasswordSuccess"));
                 } catch (e) {
                   const msg = getAuthErrorMessage(e) || te("couldNotSendReset");
                   if (msg.includes("Too many requests")) {
@@ -108,7 +106,7 @@ export default function ForgotPasswordPage() {
                       ? t("saving")
                       : !rateLimit.canRequest
                         ? t("retryIn", { seconds: rateLimit.remainingSeconds })
-                        : "Send reset link"}
+                        : t("sendResetLink")}
                   </Button>
                   <Button
                     type="button"
