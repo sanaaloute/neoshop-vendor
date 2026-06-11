@@ -67,10 +67,8 @@ export function GeoPieChart({
             }}
             formatter={(value, _name, item) => {
               const n = typeof value === "number" ? value : Number(value ?? 0);
-              return [
-                formatCurrency(Number.isFinite(n) ? n : 0),
-                String(item.payload?.name ?? ""),
-              ];
+              const safe = Number.isFinite(n) ? n : 0;
+              return [formatCurrency(safe), String(item.payload?.name ?? "")];
             }}
           />
         </PieChart>

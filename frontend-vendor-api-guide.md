@@ -205,7 +205,7 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
   "title?": "string",
   "slug?": "string",
   "description?": "string",
-  "status?": "draft" | "hidden" | "archived" | "published",
+  "status?": "draft" | "pending_review" | "hidden",
   "moq?": 1,
   "bulkPricing?": [
     { "minQuantity": 100, "unitPrice": 20.00 }
@@ -213,7 +213,7 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 }
 ```
 
-**Note:** Vendors may set `draft`, `hidden`, `archived`, or `published`. Selecting `published` is only allowed when the product is already in `published` status (admin-approved). Initial publication and the `rejected` status can only be set by an administrator.
+**Note:** Vendors may set `draft`, `pending_review`, or `hidden`. Sending back the current status (e.g., `published`) is allowed as a no-op. Products that are already `published` can only be moved to `hidden` by vendors. Initial publication, `rejected`, and `archived` statuses can only be set by an administrator.
 
 ---
 
@@ -493,7 +493,36 @@ Inventory is managed under `/inventory/variants`.
 
 **Auth:** `VENDOR_CUSTOMERS_READ`
 
-**Response:** Unique customers who ordered from this vendor.
+**Response:** Unique customers who ordered from this vendor, including lifetime spend and purchased products.
+
+```json
+{
+  "items": [
+    {
+      "userId": "uuid",
+      "name": "string | null",
+      "surname": "string | null",
+      "email": "string | null",
+      "phone": "string | null",
+      "orderCount": 5,
+      "totalSpent": "1234.56",
+      "products": [
+        {
+          "productId": "uuid",
+          "title": "string",
+          "totalQuantity": 10,
+          "totalSpent": "500.00"
+        }
+      ]
+    }
+  ]
+}
+```
+
+- `orderCount` — total number of orders placed by this customer with the authenticated vendor.
+- `totalSpent` — sum of all order grand-totals for this customer with the vendor.
+- `products` — list of distinct products purchased by this customer from the vendor, sorted by highest product spend first. Each entry aggregates quantity and spend across all orders.
+- Soft-deleted users are excluded. Deleted orders are excluded.
 
 ---
 
@@ -548,11 +577,120 @@ Inventory is managed under `/inventory/variants`.
 
 ## Vendor Analytics
 
-| Method | Path | Auth | Query |
-|--------|------|------|-------|
-| `GET` | `/vendors/me/analytics/dashboard` | `VENDOR_ANALYTICS_READ` | — |
-| `GET` | `/vendors/me/analytics/orders` | `VENDOR_ANALYTICS_READ` | `days?` (default 30) |
-| `GET` | `/vendors/me/analytics/products` | `VENDOR_ANALYTICS_READ` | — |
+All analytics endpoints require the `vendor` role + `VENDOR_ANALYTICS_READ` permission.
+
+### `GET /vendors/me/analytics/dashboard`
+
+Returns KPIs, status breakdown, top products, and new dashboard widgets.
+
+```json
+{
+  "totalRevenue": "125000.0000",
+  "totalOrders": 450,
+  "totalCustomers": 120,
+  "averageOrderValue": "277.78",
+  "pendingOrders": 5,
+  "processingOrders": 8,
+  "shippedOrders": 12,
+  "deliveredOrders": 420,
+  "disputedOrders": 2,
+  "topProducts": [
+    {
+      "variantId": "uuid",
+      "productTitle": "string",
+      "quantitySold": 100,
+      "revenue": "5000.0000"
+    }
+  ],
+  "period": "30d",
+  "geographic": [
+    {
+      "countryCode": "CN",
+      "name": "CN",
+      "revenue": "12500.0000",
+      "orderCount": 45
+    }
+  ],
+  "retentionSeries": [
+    {
+      "period": "2024-01",
+      "label": "Jan",
+      "returningCustomers": 12,
+      "totalCustomers": 45,
+      "rate": 0.27
+    }
+  ],
+  "conversionRate": 3.5,
+  "conversionTrend": [
+    { "label": "Jun 1", "value": 3.2 },
+    { "label": "Jun 2", "value": 3.5 }
+  ]
+}
+```
+
+- `geographic` is grouped by `Order.shippingAddress.country`. Missing addresses appear as `UNKNOWN`.
+- `retentionSeries` counts a customer as "returning" in a month if they had ordered in any earlier month.
+- `conversionRate` / `conversionTrend` are a **proxy** based on logged-in users who viewed any of the vendor's products vs. those who placed an order. It is not a full anonymous funnel.
+
+### `GET /vendors/me/analytics/orders`
+
+**Query:** `days?` (default 30)
+
+Returns daily order count and revenue.
+
+```json
+{
+  "items": [
+    { "date": "2024-06-01", "orders": 5, "revenue": "1200.00" }
+  ]
+}
+```
+
+### `GET /vendors/me/analytics/products`
+
+Returns product performance summary (up to 100 products).
+
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "title": "string",
+      "slug": "string",
+      "status": "published",
+      "imageUrl": "string | null",
+      "variantCount": 3,
+      "averageRating": 4.5,
+      "reviewsCount": 12,
+      "totalSold": 45,
+      "totalRevenue": "1200.00"
+    }
+  ]
+}
+```
+
+### `GET /vendors/me/analytics/inventory`
+
+**Query:** `days?` (default 30)
+
+Returns daily units sold vs. restocked.
+
+```json
+{
+  "items": [
+    {
+      "date": "2024-06-01",
+      "label": "Jun 1",
+      "unitsSold": 45,
+      "restocked": 60
+    }
+  ]
+}
+```
+
+- `unitsSold` is derived from `OrderItem` quantities for orders placed in the window.
+- `restocked` is derived from `InventoryAdjustment` records with positive quantity and reason `restock` or `return`.
+- Historical restocked data is only available from the point this model was introduced; older restocks show as `0`.
 
 ---
 

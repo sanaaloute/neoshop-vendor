@@ -332,29 +332,87 @@ export type CapturePaymentDto = {
 // --- Analytics ---
 
 export type AnalyticsDashboardResponse = {
-  totalRevenue: number;
+  totalRevenue: number | string;
   totalOrders: number;
-  averageOrderValue: number;
+  totalCustomers?: number;
+  averageOrderValue: number | string;
+  pendingOrders?: number;
+  processingOrders?: number;
+  shippedOrders?: number;
+  deliveredOrders?: number;
+  disputedOrders?: number;
   topProducts: Array<{
-    productId: string;
-    title: string;
-    soldCount: number;
+    productId?: string;
+    variantId?: string;
+    title?: string;
+    productTitle?: string;
+    soldCount?: number;
+    quantitySold?: number;
+    revenue?: number | string;
   }>;
   period: string;
+  geographic?: Array<{
+    countryCode: string;
+    name: string;
+    revenue: number | string;
+    orderCount: number;
+  }>;
+  retentionSeries?: Array<{
+    period: string;
+    label: string;
+    returningCustomers: number;
+    totalCustomers: number;
+    rate: number;
+  }>;
+  conversionRate?: number;
+  conversionTrend?: Array<{
+    label: string;
+    value: number;
+  }>;
 };
 
 export type AnalyticsOrdersTrendItem = {
   date: string;
-  orderCount: number;
-  revenue: number;
+  /** Backend may return `orders` or `orderCount` depending on version. */
+  orders?: number;
+  orderCount?: number;
+  revenue: number | string;
+};
+
+export type AnalyticsOrdersResponse = {
+  items: AnalyticsOrdersTrendItem[];
 };
 
 export type AnalyticsProductsItem = {
-  productId: string;
+  productId?: string;
+  id?: string;
   title: string;
-  views: number;
-  orders: number;
-  conversionRate: number;
+  slug?: string;
+  views?: number;
+  orders?: number;
+  totalSold?: number;
+  conversionRate?: number;
+  imageUrl?: string | null;
+  variantCount?: number;
+  averageRating?: number;
+  reviewsCount?: number;
+  totalRevenue?: number | string;
+  status?: ApiProductStatus;
+};
+
+export type AnalyticsProductsResponse = {
+  items: AnalyticsProductsItem[];
+};
+
+export type AnalyticsInventoryItem = {
+  date: string;
+  label: string;
+  unitsSold: number;
+  restocked: number;
+};
+
+export type AnalyticsInventoryResponse = {
+  items?: AnalyticsInventoryItem[];
 };
 
 // --- Reviews ---

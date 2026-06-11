@@ -190,7 +190,7 @@ export function AnalyticsHome() {
               Catalog
             </DashboardCardDescription>
             <DashboardCardTitle className="text-base">
-              Category performance
+              Top performing products
             </DashboardCardTitle>
           </DashboardCardHeader>
           <DashboardCardContent className="px-2 pt-4 pb-4 sm:px-4">

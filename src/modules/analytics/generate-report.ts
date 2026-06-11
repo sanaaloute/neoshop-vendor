@@ -20,7 +20,10 @@ const MONTHS = [
 export function emptyAnalyticsReport(
   preset: AnalyticsDatePreset
 ): AnalyticsReport {
-  const z = DAYS.map((label) => ({ label, value: 0 }));
+  const daily = DAYS.map((label) => ({ label, value: 0 }));
+  const monthly = MONTHS.slice(0, 12).map((label) => ({ label, value: 0 }));
+  const isMonthly = preset === "12m";
+  const z = isMonthly ? monthly : daily;
   return {
     preset,
     rangeLabel: "Report unavailable",
@@ -29,10 +32,7 @@ export function emptyAnalyticsReport(
     conversionRate: 0,
     conversionTrend: z,
     categoryPerformance: [],
-    retentionSeries: MONTHS.slice(0, 12).map((label) => ({
-      label,
-      value: 0,
-    })),
+    retentionSeries: monthly,
     velocitySeries: z,
     orderVolume: z,
     geographic: [],
