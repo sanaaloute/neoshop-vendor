@@ -282,7 +282,7 @@ export function VariantMatrixPanel() {
                   type="button"
                   className="border-border bg-muted/60 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
                   onClick={() => removeValueFromAttribute(attr.id, v)}
-                  title="Click to remove"
+                  title={t("clickToRemove")}
                 >
                   {v}
                   <span className="text-muted-foreground">×</span>

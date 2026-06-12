@@ -34,7 +34,13 @@
     "expandSidebar": "Développer le menu",
     "collapseSidebar": "Réduire le menu",
     "expandSidebarShortcut": "Développer le menu (⌘B / Ctrl+B)",
-    "collapseSidebarShortcut": "Réduire le menu (⌘B / Ctrl+B)"
+    "collapseSidebarShortcut": "Réduire le menu (⌘B / Ctrl+B)",
+    "searchPlaceholder": "Rechercher commandes, SKU, acheteurs…",
+    "globalSearch": "Recherche globale",
+    "openNavigation": "Ouvrir la navigation",
+    "breadcrumb": "Fil d'Ariane",
+    "brandName": "Barkosem",
+    "brandNameFull": "Tableau de bord vendeur Barkosem"
   },
   "auth": {
     "signIn": "Connexion vendeur",
@@ -204,6 +210,7 @@
     "documentUrlRequired": "L'URL du document est requise.",
     "couldNotAddDocument": "Impossible d'ajouter le document.",
     "couldNotRemoveDocument": "Impossible de supprimer le document.",
+    "documentFallback": "Document",
     "couldNotSubmitVerification": "Impossible de soumettre la vérification."
   },
   "errors": {
@@ -256,6 +263,7 @@
     "syncing": "Synchronisation…",
     "liveData": "Données en direct",
     "dataUnavailable": "Données indisponibles",
+    "reportUnavailableRaw": "Rapport indisponible",
     "revenueRange": "Revenus (période)",
     "conversionRate": "Taux de conversion",
     "orderVolume": "Volume de commandes",
@@ -708,10 +716,13 @@
     "seoSettings": "Paramètres SEO",
     "optional": "Optionnel",
     "urlSlug": "Slug URL",
+    "urlSlugPlaceholder": "mugs-ceramique-gros",
     "fromName": "Depuis le nom",
     "productName": "Nom du produit",
+    "productNamePlaceholder": "Mugs en céramique en gros",
     "moq": "MOQ",
     "description": "Description",
+    "descriptionPlaceholder": "Spécifications, MOQ, délais, emballage…",
     "bulkPricing": "Prix en gros",
     "addTier": "Ajouter un palier",
     "noBulkPricingTiers": "Aucun palier de prix en gros. Ajoutez des paliers pour offrir des remises sur volume.",
@@ -854,6 +865,9 @@
     "bulkUpdate": "Mise à jour groupée ({count} sélectionné{count, plural, one {} other {s}})",
     "weightOptional": "Poids g (optionnel)",
     "barcodeOptional": "Code-barres (optionnel)",
+    "barcodePlaceholder": "optionnel",
+    "dashPlaceholder": "—",
+    "clickToRemove": "Cliquez pour supprimer",
     "apply": "Appliquer",
     "clear": "Effacer",
     "selectVariantImage": "Sélectionner l'image de la variante",
@@ -1022,7 +1036,8 @@
       "returns": "Retours",
       "business": "Entreprise",
       "verification": "Vérification",
-      "payout": "Paiement"
+      "payout": "Paiement",
+      "ariaLabel": "Sections des paramètres de la boutique"
     },
     "saveChanges": "Enregistrer les modifications",
     "resetToDefaults": "Réinitialiser aux valeurs par défaut",
@@ -1045,6 +1060,8 @@
       "title": "Profil de la boutique",
       "description": "Identité publique de la vitrine",
       "shopName": "Nom de la boutique",
+      "defaultShopName": "Ma boutique",
+      "defaultShopSlug": "ma-boutique",
       "slug": "Slug URL",
       "previewPublicPage": "Aperçu de la page publique",
       "tagline": "Slogan",
@@ -1054,7 +1071,9 @@
       "title": "Logo & bannière",
       "description": "Image de marque visuelle",
       "logo": "Logo",
-      "banner": "Bannière"
+      "logoAlt": "Logo de la boutique",
+      "banner": "Bannière",
+      "bannerAlt": "Bannière de la boutique"
     },
     "shipping": {
       "title": "Règles d'expédition",
@@ -1062,6 +1081,7 @@
       "processingMin": "Délai de traitement (min jours)",
       "processingMax": "Délai de traitement (max jours)",
       "freeThreshold": "Seuil de livraison gratuite (CNY)",
+      "freeThresholdPlaceholder": "Aucun",
       "carrierNotes": "Notes sur les transporteurs"
     },
     "returns": {

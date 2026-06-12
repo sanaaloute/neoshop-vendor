@@ -414,7 +414,7 @@ export function ProductForm({
               control={form.control}
               name="name"
               label={t("productName")}
-              placeholder="Wholesale ceramic mugs"
+              placeholder={t("productNamePlaceholder")}
             />
             <div className="grid gap-4 md:grid-cols-1">
               <Controller
@@ -462,7 +462,7 @@ export function ProductForm({
                     id={field.name}
                     rows={5}
                     aria-invalid={fieldState.invalid}
-                    placeholder="Specs, MOQ, lead times, packaging…"
+                    placeholder={t("descriptionPlaceholder")}
                     {...field}
                   />
                   {fieldState.error?.message ? (
@@ -666,7 +666,7 @@ function SeoSection() {
                 control={control}
                 name="seo.slug"
                 label={t("urlSlug")}
-                placeholder="wholesale-ceramic-mugs"
+                placeholder={t("urlSlugPlaceholder")}
               />
             </div>
             <Button

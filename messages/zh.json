@@ -34,7 +34,13 @@
     "expandSidebar": "展开侧边栏",
     "collapseSidebar": "收起侧边栏",
     "expandSidebarShortcut": "展开侧边栏 (⌘B / Ctrl+B)",
-    "collapseSidebarShortcut": "收起侧边栏 (⌘B / Ctrl+B)"
+    "collapseSidebarShortcut": "收起侧边栏 (⌘B / Ctrl+B)",
+    "searchPlaceholder": "搜索订单、SKU、买家…",
+    "globalSearch": "全局搜索",
+    "openNavigation": "打开导航",
+    "breadcrumb": "面包屑导航",
+    "brandName": "Barkosem",
+    "brandNameFull": "Barkosem 商家后台"
   },
   "auth": {
     "signIn": "商家登录",
@@ -204,6 +210,7 @@
     "documentUrlRequired": "文件链接为必填项。",
     "couldNotAddDocument": "无法添加文件。",
     "couldNotRemoveDocument": "无法删除文件。",
+    "documentFallback": "文件",
     "couldNotSubmitVerification": "无法提交认证。"
   },
   "errors": {
@@ -256,6 +263,7 @@
     "syncing": "同步中…",
     "liveData": "实时数据",
     "dataUnavailable": "数据不可用",
+    "reportUnavailableRaw": "报告不可用",
     "revenueRange": "收入（范围）",
     "conversionRate": "转化率",
     "orderVolume": "订单量",
@@ -708,10 +716,13 @@
     "seoSettings": "SEO设置",
     "optional": "可选",
     "urlSlug": "URL标识",
+    "urlSlugPlaceholder": "wholesale-ceramic-mugs",
     "fromName": "从名称生成",
     "productName": "商品名称",
+    "productNamePlaceholder": "批发陶瓷杯",
     "moq": "最小起订量",
     "description": "描述",
+    "descriptionPlaceholder": "规格、最小起订量、交货时间、包装…",
     "bulkPricing": "批量定价",
     "addTier": "添加层级",
     "noBulkPricingTiers": "暂无批量定价层级。添加层级以提供批量折扣。",
@@ -854,6 +865,9 @@
     "bulkUpdate": "批量更新（已选 {count} 项）",
     "weightOptional": "重量(g)（可选）",
     "barcodeOptional": "条码（可选）",
+    "barcodePlaceholder": "可选",
+    "dashPlaceholder": "—",
+    "clickToRemove": "点击移除",
     "apply": "应用",
     "clear": "清除",
     "selectVariantImage": "选择变体图片",
@@ -1022,7 +1036,8 @@
       "returns": "退货",
       "business": "企业",
       "verification": "认证",
-      "payout": "提现"
+      "payout": "提现",
+      "ariaLabel": "店铺设置分区"
     },
     "saveChanges": "保存更改",
     "resetToDefaults": "重置为默认值",
@@ -1045,6 +1060,8 @@
       "title": "店铺资料",
       "description": "公开店铺身份",
       "shopName": "店铺名称",
+      "defaultShopName": "我的店铺",
+      "defaultShopSlug": "my-shop",
       "slug": "URL标识",
       "previewPublicPage": "预览公开页面",
       "tagline": "标语",
@@ -1054,7 +1071,9 @@
       "title": "Logo与横幅",
       "description": "视觉品牌",
       "logo": "Logo",
-      "banner": "横幅"
+      "logoAlt": "店铺Logo",
+      "banner": "横幅",
+      "bannerAlt": "店铺横幅"
     },
     "shipping": {
       "title": "配送规则",

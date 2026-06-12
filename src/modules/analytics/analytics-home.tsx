@@ -102,7 +102,7 @@ export function AnalyticsHome() {
         preset={preset}
         onPresetChange={setPreset}
         rangeLabel={
-          report.rangeLabel === "Report unavailable"
+          report.rangeLabel === t("reportUnavailableRaw")
             ? t("reportUnavailable")
             : report.rangeLabel
         }

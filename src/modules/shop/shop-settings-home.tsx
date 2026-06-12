@@ -130,8 +130,8 @@ export function ShopSettingsHome() {
 
       if (!shopId) {
         const created = (await createShop({
-          name: state.profile.shopName || "My Shop",
-          slug: state.profile.slug || "my-shop",
+          name: state.profile.shopName || t("defaultShopName"),
+          slug: state.profile.slug || t("defaultShopSlug"),
           description: state.profile.description || undefined,
         })) as { id?: string } | undefined;
         shopId = created?.id;
@@ -213,7 +213,7 @@ export function ShopSettingsHome() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <nav
           className="flex flex-wrap gap-2 lg:sticky lg:top-24 lg:max-w-[220px] lg:flex-col"
-          aria-label="Shop settings sections"
+          aria-label={t("shop.nav.ariaLabel")}
         >
           {navLinks.map((l) => (
             <a
@@ -439,7 +439,7 @@ export function ShopSettingsHome() {
                   <Input
                     id="free-threshold"
                     inputMode="decimal"
-                    placeholder="None"
+                    placeholder={t("shop.shipping.freeThresholdPlaceholder")}
                     value={state.shipping.freeShippingThresholdUsd}
                     onChange={(e) =>
                       bind("shipping")({
@@ -742,7 +742,7 @@ export function ShopSettingsHome() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={previewData.logoUrl}
-                    alt="Shop logo"
+                    alt={t("shop.branding.logoAlt")}
                     className="max-h-24 rounded-lg object-contain"
                   />
                 ) : null}
@@ -759,7 +759,7 @@ export function ShopSettingsHome() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={previewData.bannerUrl}
-                    alt="Shop banner"
+                    alt={t("shop.branding.bannerAlt")}
                     className="rounded-lg object-cover"
                   />
                 ) : null}

@@ -783,7 +783,7 @@ export function SettingsHome() {
                               <p className="text-sm font-medium truncate">
                                 {doc.fileName ||
                                   doc.fileUrl.split("/").pop() ||
-                                  "Document"}
+                                  t("documentFallback")}
                               </p>
                               <p className="text-muted-foreground text-[10px]">
                                 {DOCUMENT_TYPE_LABELS[doc.type]} ·{" "}

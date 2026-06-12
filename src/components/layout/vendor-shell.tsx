@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/routing";
 import { useRouter } from "@/i18n/routing";
 
@@ -18,6 +19,7 @@ import { useVendorProfileStore } from "@/store/vendor-profile-store";
 export function VendorShell({ children }: { children: ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const t = useTranslations("metadata");
   const loadVendorProfile = useVendorProfileStore((s) => s.load);
   const { status, user, isVendor } = useAuth();
   const router = useRouter();
@@ -64,7 +66,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
           <div className="border-border/60 flex h-14 items-center border-b px-4">
             <img
               src="/logo-small.png"
-              alt="Barkosem Vendor Dashboard"
+              alt={t("title")}
               className="h-6 w-auto select-none"
             />
           </div>

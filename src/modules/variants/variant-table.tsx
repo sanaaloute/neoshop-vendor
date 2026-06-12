@@ -247,7 +247,7 @@ export function VariantTable({
                     onChange={(e) =>
                       updateVariant(row.id, { barcode: e.target.value })
                     }
-                    placeholder="—"
+                    placeholder={t("barcodePlaceholder")}
                   />
                 </TableCell>
                 <TableCell className="text-right">

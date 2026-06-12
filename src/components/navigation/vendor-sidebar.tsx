@@ -28,13 +28,13 @@ export function VendorSidebarDesktop({ className }: { className?: string }) {
         {collapsed ? (
           <img
             src="/logo.png"
-            alt="Barkosem"
+            alt={t("brandName")}
             className="mx-auto h-8 w-8 select-none"
           />
         ) : (
           <img
             src="/logo-small.png"
-            alt="Barkosem Vendor Dashboard"
+            alt={t("brandNameFull")}
             className="h-6 w-auto select-none"
           />
         )}

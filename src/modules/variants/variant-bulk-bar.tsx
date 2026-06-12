@@ -66,7 +66,7 @@ export function VariantBulkBar({
               className="h-9 text-xs"
               value={barcode}
               onChange={(e) => setBarcode(e.target.value)}
-              placeholder="optional"
+              placeholder={t("barcodePlaceholder")}
             />
           </div>
           <Button type="button" size="sm" onClick={() => apply()}>
@@ -90,10 +90,12 @@ function Field({
   label,
   value,
   onChange,
+  placeholder = "—",
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  placeholder?: string;
 }) {
   return (
     <div className="grid w-20 gap-1">
@@ -102,7 +104,7 @@ function Field({
         className="h-9 text-xs tabular-nums"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="—"
+        placeholder={placeholder}
       />
     </div>
   );

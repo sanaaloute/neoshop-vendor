@@ -34,7 +34,13 @@
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar",
     "expandSidebarShortcut": "Expand sidebar (⌘B / Ctrl+B)",
-    "collapseSidebarShortcut": "Collapse sidebar (⌘B / Ctrl+B)"
+    "collapseSidebarShortcut": "Collapse sidebar (⌘B / Ctrl+B)",
+    "searchPlaceholder": "Search orders, SKUs, buyers…",
+    "globalSearch": "Global search",
+    "openNavigation": "Open navigation",
+    "breadcrumb": "Breadcrumb",
+    "brandName": "Barkosem",
+    "brandNameFull": "Barkosem Vendor Dashboard"
   },
   "auth": {
     "signIn": "Vendor sign in",
@@ -204,6 +210,7 @@
     "documentUrlRequired": "Document URL is required.",
     "couldNotAddDocument": "Could not add document.",
     "couldNotRemoveDocument": "Could not remove document.",
+    "documentFallback": "Document",
     "couldNotSubmitVerification": "Could not submit verification."
   },
   "errors": {
@@ -256,6 +263,7 @@
     "syncing": "Syncing…",
     "liveData": "Live data",
     "dataUnavailable": "Data unavailable",
+    "reportUnavailableRaw": "Report unavailable",
     "revenueRange": "Revenue (range)",
     "conversionRate": "Conversion rate",
     "orderVolume": "Order volume",
@@ -708,10 +716,13 @@
     "seoSettings": "SEO Settings",
     "optional": "Optional",
     "urlSlug": "URL Slug",
+    "urlSlugPlaceholder": "wholesale-ceramic-mugs",
     "fromName": "From name",
     "productName": "Product Name",
+    "productNamePlaceholder": "Wholesale ceramic mugs",
     "moq": "MOQ",
     "description": "Description",
+    "descriptionPlaceholder": "Specs, MOQ, lead times, packaging…",
     "bulkPricing": "Bulk pricing",
     "addTier": "Add tier",
     "noBulkPricingTiers": "No bulk pricing tiers. Add tiers to offer volume discounts.",
@@ -854,6 +865,9 @@
     "bulkUpdate": "Bulk update ({count} selected)",
     "weightOptional": "Weight g (optional)",
     "barcodeOptional": "Barcode (optional)",
+    "barcodePlaceholder": "optional",
+    "dashPlaceholder": "—",
+    "clickToRemove": "Click to remove",
     "apply": "Apply",
     "clear": "Clear",
     "selectVariantImage": "Select variant image",
@@ -1022,7 +1036,8 @@
       "returns": "Returns",
       "business": "Business",
       "verification": "Verification",
-      "payout": "Payout"
+      "payout": "Payout",
+      "ariaLabel": "Shop settings sections"
     },
     "saveChanges": "Save changes",
     "resetToDefaults": "Reset to defaults",
@@ -1045,6 +1060,8 @@
       "title": "Shop profile",
       "description": "Public storefront identity",
       "shopName": "Shop name",
+      "defaultShopName": "My Shop",
+      "defaultShopSlug": "my-shop",
       "slug": "URL slug",
       "previewPublicPage": "Preview public page",
       "tagline": "Tagline",
@@ -1054,7 +1071,9 @@
       "title": "Logo & banner",
       "description": "Visual branding",
       "logo": "Logo",
-      "banner": "Banner"
+      "logoAlt": "Shop logo",
+      "banner": "Banner",
+      "bannerAlt": "Shop banner"
     },
     "shipping": {
       "title": "Shipping rules",
@@ -1062,6 +1081,7 @@
       "processingMin": "Processing time (min days)",
       "processingMax": "Processing time (max days)",
       "freeThreshold": "Free shipping threshold (CNY)",
+      "freeThresholdPlaceholder": "None",
       "carrierNotes": "Carrier notes"
     },
     "returns": {

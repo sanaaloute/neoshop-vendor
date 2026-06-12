@@ -19,7 +19,7 @@ export function VendorBreadcrumbs({ className }: { className?: string }) {
 
   return (
     <nav
-      aria-label="Breadcrumb"
+      aria-label={t("breadcrumb")}
       className={cn(
         "text-muted-foreground flex flex-wrap items-center gap-1 text-xs md:text-sm",
         className

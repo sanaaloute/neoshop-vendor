@@ -2,6 +2,7 @@
 
 import type { RefObject } from "react";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { Menu } from "lucide-react";
 
 import { VendorBreadcrumbs } from "@/components/navigation/vendor-breadcrumbs";
@@ -26,6 +27,7 @@ export function VendorTopNav({
   onOpenMobileSidebar,
   className,
 }: VendorTopNavProps) {
+  const t = useTranslations("navigation");
   const realtimeState = useRealtimeVendorStatus();
 
   return (
@@ -47,7 +49,7 @@ export function VendorTopNav({
             size="icon-sm"
             className="md:hidden"
             onClick={onOpenMobileSidebar}
-            aria-label="Open navigation"
+            aria-label={t("openNavigation")}
           >
             <Menu className="size-4" />
           </Button>
