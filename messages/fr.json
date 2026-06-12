@@ -1027,7 +1027,9 @@
   "shop": {
     "brandingDrop": {
       "upload": "Télécharger",
-      "remove": "Supprimer"
+      "remove": "Supprimer",
+      "noImage": "Aucune image",
+      "hint": "Glissez-déposez ou cliquez pour télécharger. Formats acceptés : {formats}."
     },
     "nav": {
       "profile": "Profil",
@@ -1041,6 +1043,9 @@
     },
     "saveChanges": "Enregistrer les modifications",
     "resetToDefaults": "Réinitialiser aux valeurs par défaut",
+    "unsavedChanges": "Modifications non enregistrées",
+    "saving": "Enregistrement…",
+    "reset": "Réinitialiser",
     "loadingSavedSettings": "Chargement des paramètres enregistrés…",
     "saveHint": {
       "localSave": "Enregistré sur cet appareil. Connectez-vous à votre marketplace pour synchroniser avec le serveur.",
@@ -1120,6 +1125,7 @@
       "frequency": "Fréquence de paiement",
       "minimumPayout": "Paiement minimum (CNY)",
       "taxFormOnFile": "Formulaire fiscal enregistré",
+      "taxFormHint": "Confirmez que votre documentation fiscale est complète et enregistrée.",
       "weekly": "Hebdomadaire",
       "biweekly": "Bi-hebdomadaire",
       "monthly": "Mensuel"

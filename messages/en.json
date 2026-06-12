@@ -1027,7 +1027,9 @@
   "shop": {
     "brandingDrop": {
       "upload": "Upload",
-      "remove": "Remove"
+      "remove": "Remove",
+      "noImage": "No image",
+      "hint": "Drag & drop or click to upload. Supports {formats}."
     },
     "nav": {
       "profile": "Profile",
@@ -1041,6 +1043,9 @@
     },
     "saveChanges": "Save changes",
     "resetToDefaults": "Reset to defaults",
+    "unsavedChanges": "Unsaved changes",
+    "saving": "Saving…",
+    "reset": "Reset",
     "loadingSavedSettings": "Loading saved settings…",
     "saveHint": {
       "localSave": "Saved on this device. Connect to your marketplace to sync to the server.",
@@ -1120,6 +1125,7 @@
       "frequency": "Payout frequency",
       "minimumPayout": "Minimum payout (CNY)",
       "taxFormOnFile": "Tax form on file",
+      "taxFormHint": "Confirm that your tax documentation is complete and on file.",
       "weekly": "Weekly",
       "biweekly": "Bi-weekly",
       "monthly": "Monthly"
