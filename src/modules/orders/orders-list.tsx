@@ -122,11 +122,11 @@ export function OrdersList({
               <option value="all">{t("allStatuses")}</option>
               {ORDER_STATUS_FLOW.map((s) => (
                 <option key={s} value={s}>
-                  {t(statusLabel(s) as any)}
+                  {t(statusLabel(s) as string)}
                 </option>
               ))}
-              <option value="disputed">{t(statusLabel("disputed") as any)}</option>
-              <option value="refunded">{t(statusLabel("refunded") as any)}</option>
+              <option value="disputed">{t(statusLabel("disputed") as string)}</option>
+              <option value="refunded">{t(statusLabel("refunded") as string)}</option>
             </select>
           </div>
         </div>
@@ -221,7 +221,7 @@ export function OrdersList({
                         variant={rowBadge(o.status)}
                         className="capitalize"
                       >
-                        {t(statusLabel(o.status) as any)}
+                        {t(statusLabel(o.status) as string)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-medium tabular-nums">

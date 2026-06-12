@@ -104,7 +104,7 @@ export function InventoryHistory({
                     variant={typeBadgeVariant(m.type)}
                     className="text-[10px]"
                   >
-                    {t(typeLabel(m.type) as any)}
+                    {t(typeLabel(m.type) as string)}
                   </Badge>
                 </TableCell>
                 <TableCell>

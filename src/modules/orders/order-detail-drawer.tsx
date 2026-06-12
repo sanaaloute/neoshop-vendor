@@ -187,7 +187,7 @@ export function OrderDetailDrawer({
               </SheetDescription>
             </div>
             <Badge variant={badgeVariant(order.status)} className="capitalize">
-              {t(statusLabel(order.status) as any)}
+              {t(statusLabel(order.status) as string)}
             </Badge>
           </div>
           <p className="text-muted-foreground mt-2 text-sm">
@@ -214,7 +214,7 @@ export function OrderDetailDrawer({
                       : "bg-muted/50 text-muted-foreground border-transparent"
                   )}
                 >
-                  {t(statusLabel(st) as any)}
+                  {t(statusLabel(st) as string)}
                 </span>
               ))}
             </div>
@@ -235,7 +235,7 @@ export function OrderDetailDrawer({
                 }}
               >
                 <ArrowRight className="size-4" aria-hidden />
-                {t("nextStatus", { status: next ? t(statusLabel(next) as any) : "—" })}
+                {t("nextStatus", { status: next ? t(statusLabel(next) as string) : "—" })}
               </Button>
               <Button
                 type="button"
