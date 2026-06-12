@@ -4,7 +4,7 @@
  */
 
 export { ProductsHome } from "./products-home";
-export { ProductsList } from "./products-list";
+export { ProductsTable } from "./products-table";
 export { ProductEditor } from "./product-editor";
 export { ProductForm } from "./product-form";
 export { ProductMediaGallery } from "./product-media-gallery";

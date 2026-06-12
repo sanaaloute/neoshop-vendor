@@ -1,15 +1,42 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Radio } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  RefreshCw,
+  RotateCcw,
+  Search,
+  ShoppingBag,
+  SlidersHorizontal,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/cards/status-badge";
+import { GatewaySyncBanner } from "@/components/feedback/gateway-sync-banner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { GatewaySyncBanner } from "@/components/feedback/gateway-sync-banner";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { getApiBaseUrl } from "@/config/auth";
+import { formatCurrency } from "@/lib/format";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
+import { cn } from "@/lib/utils";
 import { useGatewayOrdersBootstrap } from "@/hooks/use-gateway-orders-bootstrap";
 import { useRefetchVendorOrders } from "@/hooks/use-refetch-vendor-orders";
 import { useOrderStats } from "@/hooks/use-order-stats";
@@ -19,13 +46,33 @@ import { useVendorWritesAllowed } from "@/hooks/use-vendor-writes";
 import { useOrdersStore } from "@/store/orders-store";
 
 import { OrderDetailDrawer } from "./order-detail-drawer";
-import { OrdersList } from "./orders-list";
 import type { OrderStatus } from "./types";
-import { useOrdersLive } from "./use-orders-live";
-import { nextWorkflowStatus } from "./workflow";
+import { ORDER_STATUS_FLOW } from "./types";
+import { nextWorkflowStatus, statusLabel } from "./workflow";
+
+const easeOutExpo = [0.22, 1, 0.36, 1] as const;
+
+const ORDER_STATUSES: { key: OrderStatus | "cancelled"; labelKey: string; status: Parameters<typeof StatusBadge>[0]["status"]; clickable: boolean }[] = [
+  { key: "pending", labelKey: "status.pending", status: "pending", clickable: true },
+  { key: "paid", labelKey: "status.paid", status: "info", clickable: true },
+  { key: "processing", labelKey: "status.processing", status: "info", clickable: true },
+  { key: "shipped", labelKey: "status.shipped", status: "warning", clickable: true },
+  { key: "delivered", labelKey: "status.delivered", status: "success", clickable: true },
+  { key: "disputed", labelKey: "status.disputed", status: "danger", clickable: true },
+  { key: "refunded", labelKey: "status.refunded", status: "danger", clickable: true },
+  { key: "cancelled", labelKey: "status.cancelled", status: "neutral", clickable: false },
+];
 
 function toApi(s: OrderStatus): ApiOrderStatus {
   return s as ApiOrderStatus;
+}
+
+function rowBadge(s: OrderStatus): Parameters<typeof StatusBadge>[0]["status"] {
+  if (s === "delivered") return "success";
+  if (s === "refunded" || s === "disputed") return "danger";
+  if (s === "shipped" || s === "processing" || s === "paid") return "info";
+  if (s === "pending") return "pending";
+  return "neutral";
 }
 
 export function OrdersHome() {
@@ -39,14 +86,29 @@ export function OrdersHome() {
   const { loading: gatewayLoading, error: gatewayError } =
     useGatewayOrdersBootstrap();
   const { stats: orderStats } = useOrderStats();
-
-  const { liveKey } = useOrdersLive();
-
+  
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+
+  const activeFiltersCount =
+    (statusFilter !== "all" ? 1 : 0) + (search ? 1 : 0);
+
+  const clearFilters = useCallback(() => {
+    setStatusFilter("all");
+    setSearch("");
+  }, []);
+
+  const handleStatClick = useCallback(
+    (status: OrderStatus) => {
+      setStatusFilter((prev) =>
+        prev === status ? "all" : status
+      );
+    },
+    []
+  );
 
   const openOrder = (id: string) => {
     setActiveOrderId(id);
@@ -76,6 +138,26 @@ export function OrdersHome() {
 
   const selectedIds = useMemo(() => [...selected], [selected]);
 
+  const filtered = useMemo(() => {
+    return orders
+      .filter((o) => {
+        if (statusFilter !== "all" && o.status !== statusFilter) return false;
+        if (search.trim()) {
+          const q = search.toLowerCase();
+          const inRef = o.reference.toLowerCase().includes(q);
+          const inEmail = o.customerEmail.toLowerCase().includes(q);
+          const inSku = o.lines.some((l) => l.sku.toLowerCase().includes(q));
+          const inName = o.customerName.toLowerCase().includes(q);
+          if (!inRef && !inEmail && !inSku && !inName) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  }, [orders, statusFilter, search]);
+
+  const allSelected =
+    filtered.length > 0 && filtered.every((o) => selected.has(o.id));
+
   const runBulkAdvance = async () => {
     if (!canWriteOrders) return;
     if (!getApiBaseUrl()) {
@@ -95,9 +177,7 @@ export function OrdersHome() {
       await refetch();
       setSelected(new Set());
     } catch (e) {
-      setBulkError(
-        httpErrorMessageForUser(e, t("couldNotAdvance"))
-      );
+      setBulkError(httpErrorMessageForUser(e, t("couldNotAdvance")));
     } finally {
       setBulkBusy(false);
     }
@@ -121,125 +201,407 @@ export function OrdersHome() {
       await refetch();
       setSelected(new Set());
     } catch (e) {
-      setBulkError(
-        httpErrorMessageForUser(e, t("couldNotRefund"))
-      );
+      setBulkError(httpErrorMessageForUser(e, t("couldNotRefund")));
     } finally {
       setBulkBusy(false);
     }
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <GatewaySyncBanner loading={gatewayLoading} error={gatewayError} />
 
+      {/* ── Stat Metric Cards ── */}
       {orderStats ? (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-8">
-          {(
-            [
-              [t("status.pending"), orderStats.pending],
-              [t("status.paid"), orderStats.paid],
-              [t("status.processing"), orderStats.processing],
-              [t("status.shipped"), orderStats.shipped],
-              [t("status.delivered"), orderStats.delivered],
-              [t("status.disputed"), orderStats.disputed],
-              [t("status.refunded"), orderStats.refunded],
-              [t("status.cancelled"), orderStats.cancelled],
-            ] as const
-          ).map(([label, count]) => (
-            <div
-              key={label}
-              className="bg-muted/40 border-border/60 flex flex-col rounded-lg border px-3 py-2"
-            >
-              <span className="text-muted-foreground text-[11px] font-medium uppercase tracking-wide">
-                {label}
-              </span>
-              <span className="text-foreground text-lg font-semibold tabular-nums">
-                {count}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge
-            variant="secondary"
-            className="gap-1.5 font-normal tabular-nums"
-          >
-            <Radio className="size-3.5 text-green-500" aria-hidden />
-            {t("title")}
-          </Badge>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={!getApiBaseUrl() || gatewayLoading}
-          onClick={() => void refetch()}
+        <motion.div
+          initial="hidden"
+          animate="show"
+          variants={{
+            hidden: {},
+            show: { transition: { staggerChildren: 0.05, delayChildren: 0.1 } },
+          }}
+          className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8"
         >
-          {t("refresh")}
-        </Button>
-      </div>
+          {ORDER_STATUSES.map(({ key, labelKey, status, clickable }) => {
+            const count =
+              key === "pending"
+                ? orderStats.pending
+                : key === "paid"
+                  ? orderStats.paid
+                  : key === "processing"
+                    ? orderStats.processing
+                    : key === "shipped"
+                      ? orderStats.shipped
+                      : key === "delivered"
+                        ? orderStats.delivered
+                        : key === "disputed"
+                          ? orderStats.disputed
+                          : key === "refunded"
+                            ? orderStats.refunded
+                            : orderStats.cancelled;
+            const active = statusFilter === key;
+            const Wrapper = clickable ? motion.button : motion.div;
+            return (
+              <Wrapper
+                key={key}
+                variants={{
+                  hidden: { opacity: 0, y: 12 },
+                  show: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { duration: 0.35, ease: easeOutExpo },
+                  },
+                }}
+                whileHover={clickable ? { y: -3, transition: { duration: 0.25 } } : undefined}
+                whileTap={clickable ? { scale: 0.97 } : undefined}
+                onClick={clickable ? () => handleStatClick(key as OrderStatus) : undefined}
+                className={cn(
+                  "relative overflow-hidden rounded-xl border p-3 text-left transition-all duration-300",
+                  "bg-card/80 shadow-vendor-card ring-1 ring-white/5 backdrop-blur-md",
+                  "dark:bg-card/60 dark:ring-white/10",
+                  !clickable && "opacity-70",
+                  active
+                    ? "border-primary/50 bg-primary/5 shadow-lg shadow-primary/10 ring-primary/20"
+                    : clickable && "border-border/60 hover:border-primary/30 hover:shadow-lg"
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <StatusBadge status={status} className="text-[10px]">
+                    {t(labelKey)}
+                  </StatusBadge>
+                  {active && (
+                    <motion.div
+                      layoutId="order-stat-active"
+                      className="bg-primary size-2 rounded-full"
+                      transition={{ duration: 0.25, ease: easeOutExpo }}
+                    />
+                  )}
+                </div>
+                <div className="mt-2 text-2xl font-semibold tabular-nums tracking-tight">
+                  {count}
+                </div>
+                <div
+                  className={cn(
+                    "mt-1 h-0.5 w-full rounded-full transition-colors duration-300",
+                    active ? "bg-primary/40" : "bg-border/40"
+                  )}
+                />
+              </Wrapper>
+            );
+          })}
+        </motion.div>
+      ) : null}
+
+      {/* ── Toolbar ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.2, ease: easeOutExpo }}
+        className="flex flex-wrap items-center justify-between gap-3"
+      >
+        <div className="flex items-center gap-2">
+          <div className="bg-primary/15 flex size-9 items-center justify-center rounded-xl">
+            <ShoppingBag className="text-primary size-5" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">{t("title")}</p>
+            <p className="text-muted-foreground text-xs">
+              {t("orderPipeline")}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5 rounded-lg"
+            disabled={!getApiBaseUrl() || gatewayLoading}
+            onClick={() => void refetch()}
+          >
+            <RefreshCw className="size-3.5" />
+            {t("refresh")}
+          </Button>
+        </div>
+      </motion.div>
 
       {bulkError ? (
-        <p className="text-destructive text-sm">{bulkError}</p>
+        <motion.p
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-destructive text-sm"
+        >
+          {bulkError}
+        </motion.p>
       ) : null}
 
-      {selected.size > 0 ? (
-        <Card className="border-primary/30 bg-primary/5 shadow-vendor-card p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium">
-              {t("bulkActions", { count: selected.size })}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                disabled={
-                  bulkBusy || !getApiBaseUrl() || !canWriteOrders
-                }
-                onClick={() => void runBulkAdvance()}
-              >
-                {t("advanceWorkflow")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                disabled={
-                  bulkBusy || !getApiBaseUrl() || !canWriteOrders
-                }
-                onClick={() => void runBulkRefund()}
-              >
-                {t("refundSelected")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => setSelected(new Set())}
-              >
-                {t("clearSelection")}
-              </Button>
+      {/* ── Bulk Actions ── */}
+      <AnimatePresence>
+        {selected.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, y: -8 }}
+            animate={{ opacity: 1, height: "auto", y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -8 }}
+            transition={{ duration: 0.3, ease: easeOutExpo }}
+          >
+            <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent shadow-vendor-card overflow-hidden">
+              <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="bg-primary/15 flex size-8 items-center justify-center rounded-lg">
+                    <span className="text-primary text-xs font-bold">
+                      {selected.size}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium">
+                    {t("bulkActions", { count: selected.size })}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={bulkBusy || !getApiBaseUrl() || !canWriteOrders}
+                    onClick={() => void runBulkAdvance()}
+                  >
+                    {t("advanceWorkflow")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    disabled={bulkBusy || !getApiBaseUrl() || !canWriteOrders}
+                    onClick={() => void runBulkRefund()}
+                  >
+                    {t("refundSelected")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setSelected(new Set())}
+                  >
+                    {t("clearSelection")}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Filters ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.25, ease: easeOutExpo }}
+      >
+        <Card className="border-border/60 shadow-vendor-card overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/5 via-transparent to-chart-2/5 border-border/50 border-b px-4 py-2.5">
+            <div className="flex items-center gap-2 text-xs font-medium">
+              <SlidersHorizontal className="text-muted-foreground size-3.5" />
+              <span className="text-muted-foreground uppercase tracking-wider">
+                {t("filters")}
+              </span>
+              {activeFiltersCount > 0 && (
+                <span className="bg-primary/15 text-primary flex size-5 items-center justify-center rounded-full text-[10px] font-bold">
+                  {activeFiltersCount}
+                </span>
+              )}
             </div>
           </div>
+          <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-end">
+            <div className="relative flex-1">
+              <Label htmlFor="order-search" className="sr-only">
+                {t("searchLabel")}
+              </Label>
+              <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+              <Input
+                id="order-search"
+                className="h-10 pl-10"
+                placeholder={t("searchPlaceholder")}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1.5 sm:w-56">
+              <Label className="text-muted-foreground text-xs">
+                {t("statusFilter")}
+              </Label>
+              <Select
+                value={statusFilter}
+                onValueChange={(v) =>
+                  setStatusFilter(v as OrderStatus | "all")
+                }
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder={t("allStatuses")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("allStatuses")}</SelectItem>
+                  {ORDER_STATUS_FLOW.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {t(statusLabel(s) as string)}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="disputed">
+                    {t(statusLabel("disputed") as string)}
+                  </SelectItem>
+                  <SelectItem value="refunded">
+                    {t(statusLabel("refunded") as string)}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className={cn(
+                "h-10 gap-1.5",
+                activeFiltersCount === 0 && "opacity-50"
+              )}
+              disabled={activeFiltersCount === 0}
+              onClick={clearFilters}
+            >
+              <RotateCcw className="size-3.5" />
+              {t("resetFilters")}
+            </Button>
+          </div>
         </Card>
-      ) : null}
+      </motion.div>
 
-      <OrdersList
-        search={search}
-        onSearchChange={setSearch}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        selected={selected}
-        onToggle={toggle}
-        onSelectAllVisible={selectAllVisible}
-        onOpenOrder={openOrder}
-        liveKey={liveKey}
-        syncLoading={gatewayLoading}
-        allowBulkSelection={canWriteOrders}
-      />
+      {/* ── Order Table ── */}
+      <Card className="border-border/80 shadow-vendor-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead className="w-10 pr-0">
+                  <Checkbox
+                    disabled={!canWriteOrders}
+                    checked={allSelected}
+                    onCheckedChange={() =>
+                      selectAllVisible(
+                        !allSelected,
+                        filtered.map((o) => o.id)
+                      )
+                    }
+                    aria-label={t("selectAll")}
+                  />
+                </TableHead>
+                <TableHead className="text-xs font-medium uppercase tracking-wider">
+                  {t("reference")}
+                </TableHead>
+                <TableHead className="hidden text-xs font-medium uppercase tracking-wider md:table-cell">
+                  {t("customer")}
+                </TableHead>
+                <TableHead className="text-xs font-medium uppercase tracking-wider">
+                  {t("status")}
+                </TableHead>
+                <TableHead className="text-right text-xs font-medium uppercase tracking-wider">
+                  {t("total")}
+                </TableHead>
+                <TableHead className="hidden text-xs font-medium uppercase tracking-wider sm:table-cell">
+                  {t("updated")}
+                </TableHead>
+                <TableHead className="text-right"> </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <AnimatePresence mode="popLayout">
+                {filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="text-muted-foreground text-center text-sm"
+                    >
+                      {gatewayLoading && orders.length === 0
+                        ? t("loading")
+                        : !gatewayLoading && orders.length === 0 && getApiBaseUrl()
+                          ? t("noOrdersYet")
+                          : !gatewayLoading && orders.length === 0 && !getApiBaseUrl()
+                            ? t("connectMarketplace")
+                            : t("noMatches")}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filtered.map((o, i) => (
+                    <motion.tr
+                      key={o.id}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{
+                        duration: 0.25,
+                        delay: i * 0.03,
+                        ease: easeOutExpo,
+                      }}
+                      data-state={selected.has(o.id) ? "selected" : undefined}
+                      className={cn(
+                        "border-b transition-colors hover:bg-muted/40",
+                        selected.has(o.id) && "bg-primary/5"
+                      )}
+                      onClick={() => openOrder(o.id)}
+                    >
+                      <td
+                        className="pr-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Checkbox
+                          disabled={!canWriteOrders}
+                          checked={selected.has(o.id)}
+                          onCheckedChange={() => toggle(o.id)}
+                          aria-label={t("selectAll")}
+                        />
+                      </td>
+                      <td className="p-2 px-4">
+                        <div className="font-medium">{o.reference}</div>
+                        <div className="text-muted-foreground font-mono text-[10px]">
+                          {o.id}
+                        </div>
+                      </td>
+                      <td className="text-muted-foreground hidden max-w-[200px] truncate p-2 px-4 md:table-cell">
+                        {o.customerName}
+                      </td>
+                      <td className="p-2 px-4">
+                        <StatusBadge status={rowBadge(o.status)}>
+                          {t(statusLabel(o.status) as string)}
+                        </StatusBadge>
+                      </td>
+                      <td className="p-2 px-4 text-right font-medium tabular-nums">
+                        {formatCurrency(o.total)}
+                      </td>
+                      <td className="text-muted-foreground hidden p-2 px-4 text-xs sm:table-cell">
+                        {new Date(o.updatedAt).toLocaleString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
+                      <td
+                        className="p-2 px-4 text-right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8"
+                          onClick={() => openOrder(o.id)}
+                        >
+                          {t("details")}
+                        </Button>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
+              </AnimatePresence>
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
 
       <OrderDetailDrawer
         orderId={activeOrderId}
