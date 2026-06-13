@@ -355,10 +355,10 @@
     "unknown": "Unknown"
   },
   "documentTypes": {
-    "idCard": "ID Card",
-    "businessLicense": "Business License",
-    "taxDocument": "Tax Document",
-    "addressProof": "Address Proof",
+    "businessRegistration": "Business Registration",
+    "taxCertificate": "Tax Certificate",
+    "bankProof": "Bank Proof",
+    "identity": "Identity",
     "other": "Other"
   },
   "language": {
@@ -678,10 +678,13 @@
     "home": {
       "availableBalance": "Available balance",
       "heldBalance": "Held balance",
+      "totalBalance": "Total balance",
       "exchangeRate": "Exchange rate",
       "noRate": "—",
       "history": "History",
       "transactionHistory": "Transaction history",
+      "toggleCurrency": "Switch to {currency}",
+      "changingCurrency": "Switching…",
       "table": {
         "date": "Date",
         "type": "Type",
@@ -693,13 +696,14 @@
       "noTransactions": "No transactions yet."
     },
     "txnType": {
+      "credit": "Credit",
+      "debit": "Debit",
       "deposit": "Deposit",
       "withdrawal": "Withdrawal",
-      "payment": "Payment",
-      "payout": "Payout",
+      "reserve": "Reserve",
+      "release": "Release",
       "refund": "Refund",
-      "hold": "Hold",
-      "release": "Release"
+      "adjustment": "Adjustment"
     },
     "txnStatus": {
       "completed": "Completed",
@@ -724,6 +728,9 @@
     "productName": "Product Name",
     "productNamePlaceholder": "Wholesale ceramic mugs",
     "moq": "MOQ",
+    "currency": "Currency",
+    "currencyCNY": "CNY - Chinese Yuan",
+    "currencyXOF": "XOF - West African CFA Franc",
     "description": "Description",
     "descriptionPlaceholder": "Specs, MOQ, lead times, packaging…",
     "bulkPricing": "Bulk pricing",
@@ -940,6 +947,8 @@
         "legalBusinessNamePlaceholder": "Amina's Handmade Crafts",
         "tradeNameLabel": "Trade Name (Optional)",
         "tradeNamePlaceholder": "Amina Crafts",
+        "taxIdLabel": "Tax ID (Optional)",
+        "taxIdPlaceholder": "TAX123456",
         "businessEmailLabel": "Business Email",
         "businessEmailPlaceholder": "contact@example.com",
         "businessPhoneLabel": "Business Phone",
@@ -960,14 +969,14 @@
         "postalCodePlaceholder": "01 BP 1234"
       },
       "documents": {
-        "idCardLabel": "ID Card",
-        "idCardDescription": "Passport, national ID, driver's licence",
-        "businessLicenseLabel": "Business License",
-        "businessLicenseDescription": "Business licence, registration certificate",
-        "taxDocumentLabel": "Tax Document",
-        "taxDocumentDescription": "Tax ID certificate, VAT registration",
-        "addressProofLabel": "Address Proof",
-        "addressProofDescription": "Utility bill, bank statement, lease agreement",
+        "businessRegistrationLabel": "Business Registration",
+        "businessRegistrationDescription": "Business licence, registration certificate",
+        "taxCertificateLabel": "Tax Certificate",
+        "taxCertificateDescription": "Tax ID certificate, VAT registration",
+        "bankProofLabel": "Bank Proof",
+        "bankProofDescription": "Bank statement, void cheque, or bank letter",
+        "identityLabel": "Identity",
+        "identityDescription": "Passport, national ID, driver's licence",
         "otherLabel": "Other",
         "otherDescription": "Any other supporting document",
         "clickOrDrag": "Click or drag files to upload",
@@ -1019,6 +1028,7 @@
       "businessNameMin": "Business name must be at least 2 characters",
       "businessNameMax": "Business name must be under 120 characters",
       "tradeNameMax": "Trade name must be under 120 characters",
+      "taxIdMax": "Tax ID must be under 64 characters",
       "emailRequired": "Business email is required",
       "emailInvalid": "Enter a valid email address",
       "phoneTooShort": "Phone number is too short",

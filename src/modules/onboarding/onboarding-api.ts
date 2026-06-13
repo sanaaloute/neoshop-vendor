@@ -14,6 +14,7 @@ export async function syncRegisterStep(draft: OnboardingDraft) {
     vendorType,
     legalBusinessName: draft.basicInfo.legalBusinessName,
     tradeName: draft.basicInfo.tradeName || undefined,
+    taxId: draft.basicInfo.taxId || undefined,
     businessEmail: draft.basicInfo.businessEmail,
     businessPhone: draft.basicInfo.businessPhone,
     countryCode: draft.basicInfo.countryCode,
@@ -27,6 +28,7 @@ export async function syncAddressStep(draft: OnboardingDraft) {
   const body = {
     legalBusinessName: draft.basicInfo.legalBusinessName,
     tradeName: draft.basicInfo.tradeName || undefined,
+    taxId: draft.basicInfo.taxId || undefined,
     businessEmail: draft.basicInfo.businessEmail,
     businessPhone: draft.basicInfo.businessPhone,
     countryCode: draft.basicInfo.countryCode,

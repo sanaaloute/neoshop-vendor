@@ -11,6 +11,18 @@ import {
 } from "./products-api";
 import type { ApiProductStatus } from "./types";
 
+function toApiMoney(n: number): string {
+  return Number(n).toFixed(2);
+}
+
+function uiBulkPricingToApi(
+  tiers: { minQuantity: number; unitPrice: number }[]
+): { minQuantity: number; unitPrice: string }[] {
+  return tiers.map((t) => ({
+    minQuantity: t.minQuantity,
+    unitPrice: toApiMoney(t.unitPrice),
+  }));
+}
 
 function uiStatusToApi(
   status: ProductFormValues["status"]
@@ -38,7 +50,8 @@ export async function createProductFromForm(
     slug: values.seo.slug.trim().toLowerCase(),
     description: values.description.trim() || undefined,
     moq: values.moq,
-    bulkPricing: values.bulkPricing.length > 0 ? values.bulkPricing : undefined,
+    currency: values.currency,
+    bulkPricing: values.bulkPricing.length > 0 ? uiBulkPricingToApi(values.bulkPricing) : undefined,
     categoryIds:
       values.categoryIds.length > 0 ? values.categoryIds : undefined,
   });
@@ -80,7 +93,8 @@ export async function updateProductFromForm(
     slug: values.seo.slug.trim().toLowerCase(),
     description: values.description.trim() || undefined,
     moq: values.moq,
-    bulkPricing: values.bulkPricing.length > 0 ? values.bulkPricing : undefined,
+    currency: values.currency,
+    bulkPricing: values.bulkPricing.length > 0 ? uiBulkPricingToApi(values.bulkPricing) : undefined,
   };
   if (vendorControlledStatuses.includes(apiStatus)) {
     body.status = apiStatus;
@@ -138,7 +152,6 @@ function uiProductStatusToApi(s: ProductStatus): ApiProductStatus {
     case "rejected":
       return "rejected";
     case "draft":
-    case "scheduled":
     default:
       return "draft";
   }

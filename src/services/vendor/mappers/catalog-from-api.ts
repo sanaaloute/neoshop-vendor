@@ -98,12 +98,15 @@ export function mapApiProductRowToProduct(
     })
     .filter(Boolean) as { minQuantity: number; unitPrice: number }[];
 
+  const currency = row.currency === "XOF" ? "XOF" : "CNY";
+
   return {
     id: String(row.id),
     ...(sku !== undefined ? { sku } : {}),
     name: String(row.title ?? row.name ?? "Product"),
     description: String(row.description ?? ""),
     price,
+    currency,
     ...(moq !== undefined ? { moq } : {}),
     ...(bulkPricing.length > 0 ? { bulkPricing } : {}),
     categoryIds,

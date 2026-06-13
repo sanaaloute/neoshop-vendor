@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Loader2, Star } from "lucide-react";
 
 import {
@@ -28,8 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { httpErrorMessageForUser } from "@/lib/http-error-message";
-import { listVendorReviews, respondToReview } from "@/services/vendor/reviews-api";
+import { useReviews } from "@/hooks/use-reviews";
 import type { ReviewResponse, ReviewStatus } from "@/services/vendor/types";
 import { useTranslations } from "next-intl";
 
@@ -78,33 +77,13 @@ function RatingStars({ rating }: { rating: number }) {
 
 export function ReviewsHome() {
   const t = useTranslations("reviews");
-  const [reviews, setReviews] = useState<ReviewResponse[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { reviews, loading, error, respond } = useReviews();
 
   const [respondSheetOpen, setRespondSheetOpen] = useState(false);
   const [activeReview, setActiveReview] = useState<ReviewResponse | null>(null);
   const [responseText, setResponseText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const loadReviews = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await listVendorReviews();
-      const items = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
-      setReviews(items as ReviewResponse[]);
-    } catch (e) {
-      setError(httpErrorMessageForUser(e, t("couldNotLoad")));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadReviews();
-  }, []);
 
   const openRespond = (review: ReviewResponse) => {
     setActiveReview(review);
@@ -118,13 +97,12 @@ export function ReviewsHome() {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      await respondToReview(activeReview.id, { response: responseText.trim() });
+      await respond(activeReview.id, responseText.trim());
       setRespondSheetOpen(false);
       setActiveReview(null);
       setResponseText("");
-      await loadReviews();
-    } catch (e) {
-      setSubmitError(httpErrorMessageForUser(e, t("couldNotSubmit")));
+    } catch {
+      setSubmitError(t("couldNotSubmit"));
     } finally {
       setSubmitting(false);
     }

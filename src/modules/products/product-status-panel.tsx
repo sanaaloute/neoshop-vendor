@@ -61,8 +61,6 @@ function statusLabel(status: ProductFormValues["status"], t: ReturnType<typeof u
       return t("status.draft");
     case "rejected":
       return t("status.rejected");
-    case "scheduled":
-      return t("status.scheduled");
     case "hidden":
       return t("status.hidden");
     case "archived":

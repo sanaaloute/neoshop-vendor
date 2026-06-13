@@ -22,8 +22,8 @@ export function useGatewayOrdersBootstrap() {
       setLoading(true);
       setError(null);
       try {
-        const list = await listVendorOrders();
-        const orders = list.map((r) =>
+        const data = await listVendorOrders();
+        const orders = data.items.map((r) =>
           mapGatewayOrderToVendorOrder(r as Record<string, unknown>)
         );
         if (!cancelled) replaceOrders(orders);

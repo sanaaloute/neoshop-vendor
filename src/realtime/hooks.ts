@@ -72,6 +72,14 @@ export function useChatTypingRealtimeEvents(
   useRealtimeEvent(REALTIME_EVENTS.CHAT_TYPING, handler);
 }
 
+export function useVendorUpdatedRealtimeEvents(
+  handler: (
+    payload: RealtimeEventPayloadMap[typeof REALTIME_EVENTS.VENDOR_UPDATED]
+  ) => void
+) {
+  useRealtimeEvent(REALTIME_EVENTS.VENDOR_UPDATED, handler);
+}
+
 /**
  * Subscribe to a specific order room for targeted updates.
  * Admins get this automatically; vendors/customers only if they own the order.

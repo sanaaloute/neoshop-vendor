@@ -1,6 +1,7 @@
 import type { NotificationRecord } from "@/modules/notifications/types";
 import type { OrderStatus } from "@/modules/orders/types";
 import type { StockMovementType } from "@/modules/inventory/types";
+import type { VendorLifecycleStatus } from "@/services/vendor/types";
 
 /**
  * Canonical Socket.IO event names and payload types for the vendor dashboard.
@@ -12,6 +13,7 @@ export const REALTIME_EVENTS = {
   INVENTORY_UPDATED: "inventory:updated",
   CHAT_MESSAGE: "neoshop.chat.message",
   CHAT_TYPING: "chat:typing",
+  VENDOR_UPDATED: "neoshop.vendors.updated",
 } as const;
 
 export type RealtimeEventName =
@@ -54,12 +56,20 @@ export type ChatTypingPayload = {
   isTyping: boolean;
 };
 
+export type VendorUpdatedPayload = {
+  vendorId: string;
+  status: VendorLifecycleStatus;
+  rejectionReason?: string | null;
+  updatedAt?: string;
+};
+
 export interface RealtimeEventPayloadMap {
   [REALTIME_EVENTS.NOTIFICATION_CREATED]: NotificationCreatedPayload;
   [REALTIME_EVENTS.ORDER_UPDATED]: OrderUpdatedPayload;
   [REALTIME_EVENTS.INVENTORY_UPDATED]: InventoryUpdatedPayload;
   [REALTIME_EVENTS.CHAT_MESSAGE]: ChatMessagePayload;
   [REALTIME_EVENTS.CHAT_TYPING]: ChatTypingPayload;
+  [REALTIME_EVENTS.VENDOR_UPDATED]: VendorUpdatedPayload;
 }
 
 /** Order room subscription response */

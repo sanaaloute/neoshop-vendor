@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { getApiBaseUrl } from "@/config/auth";
 import { mapGatewayOrderDetailToVendorOrder } from "@/services/vendor/mappers/orders-from-api";
 import { getOrder } from "@/services/vendor/orders-api";
+import { getVendorMe } from "@/services/vendor/vendors-api";
 import { useNotificationsStore } from "@/store/notifications-store";
 import { useOrdersStore } from "@/store/orders-store";
 import { useInventoryStore } from "@/store/inventory-store";
@@ -18,6 +19,7 @@ import type {
   NotificationCreatedPayload,
   OrderUpdatedPayload,
   ChatMessagePayload,
+  VendorUpdatedPayload,
 } from "./registry";
 import { useRealtimeContext } from "./context";
 
@@ -27,6 +29,7 @@ export function RealtimeStoreBridge() {
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const vendorId = useVendorProfileStore((s) => s.profile?.id ?? null);
   const currentUserIds = [userId, vendorId].filter((id): id is string => Boolean(id));
+  const currentUserIdsKey = currentUserIds.join(",");
 
   useEffect(() => {
     if (!socket) return;
@@ -76,7 +79,6 @@ export function RealtimeStoreBridge() {
         ...(thread?.vendorChatId ? [thread.vendorChatId] : []),
       ];
       const isFromVendor = vendorIds.includes(payload.senderUserId);
-      const now = new Date().toISOString();
 
       state.mergeIncomingMessage({
         id: payload.id,
@@ -96,18 +98,37 @@ export function RealtimeStoreBridge() {
       }
     };
 
+    const onVendorUpdated = async (payload: VendorUpdatedPayload) => {
+      const profile = useVendorProfileStore.getState().profile;
+      if (!profile || payload.vendorId !== profile.id) return;
+      if (!getApiBaseUrl()) return;
+      try {
+        const refreshed = await getVendorMe();
+        useVendorProfileStore.getState().setProfile(refreshed);
+      } catch {
+        // Fall back to updating just the status from the payload
+        useVendorProfileStore.getState().setProfile({
+          ...profile,
+          status: payload.status,
+          rejectionReason: payload.rejectionReason ?? profile.rejectionReason,
+        });
+      }
+    };
+
     socket.on(REALTIME_EVENTS.NOTIFICATION_CREATED, onNotification);
     socket.on(REALTIME_EVENTS.ORDER_UPDATED, onOrder);
     socket.on(REALTIME_EVENTS.INVENTORY_UPDATED, onInventory);
     socket.on(REALTIME_EVENTS.CHAT_MESSAGE, onChatMessage);
+    socket.on(REALTIME_EVENTS.VENDOR_UPDATED, onVendorUpdated);
 
     return () => {
       socket.off(REALTIME_EVENTS.NOTIFICATION_CREATED, onNotification);
       socket.off(REALTIME_EVENTS.ORDER_UPDATED, onOrder);
       socket.off(REALTIME_EVENTS.INVENTORY_UPDATED, onInventory);
       socket.off(REALTIME_EVENTS.CHAT_MESSAGE, onChatMessage);
+      socket.off(REALTIME_EVENTS.VENDOR_UPDATED, onVendorUpdated);
     };
-  }, [socket, currentUserIds.join(",")]);
+  }, [socket, currentUserIdsKey, currentUserIds]);
 
   return null;
 }

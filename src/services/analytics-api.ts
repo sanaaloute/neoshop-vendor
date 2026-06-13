@@ -59,17 +59,17 @@ export async function fetchVendorAnalyticsReport(
   }));
   const orderVolume = orders.map((o) => ({
     label: o.date.slice(5),
-    value: o.orders ?? o.orderCount ?? 0,
+    value: o.orders ?? 0,
   }));
 
   const topProducts = (dashboard.topProducts ?? []).map((p) => ({
-    label: p.productTitle || p.title || "Unknown",
+    label: p.productTitle || "Unknown",
     value: safeNumber(p.revenue),
   }));
 
   const categoryPerformance = products.slice(0, 6).map((p) => ({
     label: p.title,
-    value: p.orders ?? p.totalSold ?? 0,
+    value: p.totalSold ?? 0,
   }));
 
   const retentionSeries = (dashboard.retentionSeries ?? []).map((r) => ({

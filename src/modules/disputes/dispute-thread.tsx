@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 import type { DisputeMessage } from "./types";
 
-function bubbleStyles(role: DisputeMessage["senderRole"]) {
+function bubbleStyles(role: DisputeMessage["author"]["role"]) {
   switch (role) {
     case "vendor":
       return "ml-auto max-w-[92%] border-primary/25 bg-primary/10 text-foreground";
@@ -64,12 +64,12 @@ export function DisputeThread({
               <div
                 className={cn(
                   "rounded-xl border px-3 py-2 text-sm shadow-sm",
-                  bubbleStyles(msg.senderRole)
+                  bubbleStyles(msg.author.role)
                 )}
               >
                 <div className="text-muted-foreground mb-1 flex flex-wrap items-center justify-between gap-2 text-[11px]">
                   <span className="text-foreground font-semibold capitalize">
-                    {msg.senderRole}
+                    {msg.author.name || msg.author.role}
                   </span>
                   <time dateTime={msg.createdAt} className="tabular-nums">
                     {new Date(msg.createdAt).toLocaleString(undefined, {

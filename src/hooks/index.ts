@@ -14,7 +14,6 @@ export { useReferrals } from "@/hooks/use-referrals";
 export { usePromotions } from "@/hooks/use-promotions";
 export { useReports } from "@/hooks/use-reports";
 export { useHealthCheck } from "@/hooks/use-health-check";
-export { usePayments } from "@/hooks/use-payments";
 export { useAddresses } from "@/hooks/use-addresses";
 export { useFavorites } from "@/hooks/use-favorites";
 export { useVendorPublic } from "@/hooks/use-vendor-public";
@@ -33,3 +32,18 @@ export { useGatewayInventoryBootstrap } from "@/hooks/use-gateway-inventory-boot
 export { useGatewayVariantsBootstrap } from "@/hooks/use-gateway-variants-bootstrap";
 export { useGatewayChatBootstrap } from "@/hooks/use-gateway-chat-bootstrap";
 export { useRefetchVendorOrders } from "@/hooks/use-refetch-vendor-orders";
+
+// New guide-aligned hooks
+export { useVendorProfile } from "@/hooks/use-vendor-profile";
+export { useProductsWrite } from "@/hooks/use-products-write";
+export { useVariantsWrite } from "@/hooks/use-variants-write";
+export { useInventoryWrite } from "@/hooks/use-inventory-write";
+export { useOrderDetail } from "@/hooks/use-order-detail";
+export { useVendorCustomers } from "@/hooks/use-vendor-customers";
+export { useReviews } from "@/hooks/use-reviews";
+export { useDisputes } from "@/hooks/use-disputes";
+export { useAnalytics } from "@/hooks/use-analytics";
+export { useWallet } from "@/hooks/use-wallet";
+export { useNotifications } from "@/hooks/use-notifications";
+export { useChatMessages } from "@/hooks/use-chat-messages";
+export { useStorageUpload } from "@/hooks/use-storage-upload";

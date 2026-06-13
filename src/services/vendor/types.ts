@@ -72,6 +72,8 @@ export type VendorMeResponse = {
   addressLine1?: string | null;
   postalCode?: string | null;
   rejectionReason?: string | null;
+  submittedAt?: string | null;
+  onboardingCompletedAt?: string | null;
   documents: VendorDocument[];
   shops: VendorShopSummary[];
   statusHistory: VendorStatusHistoryEntry[];
@@ -82,6 +84,8 @@ export type VendorDocument = {
   id: string;
   type: VendorDocumentType;
   fileUrl: string;
+  storageBucket?: string | null;
+  storagePath?: string | null;
   fileName?: string | null;
   mimeType?: string | null;
   verifiedAt?: string | null;
@@ -156,10 +160,10 @@ export type UpdateVendorOnboardingDto = {
 };
 
 export type VendorDocumentType =
-  | "ID_CARD"
-  | "BUSINESS_LICENSE"
-  | "TAX_DOCUMENT"
-  | "ADDRESS_PROOF"
+  | "BUSINESS_REGISTRATION"
+  | "TAX_CERTIFICATE"
+  | "BANK_PROOF"
+  | "IDENTITY"
   | "OTHER";
 
 export type CreateVendorDocumentDto = {
@@ -199,6 +203,7 @@ export type CreateProductDto = {
   slug: string;
   description?: string;
   moq?: number;
+  currency?: "CNY" | "XOF";
   bulkPricing?: BulkPricingTier[];
   categoryIds?: string[];
 };
@@ -208,6 +213,7 @@ export type UpdateProductDto = {
   slug?: string;
   description?: string;
   moq?: number;
+  currency?: "CNY" | "XOF";
   status?: ApiProductStatus;
   bulkPricing?: BulkPricingTier[];
 };
@@ -242,25 +248,25 @@ export type AddAttributeValuesDto = {
 
 export type BulkPricingTier = {
   minQuantity: number;
-  unitPrice: number;
+  unitPrice: string;
 };
 
 export type CreateVariantDto = {
   attributeValueIds: string[];
-  wholesalePrice: number;
+  wholesalePrice: string;
   bulkPricing?: BulkPricingTier[];
   isActive?: boolean;
-  weightKg?: number;
-  volumeCbm?: number;
+  weightKg?: string;
+  volumeCbm?: string;
   imageUrl?: string;
 };
 
 export type UpdateVariantDto = {
-  wholesalePrice?: number;
+  wholesalePrice?: string;
   bulkPricing?: BulkPricingTier[];
   isActive?: boolean;
-  weightKg?: number;
-  volumeCbm?: number;
+  weightKg?: string;
+  volumeCbm?: string;
   imageUrl?: string;
 };
 
@@ -314,47 +320,29 @@ export type VendorCustomerFromApi = {
   products: CustomerProductFromApi[];
 };
 
-// --- Payments ---
-
-export type PaymentMethod = {
-  id: string;
-  code: string;
-  name: string;
-  enabled: boolean;
-};
-
-export type CapturePaymentDto = {
-  amount: number;
-  method: "cash" | "bank_transfer";
-  reference?: string;
-};
-
 // --- Analytics ---
 
 export type AnalyticsDashboardResponse = {
-  totalRevenue: number | string;
+  totalRevenue: string;
   totalOrders: number;
   totalCustomers?: number;
-  averageOrderValue: number | string;
+  averageOrderValue: string;
   pendingOrders?: number;
   processingOrders?: number;
   shippedOrders?: number;
   deliveredOrders?: number;
   disputedOrders?: number;
   topProducts: Array<{
-    productId?: string;
     variantId?: string;
-    title?: string;
     productTitle?: string;
-    soldCount?: number;
     quantitySold?: number;
-    revenue?: number | string;
+    revenue: string;
   }>;
   period: string;
   geographic?: Array<{
     countryCode: string;
     name: string;
-    revenue: number | string;
+    revenue: string;
     orderCount: number;
   }>;
   retentionSeries?: Array<{
@@ -373,10 +361,8 @@ export type AnalyticsDashboardResponse = {
 
 export type AnalyticsOrdersTrendItem = {
   date: string;
-  /** Backend may return `orders` or `orderCount` depending on version. */
-  orders?: number;
-  orderCount?: number;
-  revenue: number | string;
+  orders: number;
+  revenue: string;
 };
 
 export type AnalyticsOrdersResponse = {
@@ -384,20 +370,16 @@ export type AnalyticsOrdersResponse = {
 };
 
 export type AnalyticsProductsItem = {
-  productId?: string;
-  id?: string;
+  id: string;
   title: string;
-  slug?: string;
-  views?: number;
-  orders?: number;
-  totalSold?: number;
-  conversionRate?: number;
+  slug: string;
+  status: ApiProductStatus;
   imageUrl?: string | null;
   variantCount?: number;
-  averageRating?: number;
+  averageRating?: string;
   reviewsCount?: number;
-  totalRevenue?: number | string;
-  status?: ApiProductStatus;
+  totalSold?: number;
+  totalRevenue: string;
 };
 
 export type AnalyticsProductsResponse = {
@@ -425,8 +407,13 @@ export type ReviewResponse = {
   productTitle: string;
   customerName: string;
   rating: number;
+  title?: string | null;
   body: string;
+  mediaUrls?: string[];
+  helpfulCount?: number;
+  isVerifiedPurchase?: boolean;
   vendorResponse?: string | null;
+  vendorRespondedAt?: string | null;
   status: ReviewStatus;
   createdAt: string;
 };
@@ -450,16 +437,23 @@ export type DisputeSummary = {
   id: string;
   orderId: string;
   status: DisputeStatus;
-  amountClaimed: number;
+  customerEmail?: string | null;
+  amountClaimed: string;
   currency: string;
   reasonCategory: string;
+  escalationTier?: number;
   openedAt: string;
+  messageCount?: number;
 };
 
 export type DisputeMessage = {
   id: string;
   body: string;
-  senderRole: string;
+  author: {
+    id?: string;
+    name?: string;
+    role: string;
+  };
   createdAt: string;
 };
 
@@ -504,22 +498,21 @@ export type RegisterDeviceDto = {
 // --- Wallet ---
 
 export type WalletBalanceResponse = {
-  id: string;
-  userId: string;
-  balance: number;
+  availableBalance: string;
+  reservedBalance: string;
+  totalBalance: string;
   currency: string;
-  heldBalance: number;
 };
 
 export type WalletTransaction = {
   id: string;
-  walletId: string;
-  type: "deposit" | "withdrawal" | "payment" | "payout" | "refund" | "hold" | "release";
-  amount: number;
-  currency: string;
+  type: "credit" | "debit" | "deposit" | "withdrawal" | "reserve" | "release" | "refund" | "adjustment";
+  direction: "credit" | "debit";
   status: "pending" | "completed" | "failed" | "cancelled";
+  amount: string;
+  currency: string;
+  referenceId?: string | null;
   description?: string | null;
-  metadata?: Record<string, unknown> | null;
   createdAt: string;
 };
 
@@ -528,7 +521,8 @@ export type WalletTransaction = {
 export type Address = {
   id: string;
   label: string;
-  street: string;
+  streetLine1: string;
+  streetLine2?: string | null;
   city: string;
   region?: string | null;
   postalCode?: string | null;
@@ -539,7 +533,8 @@ export type Address = {
 
 export type CreateAddressDto = {
   label: string;
-  street: string;
+  streetLine1: string;
+  streetLine2?: string;
   city: string;
   region?: string;
   postalCode?: string;
@@ -663,13 +658,12 @@ export type HealthBeaconRequest = {
 
 export type SetupStatusResponse = {
   setupTokenRequired: boolean;
-  canBootstrap: boolean;
+  bootstrapAvailable: boolean;
 };
 
 export type SetupBootstrapRequest = {
+  supabaseUserId: string;
   email: string;
-  password: string;
-  name?: string;
 };
 
 // --- Viewed Products ---

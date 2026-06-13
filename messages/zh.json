@@ -355,10 +355,10 @@
     "unknown": "未知"
   },
   "documentTypes": {
-    "idCard": "身份证件",
-    "businessLicense": "营业执照",
-    "taxDocument": "税务文件",
-    "addressProof": "地址证明",
+    "businessRegistration": "商业登记",
+    "taxCertificate": "税务证书",
+    "bankProof": "银行证明",
+    "identity": "身份证明",
     "other": "其他"
   },
   "language": {
@@ -678,10 +678,13 @@
     "home": {
       "availableBalance": "可用余额",
       "heldBalance": "冻结余额",
+      "totalBalance": "总余额",
       "exchangeRate": "汇率",
       "noRate": "—",
       "history": "历史",
       "transactionHistory": "交易历史",
+      "toggleCurrency": "切换为 {currency}",
+      "changingCurrency": "切换中…",
       "table": {
         "date": "日期",
         "type": "类型",
@@ -693,13 +696,14 @@
       "noTransactions": "暂无交易。"
     },
     "txnType": {
+      "credit": "收入",
+      "debit": "支出",
       "deposit": "充值",
       "withdrawal": "提现",
-      "payment": "付款",
-      "payout": "结算",
+      "reserve": "预留",
+      "release": "释放",
       "refund": "退款",
-      "hold": "冻结",
-      "release": "释放"
+      "adjustment": "调整"
     },
     "txnStatus": {
       "completed": "已完成",
@@ -724,6 +728,9 @@
     "productName": "商品名称",
     "productNamePlaceholder": "批发陶瓷杯",
     "moq": "最小起订量",
+    "currency": "币种",
+    "currencyCNY": "CNY - 人民币",
+    "currencyXOF": "XOF - 西非法郎",
     "description": "描述",
     "descriptionPlaceholder": "规格、最小起订量、交货时间、包装…",
     "bulkPricing": "批量定价",
@@ -940,6 +947,8 @@
         "legalBusinessNamePlaceholder": "Amina手工工艺品",
         "tradeNameLabel": "商号（可选）",
         "tradeNamePlaceholder": "Amina Crafts",
+        "taxIdLabel": "税务编号（可选）",
+        "taxIdPlaceholder": "TAX123456",
         "businessEmailLabel": "企业邮箱",
         "businessEmailPlaceholder": "contact@example.com",
         "businessPhoneLabel": "企业电话",
@@ -960,14 +969,14 @@
         "postalCodePlaceholder": "01 BP 1234"
       },
       "documents": {
-        "idCardLabel": "身份证件",
-        "idCardDescription": "护照、身份证、驾驶证",
-        "businessLicenseLabel": "营业执照",
-        "businessLicenseDescription": "营业执照、注册证书",
-        "taxDocumentLabel": "税务文件",
-        "taxDocumentDescription": "税务登记证、增值税登记",
-        "addressProofLabel": "地址证明",
-        "addressProofDescription": "水电费账单、银行对账单、租赁协议",
+        "businessRegistrationLabel": "商业登记",
+        "businessRegistrationDescription": "营业执照、注册证书",
+        "taxCertificateLabel": "税务证书",
+        "taxCertificateDescription": "税务登记证、增值税登记",
+        "bankProofLabel": "银行证明",
+        "bankProofDescription": "银行对账单、作废支票或银行信函",
+        "identityLabel": "身份证明",
+        "identityDescription": "护照、身份证、驾驶证",
         "otherLabel": "其他",
         "otherDescription": "任何其他支持性文件",
         "clickOrDrag": "点击或拖拽文件上传",
@@ -1019,6 +1028,7 @@
       "businessNameMin": "企业名称至少需要2个字符",
       "businessNameMax": "企业名称不得超过120个字符",
       "tradeNameMax": "商号不得超过120个字符",
+      "taxIdMax": "税务编号不得超过64个字符",
       "emailRequired": "企业邮箱为必填项",
       "emailInvalid": "请输入有效的邮箱地址",
       "phoneTooShort": "电话号码太短",

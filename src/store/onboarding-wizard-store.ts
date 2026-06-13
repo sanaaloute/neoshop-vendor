@@ -124,6 +124,7 @@ export const useOnboardingWizardStore = create<OnboardingWizardState>()(
             basicInfo: {
               legalBusinessName: profile.legalBusinessName ?? "",
               tradeName: profile.tradeName ?? "",
+              taxId: profile.taxId ?? "",
               businessEmail: profile.businessEmail ?? "",
               businessPhone: profile.businessPhone ?? "",
               countryCode: profile.countryCode ?? "",
@@ -141,6 +142,8 @@ export const useOnboardingWizardStore = create<OnboardingWizardState>()(
               fileName: d.fileName ?? "document",
               mimeType: d.mimeType ?? "application/pdf",
               status: "done" as const,
+              storageBucket: d.storageBucket,
+              storagePath: d.storagePath,
             })),
             acceptedTerms: false,
           },

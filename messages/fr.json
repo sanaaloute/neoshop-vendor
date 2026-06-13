@@ -355,10 +355,10 @@
     "unknown": "Inconnu"
   },
   "documentTypes": {
-    "idCard": "Carte d'identité",
-    "businessLicense": "Licence d'entreprise",
-    "taxDocument": "Document fiscal",
-    "addressProof": "Justificatif de domicile",
+    "businessRegistration": "Enregistrement d'entreprise",
+    "taxCertificate": "Certificat fiscal",
+    "bankProof": "Preuve bancaire",
+    "identity": "Identité",
     "other": "Autre"
   },
   "language": {
@@ -678,10 +678,13 @@
     "home": {
       "availableBalance": "Solde disponible",
       "heldBalance": "Solde retenu",
+      "totalBalance": "Solde total",
       "exchangeRate": "Taux de change",
       "noRate": "—",
       "history": "Historique",
       "transactionHistory": "Historique des transactions",
+      "toggleCurrency": "Passer en {currency}",
+      "changingCurrency": "Changement…",
       "table": {
         "date": "Date",
         "type": "Type",
@@ -693,13 +696,14 @@
       "noTransactions": "Aucune transaction pour l'instant."
     },
     "txnType": {
+      "credit": "Crédit",
+      "debit": "Débit",
       "deposit": "Dépôt",
       "withdrawal": "Retrait",
-      "payment": "Paiement",
-      "payout": "Paiement",
+      "reserve": "Réserve",
+      "release": "Libération",
       "refund": "Remboursement",
-      "hold": "Retenue",
-      "release": "Libération"
+      "adjustment": "Ajustement"
     },
     "txnStatus": {
       "completed": "Terminé",
@@ -724,6 +728,9 @@
     "productName": "Nom du produit",
     "productNamePlaceholder": "Mugs en céramique en gros",
     "moq": "MOQ",
+    "currency": "Devise",
+    "currencyCNY": "CNY - Yuan chinois",
+    "currencyXOF": "XOF - Franc CFA Ouest-Africain",
     "description": "Description",
     "descriptionPlaceholder": "Spécifications, MOQ, délais, emballage…",
     "bulkPricing": "Prix en gros",
@@ -940,6 +947,8 @@
         "legalBusinessNamePlaceholder": "Artisanat d'Amina",
         "tradeNameLabel": "Nom commercial (optionnel)",
         "tradeNamePlaceholder": "Amina Crafts",
+        "taxIdLabel": "Identifiant fiscal (optionnel)",
+        "taxIdPlaceholder": "TAX123456",
         "businessEmailLabel": "Email professionnel",
         "businessEmailPlaceholder": "contact@exemple.com",
         "businessPhoneLabel": "Téléphone professionnel",
@@ -960,14 +969,14 @@
         "postalCodePlaceholder": "01 BP 1234"
       },
       "documents": {
-        "idCardLabel": "Carte d'identité",
-        "idCardDescription": "Passeport, carte nationale d'identité, permis de conduire",
-        "businessLicenseLabel": "Licence d'entreprise",
-        "businessLicenseDescription": "Licence d'entreprise, certificat d'enregistrement",
-        "taxDocumentLabel": "Document fiscal",
-        "taxDocumentDescription": "Certificat d'identification fiscale, enregistrement TVA",
-        "addressProofLabel": "Justificatif de domicile",
-        "addressProofDescription": "Facture de services publics, relevé bancaire, contrat de bail",
+        "businessRegistrationLabel": "Enregistrement d'entreprise",
+        "businessRegistrationDescription": "Licence d'entreprise, certificat d'enregistrement",
+        "taxCertificateLabel": "Certificat fiscal",
+        "taxCertificateDescription": "Certificat d'identification fiscale, enregistrement TVA",
+        "bankProofLabel": "Preuve bancaire",
+        "bankProofDescription": "Relevé bancaire, chèque annulé ou lettre bancaire",
+        "identityLabel": "Identité",
+        "identityDescription": "Passeport, carte nationale d'identité, permis de conduire",
         "otherLabel": "Autre",
         "otherDescription": "Tout autre document justificatif",
         "clickOrDrag": "Cliquez ou faites glisser des fichiers à télécharger",
@@ -1019,6 +1028,7 @@
       "businessNameMin": "Le nom de l'entreprise doit comporter au moins 2 caractères",
       "businessNameMax": "Le nom de l'entreprise doit être inférieur à 120 caractères",
       "tradeNameMax": "Le nom commercial doit être inférieur à 120 caractères",
+      "taxIdMax": "L'identifiant fiscal doit être inférieur à 64 caractères",
       "emailRequired": "L'email professionnel est requis",
       "emailInvalid": "Entrez une adresse email valide",
       "phoneTooShort": "Le numéro de téléphone est trop court",

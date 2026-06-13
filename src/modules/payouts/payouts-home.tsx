@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { MetricCard } from "@/components/cards/metric-card";
@@ -20,34 +20,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useWallet } from "@/hooks/use-wallet";
+import { useExchangeRates } from "@/hooks/use-exchange-rates";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { useExchangeRates } from "@/hooks/use-exchange-rates";
-import {
-  getWalletMe,
-  listWalletTransactions,
-} from "@/services/vendor/wallet-api";
-import type {
-  WalletBalanceResponse,
-  WalletTransaction,
-} from "@/services/vendor/types";
+import type { WalletTransaction } from "@/services/vendor/types";
 
 function txnTypeLabel(type: WalletTransaction["type"], t: (key: string) => string): string {
   switch (type) {
+    case "credit":
+      return t("payouts.txnType.credit");
+    case "debit":
+      return t("payouts.txnType.debit");
     case "deposit":
       return t("payouts.txnType.deposit");
     case "withdrawal":
       return t("payouts.txnType.withdrawal");
-    case "payment":
-      return t("payouts.txnType.payment");
-    case "payout":
-      return t("payouts.txnType.payout");
-    case "refund":
-      return t("payouts.txnType.refund");
-    case "hold":
-      return t("payouts.txnType.hold");
+    case "reserve":
+      return t("payouts.txnType.reserve");
     case "release":
       return t("payouts.txnType.release");
+    case "refund":
+      return t("payouts.txnType.refund");
+    case "adjustment":
+      return t("payouts.txnType.adjustment");
     default:
       return type;
   }
@@ -84,7 +80,13 @@ function statusBadge(status: WalletTransaction["status"], t: (key: string) => st
   }
 }
 
-function signedCurrency(n: number, currency = "CNY") {
+function parseMoney(value: string): number {
+  const n = Number.parseFloat(value.replace(/[+\s]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function signedCurrency(value: string, currency = "CNY") {
+  const n = parseMoney(value);
   const abs = formatCurrency(Math.abs(n), currency);
   if (n > 0) return `+${abs}`;
   if (n < 0) return `−${abs}`;
@@ -94,29 +96,16 @@ function signedCurrency(n: number, currency = "CNY") {
 export function PayoutsHome() {
   const t = useTranslations();
   const { currentRate, fetchRate } = useExchangeRates();
-  const [balance, setBalance] = useState<WalletBalanceResponse | null>(null);
-  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { balance, transactions, loading, changeCurrency } = useWallet();
+  const [currencyBusy, setCurrencyBusy] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    Promise.all([getWalletMe(), listWalletTransactions({ limit: 50 })])
-      .then(([wallet, txns]) => {
-        if (cancelled) return;
-        setBalance(wallet);
-        setTransactions(txns.items);
-      })
-      .catch(() => {
-        if (cancelled) return;
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const handleToggleCurrency = () => {
+    if (!balance || currencyBusy) return;
+    setCurrencyBusy(true);
+    changeCurrency(balance.currency === "XOF" ? "CNY" : "XOF").finally(() => {
+      setCurrencyBusy(false);
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -125,7 +114,9 @@ export function PayoutsHome() {
           index={0}
           label={t("payouts.home.availableBalance")}
           value={
-            balance ? formatCurrency(balance.balance, balance.currency) : "—"
+            balance
+              ? formatCurrency(parseMoney(balance.availableBalance), balance.currency)
+              : "—"
           }
         />
         <MetricCard
@@ -133,12 +124,21 @@ export function PayoutsHome() {
           label={t("payouts.home.heldBalance")}
           value={
             balance
-              ? formatCurrency(balance.heldBalance, balance.currency)
+              ? formatCurrency(parseMoney(balance.reservedBalance), balance.currency)
               : "—"
           }
         />
         <MetricCard
           index={2}
+          label={t("payouts.home.totalBalance")}
+          value={
+            balance
+              ? formatCurrency(parseMoney(balance.totalBalance), balance.currency)
+              : "—"
+          }
+        />
+        <MetricCard
+          index={3}
           label={t("payouts.home.exchangeRate")}
           value={
             currentRate
@@ -148,7 +148,7 @@ export function PayoutsHome() {
         />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {["USD", "EUR", "GBP", "JPY"].map((to) => (
           <button
             key={to}
@@ -159,6 +159,18 @@ export function PayoutsHome() {
             {balance?.currency ?? "CNY"} → {to}
           </button>
         ))}
+        <button
+          type="button"
+          disabled={currencyBusy || !balance}
+          onClick={handleToggleCurrency}
+          className="bg-muted/40 border-border/60 hover:bg-muted/60 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
+        >
+          {currencyBusy
+            ? t("payouts.home.changingCurrency")
+            : t("payouts.home.toggleCurrency", {
+                currency: balance?.currency === "XOF" ? "CNY" : "XOF",
+              })}
+        </button>
       </div>
 
       <DashboardCard className="gap-0 py-0">
@@ -219,7 +231,7 @@ export function PayoutsHome() {
                       <TableCell
                         className={cn(
                           "pr-4 text-right font-medium tabular-nums",
-                          txn.amount >= 0
+                          parseMoney(txn.amount) >= 0
                             ? "text-green-600 dark:text-green-400"
                             : ""
                         )}

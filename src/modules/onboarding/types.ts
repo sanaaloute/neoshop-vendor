@@ -3,6 +3,7 @@ import type { VendorDocumentType, VendorType } from "@/services/vendor/types";
 export type BasicInfo = {
   legalBusinessName: string;
   tradeName: string;
+  taxId: string;
   businessEmail: string;
   businessPhone: string;
   countryCode: string;
@@ -24,9 +25,9 @@ export type DraftDocument = {
   status: "uploading" | "done" | "error";
   progress?: number;
   /** Storage bucket name (e.g. "vendor-documents") */
-  storageBucket?: string;
+  storageBucket?: string | null;
   /** Storage object path (e.g. "vendor-uuid/filename.pdf") */
-  storagePath?: string;
+  storagePath?: string | null;
 };
 
 export type OnboardingDraft = {
@@ -52,6 +53,7 @@ export function emptyOnboardingDraft(): OnboardingDraft {
     basicInfo: {
       legalBusinessName: "",
       tradeName: "",
+      taxId: "",
       businessEmail: "",
       businessPhone: "",
       countryCode: "",

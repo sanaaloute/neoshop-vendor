@@ -14,6 +14,7 @@ type VendorProfileState = {
   fetched: boolean;
   /** Load once per session unless `force` (e.g. after submit-verification). */
   load: (opts?: { force?: boolean }) => Promise<void>;
+  setProfile: (profile: VendorMeResponse) => void;
   reset: () => void;
 };
 
@@ -49,6 +50,8 @@ export const useVendorProfileStore = create<VendorProfileState>((set, get) => ({
     });
     return promise;
   },
+
+  setProfile: (profile) => set({ profile, loading: false, fetched: true }),
 
   reset: () => set({ profile: null, loading: false, fetched: false }),
 }));

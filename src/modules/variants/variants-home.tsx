@@ -343,13 +343,13 @@ export function VariantsHome() {
       if (toCreate.length > 0) {
         const variants = toCreate.map((row) => {
           const weightKg =
-            row.weightGrams > 0 ? row.weightGrams / 1000 : undefined;
+            row.weightGrams > 0 ? (row.weightGrams / 1000).toFixed(4) : undefined;
           const volumeCbm =
             row.lengthCm > 0 && row.widthCm > 0 && row.heightCm > 0
-              ? (row.lengthCm * row.widthCm * row.heightCm) / 1_000_000
+              ? ((row.lengthCm * row.widthCm * row.heightCm) / 1_000_000).toFixed(6)
               : undefined;
           return {
-            wholesalePrice: row.price,
+            wholesalePrice: row.price.toFixed(2),
             attributeValueIds: row.selectionIds ?? [],
             isActive: true,
             weightKg,
@@ -384,14 +384,14 @@ export function VariantsHome() {
       if (toUpdate.length > 0) {
         const updates = toUpdate.map((row) => {
           const weightKg =
-            row.weightGrams > 0 ? row.weightGrams / 1000 : undefined;
+            row.weightGrams > 0 ? (row.weightGrams / 1000).toFixed(4) : undefined;
           const volumeCbm =
             row.lengthCm > 0 && row.widthCm > 0 && row.heightCm > 0
-              ? (row.lengthCm * row.widthCm * row.heightCm) / 1_000_000
+              ? ((row.lengthCm * row.widthCm * row.heightCm) / 1_000_000).toFixed(6)
               : undefined;
           return {
             variantId: row.id,
-            wholesalePrice: row.price,
+            wholesalePrice: row.price.toFixed(2),
             weightKg,
             volumeCbm,
             imageUrl: row.imageUrl,

@@ -61,7 +61,7 @@ export function toDisputeCase(
     id: summary.id,
     orderId: summary.orderId,
     title: summary.reasonCategory,
-    amount: summary.amountClaimed,
+    amount: Number.parseFloat(summary.amountClaimed) || 0,
     currency: summary.currency,
     status: summary.status,
     openedAt: summary.openedAt,

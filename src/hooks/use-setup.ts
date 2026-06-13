@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 
 import { getApiBaseUrl } from "@/config/auth";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
-import { getSetupStatus, bootstrapAdmin } from "@/services/vendor/setup-api";
+import { bootstrapAdmin, getSetupStatus } from "@/services/vendor/setup-api";
 import type { SetupStatusResponse } from "@/services/vendor/types";
 
 /** Check platform setup status and bootstrap the first admin if needed. */
@@ -28,7 +28,7 @@ export function useSetup() {
   }, []);
 
   const bootstrap = useCallback(
-    async (body: { email: string; password: string; name?: string }) => {
+    async (body: { supabaseUserId: string; email: string }) => {
       if (!getApiBaseUrl()) return;
       setLoading(true);
       setError(null);

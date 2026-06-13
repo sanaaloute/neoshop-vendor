@@ -2,7 +2,6 @@
 export type ProductStatus =
   | "draft"
   | "published"
-  | "scheduled"
   | "archived"
   | "pending_review"
   | "hidden"
@@ -35,6 +34,7 @@ export type Product = {
   name: string;
   description: string;
   price: number;
+  currency: "CNY" | "XOF";
   moq?: number;
   bulkPricing?: BulkPricingTier[];
   categoryIds: string[];
@@ -42,7 +42,6 @@ export type Product = {
   seo: ProductSeo;
   media: ProductMedia[];
   status: ProductStatus;
-  /** ISO datetime when `status === "scheduled"` */
   publishAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -52,6 +51,7 @@ export type ProductFormValues = {
   name: string;
   description: string;
   moq: number;
+  currency: "CNY" | "XOF";
   bulkPricing: BulkPricingTier[];
   categoryIds: string[];
   seo: { slug: string };
@@ -65,6 +65,7 @@ export function productToFormValues(p: Product): ProductFormValues {
     name: p.name,
     description: p.description,
     moq: p.moq ?? 1,
+    currency: p.currency ?? "CNY",
     bulkPricing: p.bulkPricing ? [...p.bulkPricing] : [],
     categoryIds: [...p.categoryIds],
     seo: { slug: p.seo.slug },
@@ -81,6 +82,7 @@ export function formValuesToProductPatch(
     name: v.name.trim(),
     description: v.description.trim(),
     moq: v.moq,
+    currency: v.currency,
     bulkPricing: v.bulkPricing.length > 0 ? [...v.bulkPricing] : undefined,
     categoryIds: v.categoryIds,
     seo: {

@@ -47,6 +47,7 @@ export function TypeBasicStepForm() {
     vendorType: (draft.vendorType || "INDIVIDUAL") as "INDIVIDUAL" | "COMPANY",
     legalBusinessName: draft.basicInfo.legalBusinessName,
     tradeName: draft.basicInfo.tradeName,
+    taxId: draft.basicInfo.taxId,
     businessEmail: draft.basicInfo.businessEmail,
     businessPhone: draft.basicInfo.businessPhone,
     countryCode: draft.basicInfo.countryCode,
@@ -64,6 +65,7 @@ export function TypeBasicStepForm() {
       patchBasicInfo({
         legalBusinessName: data.legalBusinessName,
         tradeName: data.tradeName,
+        taxId: data.taxId,
         businessEmail: data.businessEmail,
         businessPhone: data.businessPhone,
         countryCode: data.countryCode,
@@ -172,6 +174,15 @@ export function TypeBasicStepForm() {
                 name="tradeName"
                 label={t("steps.typeBasic.tradeNameLabel")}
                 placeholder={t("steps.typeBasic.tradeNamePlaceholder")}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <VendorTextField
+                control={form.control}
+                name="taxId"
+                label={t("steps.typeBasic.taxIdLabel")}
+                placeholder={t("steps.typeBasic.taxIdPlaceholder")}
               />
             </div>
 

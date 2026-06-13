@@ -46,14 +46,14 @@ export function DocumentsStepForm() {
   const removeDocument = useOnboardingWizardStore((s) => s.removeDocument);
 
   const documentTypes: { value: VendorDocumentType; label: string; description: string }[] = [
-    { value: "ID_CARD", label: t("steps.documents.idCardLabel"), description: t("steps.documents.idCardDescription") },
-    { value: "BUSINESS_LICENSE", label: t("steps.documents.businessLicenseLabel"), description: t("steps.documents.businessLicenseDescription") },
-    { value: "TAX_DOCUMENT", label: t("steps.documents.taxDocumentLabel"), description: t("steps.documents.taxDocumentDescription") },
-    { value: "ADDRESS_PROOF", label: t("steps.documents.addressProofLabel"), description: t("steps.documents.addressProofDescription") },
+    { value: "BUSINESS_REGISTRATION", label: t("steps.documents.businessRegistrationLabel"), description: t("steps.documents.businessRegistrationDescription") },
+    { value: "TAX_CERTIFICATE", label: t("steps.documents.taxCertificateLabel"), description: t("steps.documents.taxCertificateDescription") },
+    { value: "BANK_PROOF", label: t("steps.documents.bankProofLabel"), description: t("steps.documents.bankProofDescription") },
+    { value: "IDENTITY", label: t("steps.documents.identityLabel"), description: t("steps.documents.identityDescription") },
     { value: "OTHER", label: t("steps.documents.otherLabel"), description: t("steps.documents.otherDescription") },
   ];
 
-  const [selectedType, setSelectedType] = useState<VendorDocumentType>("ID_CARD");
+  const [selectedType, setSelectedType] = useState<VendorDocumentType>("BUSINESS_REGISTRATION");
   const [dragActive, setDragActive] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);

@@ -3,15 +3,16 @@ import { vendorApiClient } from "@/services/api/client";
 import type {
   ApiOrderStatus,
   OrderStatsResponse,
+  Paginated,
   UpdateOrderStatusDto,
   VendorCustomerFromApi,
 } from "./types";
 
-/** GET /orders/vendor — returns an array of order summaries (no pagination params per spec) */
+/** GET /orders/vendor — list orders for the authenticated vendor */
 export async function listVendorOrders(params?: {
   status?: ApiOrderStatus;
 }) {
-  const { data } = await vendorApiClient.get<unknown[]>("/api/v1/orders/vendor", {
+  const { data } = await vendorApiClient.get<Paginated<unknown>>("/api/v1/orders/vendor", {
     params,
   });
   return data;
@@ -25,7 +26,7 @@ export async function getVendorOrderStats() {
 
 /** GET /orders/vendor/customers — list unique customers who ordered from this vendor */
 export async function listVendorCustomers() {
-  const { data } = await vendorApiClient.get<VendorCustomerFromApi[]>("/api/v1/orders/vendor/customers");
+  const { data } = await vendorApiClient.get<Paginated<VendorCustomerFromApi>>("/api/v1/orders/vendor/customers");
   return data;
 }
 

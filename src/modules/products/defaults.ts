@@ -5,6 +5,7 @@ export function emptyProductFormValues(): ProductFormValues {
     name: "",
     description: "",
     moq: 1,
+    currency: "CNY",
     bulkPricing: [],
     categoryIds: [],
     seo: { slug: "" },

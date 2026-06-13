@@ -26,6 +26,7 @@ export const productFormSchema = z
     name: z.string().min(2, "Name is required"),
     description: z.string().min(10, "Add a short description (min 10 chars)"),
     moq: z.number().min(1, "MOQ must be at least 1"),
+    currency: z.enum(["CNY", "XOF"]),
     bulkPricing: z.array(bulkPricingTierSchema),
     categoryIds: z.array(z.string()).min(1, "Pick at least one category"),
     seo: seoSchema,
@@ -33,24 +34,12 @@ export const productFormSchema = z
     status: z.enum([
       "draft",
       "published",
-      "scheduled",
       "archived",
       "pending_review",
       "hidden",
       "rejected",
     ]),
     publishAt: z.string().nullable(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.status === "scheduled") {
-      if (!data.publishAt || !data.publishAt.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Pick a publish date and time",
-          path: ["publishAt"],
-        });
-      }
-    }
   });
 
 export type ProductFormSchemaIn = z.infer<typeof productFormSchema>;

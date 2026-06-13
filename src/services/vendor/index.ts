@@ -8,7 +8,6 @@ export * from "./products-api";
 export * from "./variants-api";
 export * from "./inventory-api";
 export * from "./orders-api";
-export * from "./payments-api";
 export * from "./chat-api";
 export * from "./favorites-api";
 export * from "./reports-api";

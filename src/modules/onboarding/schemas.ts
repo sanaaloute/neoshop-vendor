@@ -8,6 +8,7 @@ export function createBasicInfoSchema(t: (key: string) => string) {
       .min(2, t("validation.businessNameMin"))
       .max(120, t("validation.businessNameMax")),
     tradeName: z.string().max(120, t("validation.tradeNameMax")).optional().or(z.literal("")),
+    taxId: z.string().max(64, t("validation.taxIdMax")).optional().or(z.literal("")),
     businessEmail: z
       .string()
       .min(1, t("validation.emailRequired"))

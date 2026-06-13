@@ -13,9 +13,9 @@ export function useRefetchVendorOrders() {
 
   return useCallback(async () => {
     if (!getApiBaseUrl()) return;
-    const list = await listVendorOrders();
+    const data = await listVendorOrders();
     replaceOrders(
-      list.map((r) => mapGatewayOrderToVendorOrder(r as Record<string, unknown>))
+      data.items.map((r) => mapGatewayOrderToVendorOrder(r as Record<string, unknown>))
     );
   }, [replaceOrders]);
 }

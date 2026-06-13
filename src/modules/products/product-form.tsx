@@ -34,6 +34,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { getApiBaseUrl } from "@/config/auth";
 import { UI_DELAYS } from "@/config/ui";
@@ -416,7 +423,7 @@ export function ProductForm({
               label={t("productName")}
               placeholder={t("productNamePlaceholder")}
             />
-            <div className="grid gap-4 md:grid-cols-1">
+            <div className="grid gap-4 md:grid-cols-2">
               <Controller
                 control={form.control}
                 name="moq"
@@ -442,6 +449,36 @@ export function ProductForm({
                       name={field.name}
                       ref={field.ref}
                     />
+                    {fieldState.error?.message ? (
+                      <p className="text-destructive text-xs">
+                        {fieldState.error.message}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+              />
+              <Controller
+                control={form.control}
+                name="currency"
+                render={({ field, fieldState }) => (
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={field.name}>{t("currency")}</Label>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={!canWriteCatalog}
+                    >
+                      <SelectTrigger
+                        id={field.name}
+                        aria-invalid={fieldState.invalid}
+                      >
+                        <SelectValue placeholder={t("currency")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CNY">{t("currencyCNY")}</SelectItem>
+                        <SelectItem value="XOF">{t("currencyXOF")}</SelectItem>
+                      </SelectContent>
+                    </Select>
                     {fieldState.error?.message ? (
                       <p className="text-destructive text-xs">
                         {fieldState.error.message}

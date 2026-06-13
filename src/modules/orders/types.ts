@@ -6,7 +6,8 @@ export type OrderStatus =
   | "shipped"
   | "delivered"
   | "disputed"
-  | "refunded";
+  | "refunded"
+  | "cancelled";
 
 export type OrderLine = {
   sku: string;

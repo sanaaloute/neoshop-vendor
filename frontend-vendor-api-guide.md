@@ -8,73 +8,213 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 
 ---
 
+## Global Conventions
+
+### Required Headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | All vendor endpoints | `Bearer <supabase-access-token>` (JWT, HS256) |
+| `X-Request-Id` | Optional | Unique request ID (echoed in response, used for tracing) |
+| `X-Correlation-Id` | Optional | Correlation ID for distributed tracing |
+| `Idempotency-Key` | Optional | 128-char max; ensures safe retries for state-changing ops |
+| `Content-Type` | POST/PATCH/PUT | `application/json` (or `multipart/form-data` for uploads) |
+| `User-Agent` | Auto-captured | Used for session tracking |
+
+### Guard Chain (Authenticated Endpoints)
+
+`JwtAuthGuard` → `RolesGuard` → `PermissionsGuard` → `SessionActiveGuard` → `ThrottlerGuard`
+
+- `@Public()` skips JWT authentication
+- `@Roles(UserRole.vendor)` restricts to vendor role
+- `@RequirePermissions()` restricts by permission
+- `@SkipThrottle()` exempts from rate limiting
+
+### Response Format
+
+**Success responses** return the resource payload directly (no wrapper):
+
+```json
+{
+  "id": "vendor-uuid",
+  "status": "APPROVED",
+  "...": "..."
+}
+```
+
+**Error responses** use this envelope:
+
+```json
+{
+  "statusCode": 400,
+  "message": "Validation error description",
+  "error": "Bad Request",
+  "path": "/api/v1/...",
+  "requestId": "req-uuid",
+  "correlationId": "corr-uuid",
+  "timestamp": "2024-06-12T10:00:00.000Z"
+}
+```
+
+### Data Types
+
+- **Decimal values** (prices, balances): returned as **strings** to preserve precision
+- **Dates**: ISO 8601 strings (`YYYY-MM-DDTHH:mm:ss.sssZ`)
+- **UUIDs**: Version 4 UUIDs (`xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`)
+- **Enums**: lowercase snake_case string values
+
+---
+
 ## Vendor Profile
 
 ### `GET /vendors/me`
 
-**Auth:** `vendor` role + `VENDOR_PROFILE_WRITE`
+Get vendor profile, documents, shops, and recent status history.
 
-**Response:** Vendor profile, documents, shops, and recent status history.
+**Role:** `vendor`  
+**Permission:** `VENDOR_PROFILE_WRITE`
+
+**Response:**
+```json
+{
+  "id": "vendor-uuid",
+  "userId": "user-uuid",
+  "legalBusinessName": "Acme Corp LLC",
+  "tradeName": "Acme Corp",
+  "taxId": "TAX123456",
+  "businessEmail": "contact@acme.com",
+  "businessPhone": "+22670123456",
+  "countryCode": "BF",
+  "region": "Centre",
+  "city": "Ouagadougou",
+  "addressLine1": "123 Main Street",
+  "postalCode": "01",
+  "vendorType": "COMPANY",
+  "status": "APPROVED",
+  "submittedAt": "2024-06-01T10:00:00Z",
+  "onboardingCompletedAt": "2024-05-15T10:00:00Z",
+  "rejectionReason": null,
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-06-12T10:00:00Z",
+  "documents": [
+    {
+      "id": "doc-uuid",
+      "type": "BUSINESS_REGISTRATION",
+      "fileUrl": "https://.../doc.pdf",
+      "storageBucket": "vendor-documents",
+      "storagePath": "vendor-uuid/doc_1234567890.pdf",
+      "fileName": "business_reg.pdf",
+      "mimeType": "application/pdf",
+      "verifiedAt": null,
+      "createdAt": "2024-06-01T10:00:00Z"
+    }
+  ],
+  "shops": [
+    { "id": "shop-uuid", "slug": "acme-corp", "name": "Acme Corp", "isPublished": true }
+  ],
+  "statusHistory": [
+    { "status": "PENDING_ONBOARDING", "note": "Initial registration", "createdAt": "2024-01-01T00:00:00Z" },
+    { "status": "PENDING_VERIFICATION", "note": "Submitted for review", "createdAt": "2024-06-01T10:00:00Z" },
+    { "status": "APPROVED", "note": "Verified and approved", "createdAt": "2024-06-05T10:00:00Z" }
+  ]
+}
+```
 
 ---
 
 ### `POST /vendors/me/register`
 
-**Auth:** `vendor` role + `VENDOR_PROFILE_WRITE`
+Create vendor profile for authenticated seller account.
 
-**Body:** `RegisterVendorDto`
+**Role:** `vendor`  
+**Permission:** `VENDOR_PROFILE_WRITE`
+
+**Request Body:**
 ```json
 {
-  "vendorType": "INDIVIDUAL" | "COMPANY",
-  "legalBusinessName": "string (2-200 chars)",
-  "tradeName?": "string",
-  "taxId?": "string",
-  "businessEmail?": "email",
-  "businessPhone?": "string",
-  "countryCode?": "ISO-3166-1 alpha-2 (2 chars)"
+  "vendorType": "COMPANY",                 // required, enum: INDIVIDUAL, COMPANY
+  "legalBusinessName": "Acme Corp LLC",  // required, string, 2-200 chars
+  "tradeName": "Acme Corp",               // optional, string, max 200
+  "taxId": "TAX123456",                   // optional, string, max 64
+  "businessEmail": "contact@acme.com",    // optional, email, max 320
+  "businessPhone": "+22670123456",        // optional, string, max 32
+  "countryCode": "BF"                     // optional, ISO 3166-1 alpha-2, exactly 2 chars
 }
 ```
+
+**Response:** Full `Vendor` object with `status: PENDING_ONBOARDING`
+
+**Error Codes:**
+- `400` — Validation error (invalid fields, missing required)
+- `409` — Vendor profile already exists
 
 ---
 
 ### `PATCH /vendors/me/onboarding`
 
-**Auth:** `VENDOR_PROFILE_WRITE`
+Update onboarding fields while status allows edits (`PENDING_ONBOARDING` or `REJECTED`).
 
-**Body:** `UpdateVendorOnboardingDto` (all optional)
+**Role:** `vendor`  
+**Permission:** `VENDOR_PROFILE_WRITE`
+
+**Request Body:**
 ```json
 {
-  "vendorType?": "INDIVIDUAL" | "COMPANY",
-  "legalBusinessName?": "string",
-  "tradeName?": "string",
-  "taxId?": "string",
-  "businessEmail?": "email",
-  "businessPhone?": "string",
-  "countryCode?": "string (2 chars)",
-  "region?": "string",
-  "city?": "string",
-  "addressLine1?": "string",
-  "postalCode?": "string"
+  "vendorType": "COMPANY",                 // optional, enum: INDIVIDUAL, COMPANY
+  "legalBusinessName": "Acme Corp LLC",  // optional, string, 2-200 chars
+  "tradeName": "Acme Corp",               // optional, string, max 200
+  "taxId": "TAX123456",                   // optional, string, max 64
+  "businessEmail": "contact@acme.com",    // optional, email, max 320
+  "businessPhone": "+22670123456",        // optional, string, max 32
+  "countryCode": "BF",                    // optional, string, 2 chars
+  "region": "Centre",                     // optional, string, max 120
+  "city": "Ouagadougou",                  // optional, string, max 120
+  "addressLine1": "123 Main Street",      // optional, string, max 240
+  "postalCode": "01"                      // optional, string, max 32
 }
 ```
 
-**Note:** Some fields may be locked after admin approval.
+**Response:** Updated `Vendor` profile (same shape as `GET /vendors/me`)
+
+**Error Codes:**
+- `400` — Profile locked (status not `PENDING_ONBOARDING` or `REJECTED`)
+- `403` — Insufficient permissions
+
+> **Note:** Some fields may be locked after admin approval.
 
 ---
 
 ### `POST /vendors/me/documents`
 
-**Auth:** `VENDOR_PROFILE_WRITE`
+Register a verification document metadata + URL.
 
-**Body:** `CreateVendorDocumentDto`
+**Role:** `vendor`  
+**Permission:** `VENDOR_PROFILE_WRITE`
+
+**Request Body:**
 ```json
 {
-  "type": "ID_CARD" | "BUSINESS_LICENSE" | "TAX_DOCUMENT" | "ADDRESS_PROOF" | "OTHER",
-  "fileUrl": "https://...",
-  "storageBucket?": "vendor-documents",
-  "storagePath?": "object/path",
-  "fileName?": "string",
-  "mimeType?": "string"
+  "type": "BUSINESS_REGISTRATION",        // required, enum: BUSINESS_REGISTRATION, TAX_CERTIFICATE, BANK_PROOF, IDENTITY, OTHER
+  "fileUrl": "https://.../doc.pdf",       // required, HTTPS URL, max 2048
+  "storageBucket": "vendor-documents",     // optional, string, max 64 — preferred for signed URL refresh
+  "storagePath": "vendor-uuid/doc_123.pdf", // optional, string, max 1024
+  "fileName": "business_reg.pdf",         // optional, string, max 255
+  "mimeType": "application/pdf"           // optional, string, max 128
+}
+```
+
+**Response:**
+```json
+{
+  "id": "doc-uuid",
+  "type": "BUSINESS_REGISTRATION",
+  "fileUrl": "https://.../doc.pdf",
+  "storageBucket": "vendor-documents",
+  "storagePath": "vendor-uuid/doc_123.pdf",
+  "fileName": "business_reg.pdf",
+  "mimeType": "application/pdf",
+  "verifiedAt": null,
+  "createdAt": "2024-06-12T10:00:00Z"
 }
 ```
 
@@ -82,15 +222,38 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 
 ### `DELETE /vendors/me/documents/:documentId`
 
-**Auth:** `VENDOR_PROFILE_WRITE`
+Remove a verification document before approval.
+
+**Role:** `vendor`  
+**Permission:** `VENDOR_PROFILE_WRITE`
+
+**Response:** `204 No Content`
 
 ---
 
 ### `POST /vendors/me/submit-verification`
 
-**Auth:** `VENDOR_PROFILE_WRITE`
+Submit vendor profile for backend verification / approval workflow.
 
-**Note:** Submits vendor profile for backend verification / approval workflow.
+**Role:** `vendor`  
+**Permission:** `VENDOR_PROFILE_WRITE`
+
+**Response:**
+```json
+{
+  "id": "vendor-uuid",
+  "status": "PENDING_VERIFICATION",
+  "submittedAt": "2024-06-12T10:00:00Z",
+  /* ... other vendor fields ... */
+}
+```
+
+**Business Rules:**
+- Must have all required onboarding fields filled
+- Must have at least 1 document uploaded
+
+**Error Codes:**
+- `400` — Incomplete profile (missing required fields or documents)
 
 ---
 
@@ -98,14 +261,35 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 
 ### `POST /shops`
 
-**Auth:** `vendor` role + `VENDOR_SHOPS_WRITE`
+Create a shop for the authenticated vendor.
 
-**Body:** `CreateShopDto`
+**Role:** `vendor`  
+**Permission:** `VENDOR_SHOPS_WRITE`
+
+**Request Body:**
 ```json
 {
-  "slug": "lowercase-slug",
-  "name": "Shop Name",
-  "description?": "string (max 4000)"
+  "slug": "acme-corp",                    // required, string, 2-80 chars, regex: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+  "name": "Acme Corp",                    // required, string, 2-120 chars
+  "description": "Premium apparel supplier" // optional, string, max 4000
+}
+```
+
+**Response:**
+```json
+{
+  "id": "shop-uuid",
+  "vendorId": "vendor-uuid",
+  "slug": "acme-corp",
+  "name": "Acme Corp",
+  "description": "Premium apparel supplier",
+  "logoUrl": null,
+  "bannerUrl": null,
+  "shippingConfig": null,
+  "paymentConfig": null,
+  "isPublished": false,
+  "createdAt": "2024-06-12T10:00:00Z",
+  "updatedAt": "2024-06-12T10:00:00Z"
 }
 ```
 
@@ -113,37 +297,87 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 
 ### `GET /shops/me`
 
-**Auth:** `VENDOR_SHOPS_WRITE`
+List shops owned by the authenticated vendor.
 
-**Response:** Shops owned by the authenticated vendor.
+**Role:** `vendor`  
+**Permission:** `VENDOR_SHOPS_WRITE`
+
+**Response:**
+```json
+{
+  "items": [
+    {
+      "id": "shop-uuid",
+      "slug": "acme-corp",
+      "name": "Acme Corp",
+      "description": "Premium apparel supplier",
+      "logoUrl": "https://.../logo.webp",
+      "bannerUrl": "https://.../banner.webp",
+      "isPublished": true,
+      "createdAt": "2024-06-12T10:00:00Z"
+    }
+  ]
+}
+```
 
 ---
 
 ### `GET /shops/public/:slug`
 
-**Auth:** Public (no JWT required)
+Get published shop payload (storefront-safe). Public — no auth required.
 
-**Response:** Published shop payload (storefront-safe).
+**Response:**
+```json
+{
+  "id": "shop-uuid",
+  "slug": "acme-corp",
+  "name": "Acme Corp",
+  "description": "Premium apparel supplier",
+  "logoUrl": "https://.../logo.webp",
+  "bannerUrl": "https://.../banner.webp",
+  "isPublished": true,
+  "vendor": {
+    "id": "vendor-uuid",
+    "tradeName": "Acme Corp",
+    "legalBusinessName": "Acme Corp LLC",
+    "status": "APPROVED"
+  }
+}
+```
 
 ---
 
 ### `PATCH /shops/:shopId`
 
-**Auth:** `VENDOR_SHOPS_WRITE` — only for shops owned by this vendor
+Update shop branding, shipping/payment configs, or publishing state.
 
-**Body:** `UpdateShopDto` (all optional)
+**Role:** `vendor`  
+**Permission:** `VENDOR_SHOPS_WRITE` — only for shops owned by this vendor
+
+**Request Body:**
 ```json
 {
-  "slug?": "string",
-  "name?": "string",
-  "description?": "string",
-  "logoUrl?": "https://...",
-  "bannerUrl?": "https://...",
-  "shippingConfig?": { ... },
-  "paymentConfig?": { ... },
-  "isPublished?": true | false
+  "slug": "acme-corp",                    // optional, string, 2-80, same regex
+  "name": "Acme Corp",                    // optional, string, 2-120
+  "description": "Updated description",   // optional, string, max 4000
+  "logoUrl": "https://.../logo.webp",     // optional, HTTPS URL, max 2048
+  "bannerUrl": "https://.../banner.webp", // optional, HTTPS URL, max 2048
+  "shippingConfig": {                     // optional, JSON object — structured shipping rules
+    "zones": [{ "country": "BF", "baseCost": "50.00" }]
+  },
+  "paymentConfig": {                      // optional, JSON object — payout config
+    "method": "bank_transfer",
+    "accountNumber": "BF123456789"
+  },
+  "isPublished": true                     // optional, boolean — blocked unless vendor status is APPROVED
 }
 ```
+
+**Response:** Updated `Shop` object
+
+**Error Codes:**
+- `400` — Cannot publish shop (vendor not approved)
+- `403` — Not owner of this shop
 
 ---
 
@@ -151,19 +385,52 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 
 ### `POST /products`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Create a vendor-owned product shell.
 
-**Body:** `CreateProductDto`
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Request Body:**
 ```json
 {
-  "title": "Product Title",
-  "slug": "product-slug",
-  "description?": "string (max 20000)",
-  "moq?": 1,
-  "bulkPricing?": [
-    { "minQuantity": 100, "unitPrice": 20.00 }
+  "title": "Premium Cotton T-Shirt",       // required, string, 2-180
+  "slug": "premium-cotton-t-shirt",       // required, string, 2-120, regex: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+  "description": "High-quality cotton...",  // optional, string, max 20000
+  "currency": "CNY",                      // optional, enum: CNY, XOF — default CNY
+  "moq": 100,                             // optional, integer, min 1, default 1
+  "bulkPricing": [                        // optional, array of tiers
+    { "minQuantity": 100, "unitPrice": 20.00 },
+    { "minQuantity": 500, "unitPrice": 18.00 }
   ],
-  "categoryIds?": ["uuid"]
+  "categoryIds": ["cat-uuid-1", "cat-uuid-2"] // optional, UUID array, unique
+}
+```
+
+**Response:**
+```json
+{
+  "id": "prod-uuid",
+  "vendorId": "vendor-uuid",
+  "title": "Premium Cotton T-Shirt",
+  "slug": "premium-cotton-t-shirt",
+  "description": "High-quality cotton...",
+  "status": "draft",
+  "currency": "CNY",
+  "moq": 100,
+  "bulkPricing": [
+    { "minQuantity": 100, "unitPrice": "20.00" },
+    { "minQuantity": 500, "unitPrice": "18.00" }
+  ],
+  "averageRating": "0.00",
+  "reviewsCount": 0,
+  "categories": [
+    { "category": { "id": "cat-uuid-1", "name": "Apparel", "slug": "apparel" } }
+  ],
+  "attributes": [],
+  "media": [],
+  "variants": [],
+  "createdAt": "2024-06-12T10:00:00Z",
+  "updatedAt": "2024-06-12T10:00:00Z"
 }
 ```
 
@@ -171,66 +438,199 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 
 ### `GET /products/me`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+List products owned by the authenticated vendor.
 
-**Query:** `status?`, `search?`, `skip?` (0), `take?` (24, max 100)
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
 
-**Response:** Vendor-scoped product list.
+**Query Parameters:**
+| Param | Type | Default | Constraints |
+|-------|------|---------|-------------|
+| `status` | enum | — | `draft` \| `pending_review` \| `published` \| `hidden` \| `archived` \| `rejected` |
+| `search` | string | — | Max 120 chars, case-insensitive title search |
+| `skip` | integer | 0 | Min 0 |
+| `take` | integer | 24 | 1-100 |
+
+**Response:**
+```json
+{
+  "items": [
+    {
+      "id": "prod-uuid",
+      "title": "Premium Cotton T-Shirt",
+      "slug": "premium-cotton-t-shirt",
+      "status": "published",
+      "moq": 100,
+      "averageRating": "4.50",
+      "reviewsCount": 12,
+      "primaryImageUrl": "https://.../primary.webp",
+      "createdAt": "2024-06-12T10:00:00Z"
+    }
+  ],
+  "total": 50,
+  "skip": 0,
+  "take": 24
+}
+```
 
 ---
 
 ### `GET /products/me/stats`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Product count breakdown by status.
 
-**Response:** Product count breakdown by status.
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Response:**
+```json
+{
+  "total": 50,
+  "byStatus": {
+    "draft": 5,
+    "pending_review": 2,
+    "published": 40,
+    "hidden": 2,
+    "archived": 1
+  }
+}
+```
 
 ---
 
 ### `GET /products/:productId`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE` — must own product
+Fetch product detail including dynamic attributes and variants.
 
-**Response:** Full product with dynamic attributes and variants.
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE` — must own product
+
+**Response:**
+```json
+{
+  "id": "prod-uuid",
+  "vendorId": "vendor-uuid",
+  "title": "Premium Cotton T-Shirt",
+  "slug": "premium-cotton-t-shirt",
+  "description": "High-quality cotton...",
+  "status": "published",
+  "currency": "CNY",
+  "moq": 100,
+  "bulkPricing": [
+    { "minQuantity": 100, "unitPrice": "20.00" },
+    { "minQuantity": 500, "unitPrice": "18.00" }
+  ],
+  "averageRating": "4.50",
+  "reviewsCount": 12,
+  "categories": [
+    { "category": { "id": "cat-uuid-1", "name": "Apparel", "slug": "apparel" } }
+  ],
+  "attributes": [
+    {
+      "id": "attr-uuid",
+      "code": "color",
+      "label": "Color",
+      "sortOrder": 0,
+      "values": [
+        { "id": "val-uuid-1", "value": "Red", "sortOrder": 0 },
+        { "id": "val-uuid-2", "value": "Blue", "sortOrder": 1 }
+      ]
+    }
+  ],
+  "media": [
+    {
+      "id": "media-uuid",
+      "url": "https://cdn.neoshop.com/.../main.webp",
+      "alt": "Front view",
+      "sortOrder": 0,
+      "isPrimary": true,
+      "variantId": null
+    }
+  ],
+  "variants": [
+    {
+      "id": "variant-uuid",
+      "sku": "SKU-RED-XL-ABC123",
+      "wholesalePrice": "25.00",
+      "currency": "CNY",
+      "isActive": true,
+      "imageUrl": "https://.../red-xl.webp",
+      "weightKg": "0.5000",
+      "volumeCbm": "0.002000",
+      "selections": [
+        { "attributeValueId": "val-uuid-1", "attributeValue": { "value": "Red" } },
+        { "attributeValueId": "val-uuid-4", "attributeValue": { "value": "XL" } }
+      ],
+      "inventory": { "quantity": 100, "reservedQuantity": 5 }
+    }
+  ],
+  "createdAt": "2024-06-12T10:00:00Z",
+  "updatedAt": "2024-06-12T10:00:00Z"
+}
+```
 
 ---
 
 ### `PATCH /products/:productId`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Update product descriptors, lifecycle status, or MOQ.
 
-**Body:** `UpdateProductDto` (all optional)
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Request Body:**
 ```json
 {
-  "title?": "string",
-  "slug?": "string",
-  "description?": "string",
-  "status?": "draft" | "pending_review" | "hidden",
-  "moq?": 1,
-  "bulkPricing?": [
-    { "minQuantity": 100, "unitPrice": 20.00 }
+  "title": "Updated T-Shirt Title",         // optional, string, 2-180
+  "slug": "updated-t-shirt",               // optional, string, 2-120
+  "description": "Updated description...",   // optional, string, max 20000
+  "currency": "CNY",                       // optional, enum: CNY, XOF
+  "status": "pending_review",               // optional, enum — vendor may only set: draft, pending_review, hidden
+  "moq": 50,                               // optional, integer, min 1
+  "bulkPricing": [                         // optional, replaces entire set
+    { "minQuantity": 50, "unitPrice": 22.00 }
   ]
 }
 ```
 
-**Note:** Vendors may set `draft`, `pending_review`, or `hidden`. Sending back the current status (e.g., `published`) is allowed as a no-op. Products that are already `published` can only be moved to `hidden` by vendors. Initial publication, `rejected`, and `archived` statuses can only be set by an administrator.
+**Response:** Updated `Product` with full includes
+
+**Status Rules:**
+- Vendors may set: `draft`, `pending_review`, `hidden`
+- Published products can only be moved to `hidden`
+- `published`, `rejected`, `archived` can only be set by admin
+- Sending current status is allowed as no-op
 
 ---
 
 ### `DELETE /products/:productId`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE` — soft delete (sets `deletedAt`).
+Delete a product and all nested catalog rows (soft delete — sets `deletedAt`).
+
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Response:** `204 No Content`
+
+**Business Rule:** Hard-deletion blocked if product has order history.
 
 ---
 
 ### `PUT /products/:productId/categories`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Replace category assignments for a product.
 
-**Body:** `SetProductCategoriesDto`
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Request Body:**
 ```json
-{ "categoryIds?": ["uuid"] }
+{
+  "categoryIds": ["cat-uuid-1", "cat-uuid-2"] // optional, UUID array, unique — omit or empty to clear
+}
 ```
+
+**Response:** `Product` with categories included (same full shape as `GET /products/:productId`)
 
 ---
 
@@ -238,16 +638,33 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 
 ### `POST /products/:productId/media`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Attach product media via HTTPS URL metadata.
 
-**Body:** `CreateProductMediaDto`
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Request Body:**
 ```json
 {
+  "url": "https://cdn.neoshop.com/product-media/vendor-uuid/prod-uuid/main.webp",  // required, HTTPS URL, max 2048 — must be from product-media bucket
+  "alt": "Front view",                      // optional, string, max 255
+  "sortOrder": 0,                           // optional, integer, min 0
+  "isPrimary": true,                       // optional, boolean, default false — cannot be set with variantId
+  "variantId": "variant-uuid"              // optional, UUID — associates image with specific variant
+}
+```
+
+**Response:**
+```json
+{
+  "id": "media-uuid",
+  "productId": "prod-uuid",
+  "variantId": null,
   "url": "https://cdn.neoshop.com/...",
-  "alt?": "string",
-  "sortOrder?": 0,
-  "isPrimary?": false,
-  "variantId?": "uuid"
+  "alt": "Front view",
+  "sortOrder": 0,
+  "isPrimary": true,
+  "createdAt": "2024-06-12T10:00:00Z"
 }
 ```
 
@@ -255,7 +672,12 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 
 ### `DELETE /products/:productId/media/:mediaId`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Remove a media asset reference.
+
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Response:** `204 No Content`
 
 ---
 
@@ -263,39 +685,88 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 
 ### `POST /products/:productId/attributes`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Define a dynamic attribute dimension (blocked once variants exist).
 
-**Body:** `CreateProductAttributeDto`
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Request Body:**
 ```json
 {
-  "code": "color",
-  "label": "Color",
-  "sortOrder?": 0,
-  "values?": [
-    { "value": "Red", "sortOrder?": 0 }
+  "code": "color",                          // required, string, 2-64, regex: ^[a-z][a-z0-9_]*$
+  "label": "Color",                         // required, string, 1-120
+  "sortOrder": 0,                           // optional, integer, min 0
+  "values": [                               // optional, array of initial values, min 1
+    { "value": "Red", "sortOrder": 0 },
+    { "value": "Blue", "sortOrder": 1 },
+    { "value": "Green", "sortOrder": 2 }
   ]
 }
 ```
+
+**Response:**
+```json
+{
+  "id": "attr-uuid",
+  "productId": "prod-uuid",
+  "code": "color",
+  "label": "Color",
+  "sortOrder": 0,
+  "values": [
+    { "id": "val-uuid-1", "value": "Red", "sortOrder": 0 },
+    { "id": "val-uuid-2", "value": "Blue", "sortOrder": 1 },
+    { "id": "val-uuid-3", "value": "Green", "sortOrder": 2 }
+  ]
+}
+```
+
+**Error Codes:**
+- `400` — Cannot add attributes after variants exist
 
 ---
 
 ### `DELETE /products/:productId/attributes/:attributeId`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Remove an attribute dimension (must be unused by variants).
 
-**Note:** Must be unused by variants.
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Response:** `204 No Content`
+
+**Error Codes:**
+- `400` — Attribute is used by existing variants
 
 ---
 
 ### `POST /products/:productId/attributes/:attributeId/values`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Append selectable values for an existing attribute.
 
-**Body:** `AddAttributeValuesDto`
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Request Body:**
 ```json
 {
+  "values": [                               // required, array, min 1
+    { "value": "Yellow", "sortOrder": 3 }
+  ]
+}
+```
+
+**Response:** `ProductAttribute` with full values
+```json
+{
+  "id": "attr-uuid",
+  "productId": "prod-uuid",
+  "code": "color",
+  "label": "Color",
+  "sortOrder": 0,
   "values": [
-    { "value": "Red", "sortOrder?": 0 }
+    { "id": "val-uuid-1", "value": "Red", "sortOrder": 0 },
+    { "id": "val-uuid-2", "value": "Blue", "sortOrder": 1 },
+    { "id": "val-uuid-3", "value": "Yellow", "sortOrder": 3 }
   ]
 }
 ```
@@ -304,9 +775,15 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 
 ### `DELETE /products/:productId/attributes/:attributeId/values/:valueId`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Remove a single attribute option (must be unused by variants).
 
-**Note:** Must be unused by variants.
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Response:** `204 No Content`
+
+**Error Codes:**
+- `400` — Value is used by existing variants
 
 ---
 
@@ -314,42 +791,76 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 
 ### `GET /products/:productId/variants`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+List variants for a product owned by the vendor.
 
-**Response:** List variants for a product owned by the vendor.
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
 
----
-
-### `POST /products/:productId/variants`
-
-**Auth:** `VENDOR_PRODUCTS_WRITE`
-
-**Body:** `CreateVariantDto`
+**Response:**
 ```json
 {
-  "attributeValueIds": ["val-uuid-1", "val-uuid-2"],
-  "wholesalePrice": 25.00,
-  "isActive?": true,
-  "weightKg?": 0.5,
-  "volumeCbm?": 0.002,
-  "imageUrl?": "https://cdn.example.com/black-m.jpg"
+  "items": [
+    {
+      "id": "variant-uuid",
+      "productId": "prod-uuid",
+      "sku": "SKU-RED-XL-ABC123",
+      "wholesalePrice": "25.00",
+      "isActive": true,
+      "imageUrl": "https://.../red-xl.webp",
+      "weightKg": "0.5000",
+      "volumeCbm": "0.002000",
+      "selections": [
+        { "attributeValueId": "val-uuid-1", "attributeValue": { "value": "Red" } },
+        { "attributeValueId": "val-uuid-4", "attributeValue": { "value": "XL" } }
+      ],
+      "inventory": { "quantity": 100, "reservedQuantity": 5 },
+      "createdAt": "2024-06-12T10:00:00Z"
+    }
+  ]
 }
 ```
 
 ---
 
-### `PATCH /products/:productId/variants/:variantId`
+### `POST /products/:productId/variants`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Create a dynamically composed variant (SKU auto-generated).
 
-**Body:** `UpdateVariantDto` (all optional)
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Request Body:**
 ```json
 {
-  "wholesalePrice?": 25.00,
-  "isActive?": true,
-  "weightKg?": 0.5,
-  "volumeCbm?": 0.002,
-  "imageUrl?": "https://cdn.example.com/black-m.jpg"
+  "attributeValueIds": ["val-uuid-1", "val-uuid-4"],  // required, UUID array, unique — one per dynamic dimension; empty if product has zero attributes
+  "wholesalePrice": 25.00,                 // required, number, min 0
+  "currency": "CNY",                       // optional, enum: CNY, XOF — defaults to product currency
+  "isActive": true,                        // optional, boolean, default true
+  "weightKg": 0.5,                         // optional, number, min 0
+  "volumeCbm": 0.002,                      // optional, number, min 0
+  "imageUrl": "https://.../red-xl.webp"    // optional, string
+}
+```
+
+**Response:** `ProductVariant` with selections and inventory
+```json
+{
+  "id": "variant-uuid",
+  "productId": "prod-uuid",
+  "sku": "SKU-RED-XL-ABC123",
+  "wholesalePrice": "25.00",
+  "currency": "CNY",
+  "isActive": true,
+  "imageUrl": "https://.../red-xl.webp",
+  "weightKg": "0.5000",
+  "volumeCbm": "0.002000",
+  "selections": [
+    { "attributeValueId": "val-uuid-1", "attributeValue": { "value": "Red" } },
+    { "attributeValueId": "val-uuid-4", "attributeValue": { "value": "XL" } }
+  ],
+  "inventory": { "quantity": 100, "reservedQuantity": 0 },
+  "createdAt": "2024-06-12T10:00:00Z",
+  "updatedAt": "2024-06-12T10:00:00Z"
 }
 ```
 
@@ -357,117 +868,209 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 
 ### `POST /products/:productId/variants/bulk`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Bulk create variants (up to 50).
 
-**Body:** `BulkCreateVariantsDto`
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Request Body:**
 ```json
 {
-  "variants": [
+  "variants": [                             // required, array, min 1, max 50
     {
-      "attributeValueIds": ["val-uuid-1", "val-uuid-2"],
+      "attributeValueIds": ["val-uuid-1", "val-uuid-4"],
       "wholesalePrice": 25.00,
+      "currency": "CNY",
       "isActive": true,
       "weightKg": 0.5,
       "volumeCbm": 0.002,
-      "imageUrl": "https://cdn.example.com/black-m.jpg"
+      "imageUrl": "https://.../red-xl.webp"
     },
     {
-      "attributeValueIds": ["val-uuid-1", "val-uuid-3"],
+      "attributeValueIds": ["val-uuid-2", "val-uuid-4"],
       "wholesalePrice": 25.00,
+      "currency": "CNY",
       "isActive": true,
       "weightKg": 0.5,
       "volumeCbm": 0.002,
-      "imageUrl": "https://cdn.example.com/black-l.jpg"
+      "imageUrl": "https://.../blue-xl.webp"
     }
   ]
 }
 ```
 
-**Response:** Array of created variants (same shape as `GET /variants`).
+**Response:** `ProductVariant[]` with selections and inventory (same shape as single `POST /products/:productId/variants`)
 
 ---
 
 ### `PATCH /products/:productId/variants/bulk`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Bulk update variants (up to 50).
 
-**Body:** `BulkUpdateVariantsDto`
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Request Body:**
 ```json
 {
-  "updates": [
+  "updates": [                              // required, array, min 1, max 50
     {
       "variantId": "var-uuid-1",
       "wholesalePrice": 26.00,
+      "currency": "CNY",
       "isActive": false
     },
     {
       "variantId": "var-uuid-2",
-      "imageUrl": "https://cdn.example.com/new-image.jpg"
+      "imageUrl": "https://.../new-image.jpg"
     }
   ]
 }
 ```
 
-**Response:** Array of updated variants.
+**Response:** `ProductVariant[]` with selections and inventory (same shape as single variant response)
 
 ---
 
 ### `POST /products/:productId/variants/bulk-delete`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Bulk soft-delete variants (up to 50).
 
-**Body:** `BulkDeleteVariantsDto`
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Request Body:**
 ```json
 {
-  "variantIds": ["var-uuid-1", "var-uuid-2"]
+  "variantIds": ["var-uuid-1", "var-uuid-2"] // required, UUID array, min 1, max 50
 }
 ```
 
-**Response:** `{ "deletedCount": 2 }`
+**Response:**
+```json
+{
+  "deletedCount": 2
+}
+```
+
+---
+
+### `PATCH /products/:productId/variants/:variantId`
+
+Update pricing, activation state, or dimensions.
+
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Request Body:**
+```json
+{
+  "wholesalePrice": 26.00,                 // optional, number, min 0
+  "currency": "CNY",                       // optional, enum: CNY, XOF
+  "isActive": false,                       // optional, boolean
+  "weightKg": 0.6,                         // optional, number, min 0
+  "volumeCbm": 0.0025,                     // optional, number, min 0
+  "imageUrl": "https://.../new-image.jpg"  // optional, string
+}
+```
+
+**Response:** `ProductVariant` with selections and inventory (same shape as single variant response)
 
 ---
 
 ### `DELETE /products/:productId/variants/:variantId`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Delete a variant and its inventory row (soft delete).
 
-**Note:** Soft-deletes the variant (sets `deletedAt`).
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Response:** `204 No Content`
 
 ---
 
 ## Inventory
 
-Inventory is managed under `/inventory/variants`.
-
 ### `GET /inventory/variants/:variantId`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Read variant stock snapshot.
 
-**Response:** Stock snapshot for the variant.
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Response:**
+```json
+{
+  "variantId": "variant-uuid",
+  "quantity": 100,
+  "reservedQuantity": 5,
+  "createdAt": "2024-06-12T10:00:00Z",
+  "updatedAt": "2024-06-12T10:00:00Z"
+}
+```
 
 ---
 
 ### `PATCH /inventory/variants/:variantId`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Set absolute on-hand quantity.
 
-**Body:** `SetVariantQuantityDto`
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Request Body:**
 ```json
-{ "quantity": 100 }
+{
+  "quantity": 150                          // required, integer, min 0
+}
 ```
+
+**Response:** Updated `VariantInventory`
+```json
+{
+  "variantId": "variant-uuid",
+  "quantity": 150,
+  "reservedQuantity": 5,
+  "createdAt": "2024-06-12T10:00:00Z",
+  "updatedAt": "2024-06-12T10:00:00Z"
+}
+```
+
+**Side Effect:** Creates `inventoryAdjustment` record with reason `correction`
 
 ---
 
 ### `POST /inventory/variants/:variantId/adjust`
 
-**Auth:** `VENDOR_PRODUCTS_WRITE`
+Apply a stock delta (restock or decrement).
 
-**Body:** `AdjustVariantQuantityDto`
+**Role:** `vendor`  
+**Permission:** `VENDOR_PRODUCTS_WRITE`
+
+**Request Body:**
 ```json
-{ "delta": -5 }
+{
+  "delta": -5                              // required, integer — negative allowed
+}
 ```
 
-**Note:** Negative values decrement stock; positive values restock.
+**Response:** Updated `VariantInventory`
+```json
+{
+  "variantId": "variant-uuid",
+  "quantity": 95,
+  "reservedQuantity": 5,
+  "createdAt": "2024-06-12T10:00:00Z",
+  "updatedAt": "2024-06-12T10:00:00Z"
+}
+```
+
+**Side Effect:** Creates `inventoryAdjustment` with reason `restock` (positive) or `adjustment` (negative)
+
+**Business Rule:** Rejected if resulting quantity < 0
+
+**Error Codes:**
+- `400` — Resulting quantity would be negative
 
 ---
 
@@ -475,41 +1078,98 @@ Inventory is managed under `/inventory/variants`.
 
 ### `GET /orders/vendor`
 
-**Auth:** `vendor` role + `ORDERS_VENDOR_READ`
+List orders for the authenticated vendor.
 
-**Response:** Orders containing items from this vendor's products.
+**Role:** `vendor`  
+**Permission:** `ORDERS_VENDOR_READ`
+
+**Response:**
+```json
+{
+  "items": [
+    {
+      "id": "order-uuid",
+      "checkoutGroupId": "group-uuid",
+      "customerUserId": "user-uuid",
+      "customer": {
+        "id": "user-uuid",
+        "email": "user@example.com"
+      },
+      "status": "paid",
+      "currency": "XOF",
+      "subtotal": "250.00",
+      "taxTotal": "0.00",
+      "shippingTotal": "0.00",
+      "grandTotal": "250.00",
+      "placedAt": "2024-06-12T10:00:00Z",
+      "items": [
+        {
+          "id": "item-uuid",
+          "variantId": "variant-uuid",
+          "quantity": 10,
+          "unitPrice": "25.00",
+          "lineTotal": "250.00",
+          "skuSnapshot": "SKU-A1B2C3",
+          "titleSnapshot": "T-Shirt",
+          "variantImageUrl": "https://.../red-variant.webp"
+        }
+      ]
+    }
+  ]
+}
+```
 
 ---
 
 ### `GET /orders/vendor/stats`
 
-**Auth:** `VENDOR_ANALYTICS_READ`
+Order count breakdown by status.
 
-**Response:** Order count breakdown by status for the vendor.
+**Role:** `vendor`  
+**Permission:** `VENDOR_ANALYTICS_READ`
+
+**Response:**
+```json
+{
+  "total": 450,
+  "byStatus": {
+    "pending": 5,
+    "paid": 8,
+    "processing": 12,
+    "shipped": 15,
+    "delivered": 420,
+    "disputed": 2,
+    "refunded": 3,
+    "cancelled": 10
+  }
+}
+```
 
 ---
 
 ### `GET /orders/vendor/customers`
 
-**Auth:** `VENDOR_CUSTOMERS_READ`
+List unique customers who ordered from this vendor.
 
-**Response:** Unique customers who ordered from this vendor, including lifetime spend and purchased products.
+**Role:** `vendor`  
+**Permission:** `VENDOR_CUSTOMERS_READ`
 
+**Response:**
 ```json
 {
   "items": [
     {
-      "userId": "uuid",
-      "name": "string | null",
-      "surname": "string | null",
-      "email": "string | null",
-      "phone": "string | null",
+      "userId": "user-uuid",
+      "name": "John",
+      "surname": "Doe",
+      "email": "user@example.com",
+      "phone": "+22670123456",
       "orderCount": 5,
       "totalSpent": "1234.56",
       "products": [
         {
-          "productId": "uuid",
-          "title": "string",
+          "productId": "prod-uuid",
+          "title": "T-Shirt",
           "totalQuantity": 10,
           "totalSpent": "500.00"
         }
@@ -519,70 +1179,307 @@ Inventory is managed under `/inventory/variants`.
 }
 ```
 
-- `orderCount` — total number of orders placed by this customer with the authenticated vendor.
-- `totalSpent` — sum of all order grand-totals for this customer with the vendor.
-- `products` — list of distinct products purchased by this customer from the vendor, sorted by highest product spend first. Each entry aggregates quantity and spend across all orders.
-- Soft-deleted users are excluded. Deleted orders are excluded.
+> **Notes:**
+> - `orderCount` — total orders placed by this customer with the vendor
+> - `totalSpent` — sum of all order grand-totals
+> - `products` — distinct products purchased, sorted by highest spend first
+> - Soft-deleted users and deleted orders are excluded
 
 ---
 
 ### `GET /orders/:orderId`
 
-**Auth:** `customer` | `vendor` | `admin`
+Get order detail with items, timeline, invoices, payments, refunds.
 
-**Response:** Order detail with items, timeline, invoices, payments, refunds.
+**Roles:** `customer` (owner), `vendor` (seller), `admin`
 
----
-
-### `PATCH /orders/:orderId/status`
-
-**Auth:** `ORDERS_VENDOR_FULFILL`
-
-**Body:** `TransitionOrderDto`
+**Response:**
 ```json
 {
-  "status": "confirmed" | "shipped" | "delivered" | ...,
-  "note?": "string (max 2000)"
+  "id": "order-uuid",
+  "checkoutGroupId": "group-uuid",
+  "customerUserId": "user-uuid",
+  "customer": { "id": "user-uuid", "email": "user@example.com" },
+  "vendorId": "vendor-uuid",
+  "vendor": { "id": "vendor-uuid", "tradeName": "Acme Corp", "legalBusinessName": "Acme Corp LLC" },
+  "status": "paid",
+  "currency": "XOF",
+  "vendorCurrency": "CNY",
+  "subtotal": "250.00",
+  "taxTotal": "0.00",
+  "shippingTotal": "0.00",
+  "grandTotal": "250.00",
+  "couponCode": null,
+  "placedAt": "2024-06-12T10:00:00Z",
+  "updatedAt": "2024-06-12T10:00:00Z",
+  "items": [
+    {
+      "id": "item-uuid",
+      "variantId": "variant-uuid",
+      "quantity": 10,
+      "unitPrice": "25.00",
+      "lineTotal": "250.00",
+      "skuSnapshot": "SKU-A1B2C3",
+      "titleSnapshot": "T-Shirt",
+      "variantImageUrl": "https://.../red-variant.webp",
+      "variant": {
+        "id": "variant-uuid",
+        "sku": "SKU-A1B2C3",
+        "imageUrl": "https://.../red-variant.webp",
+        "weightKg": "0.5000",
+        "volumeCbm": "0.002000",
+        "currency": "CNY"
+      }
+    }
+  ],
+  "statusHistory": [
+    { "id": "hist-uuid", "status": "pending", "note": null, "actorUserId": null, "createdAt": "2024-06-12T09:00:00Z" },
+    { "id": "hist-uuid-2", "status": "paid", "note": "Payment captured", "actorUserId": "user-uuid", "createdAt": "2024-06-12T10:00:00Z" }
+  ],
+  "invoices": [],
+  "payments": [],
+  "refunds": []
 }
 ```
 
 ---
 
+### `PATCH /orders/:orderId/status`
+
+Fulfillment status change (business rules enforced).
+
+**Roles:** `vendor`, `admin`  
+**Permission:** `ORDERS_VENDOR_FULFILL`
+
+**Request Body:**
+```json
+{
+  "status": "processing",                 // required, enum: pending, paid, processing, shipped, delivered, disputed, refunded, cancelled
+  "note": "Order confirmed, preparing shipment" // optional, string, max 2000
+}
+```
+
+**Vendor Allowed Transitions:**
+| From | To |
+|------|-----|
+| `paid` | `processing` |
+| `processing` | `shipped` |
+| `shipped` | `delivered` |
+
+**Response:** Updated `Order` with full detail include (same shape as `GET /orders/:orderId`)
+
+**Error Codes:**
+- `400` — Invalid status transition
+- `403` — Not order vendor
+
+---
+
 ### `GET /orders/:orderId/tracking`
 
-**Auth:** `ORDERS_CUSTOMER_READ`
+Get tracking events for an order.
 
-**Response:** Tracking events for the order.
+**Roles:** `customer`, `vendor`, `admin`  
+**Permission:** `ORDERS_CUSTOMER_READ`
+
+**Response:**
+```json
+{
+  "carrier": "DHL",
+  "trackingNumber": "1234567890",
+  "events": [
+    {
+      "id": "event-uuid",
+      "status": "shipped",
+      "location": "Ouagadougou",
+      "note": "Package left facility",
+      "createdAt": "2024-06-12T10:00:00Z"
+    }
+  ]
+}
+```
 
 ---
 
 ## Vendor Reviews
 
-| Method | Path | Auth | Body |
-|--------|------|------|------|
-| `GET` | `/vendors/me/reviews` | `VENDOR_REVIEWS_READ` | — |
-| `POST` | `/vendors/me/reviews/:reviewId/response` | `VENDOR_REVIEWS_RESPOND` | `{ response: string }` |
+### `GET /vendors/me/reviews`
+
+List reviews on products owned by this vendor.
+
+**Role:** `vendor`  
+**Permission:** `VENDOR_REVIEWS_READ`
+
+**Response:**
+```json
+{
+  "items": [
+    {
+      "id": "review-uuid",
+      "productId": "prod-uuid",
+      "productTitle": "T-Shirt",
+      "customerName": "John D.",
+      "rating": 5,
+      "title": "Great quality!",
+      "body": "The fabric is excellent.",
+      "mediaUrls": ["https://.../photo1.jpg"],
+      "helpfulCount": 3,
+      "isVerifiedPurchase": true,
+      "vendorResponse": "Thank you for your feedback!",
+      "vendorRespondedAt": "2024-06-13T10:00:00Z",
+      "createdAt": "2024-06-12T10:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### `POST /vendors/me/reviews/:reviewId/response`
+
+Respond to a review as the vendor.
+
+**Role:** `vendor`  
+**Permission:** `VENDOR_REVIEWS_RESPOND`
+
+**Request Body:**
+```json
+{
+  "response": "Thank you for your feedback!" // required, string
+}
+```
+
+**Response:** Updated `Review` with `vendorResponse` and `vendorRespondedAt`
+```json
+{
+  "id": "review-uuid",
+  "productId": "prod-uuid",
+  "customerId": "user-uuid",
+  "orderItemId": "order-item-uuid",
+  "rating": 5,
+  "title": "Great quality!",
+  "comment": "The fabric is excellent.",
+  "mediaUrls": ["https://.../photo1.jpg"],
+  "helpfulCount": 3,
+  "vendorResponse": "Thank you for your feedback!",
+  "vendorRespondedAt": "2024-06-13T10:00:00Z",
+  "status": "approved",
+  "createdAt": "2024-06-12T10:00:00Z",
+  "updatedAt": "2024-06-13T10:00:00Z",
+  "deletedAt": null
+}
+```
 
 ---
 
 ## Disputes (Vendor)
 
-| Method | Path | Auth | Body |
-|--------|------|------|------|
-| `GET` | `/vendors/me/disputes` | `VENDOR_DISPUTES_READ` | — |
-| `GET` | `/vendors/me/disputes/:disputeId` | `VENDOR_DISPUTES_READ` | — |
-| `POST` | `/vendors/me/disputes/:disputeId/messages` | `VENDOR_DISPUTES_RESPOND` | `{ body: string, internal?: boolean, replyToId?: uuid }` |
+### `GET /vendors/me/disputes`
+
+List disputes for orders placed with this vendor.
+
+**Role:** `vendor`  
+**Permission:** `VENDOR_DISPUTES_READ`
+
+**Response:**
+```json
+{
+  "items": [
+    {
+      "id": "dispute-uuid",
+      "orderId": "order-uuid",
+      "customerEmail": "user@example.com",
+      "amountClaimed": "250.00",
+      "currency": "XOF",
+      "status": "open",
+      "reasonCategory": "order_issue",
+      "escalationTier": 0,
+      "openedAt": "2024-06-12T10:00:00Z",
+      "messageCount": 5
+    }
+  ]
+}
+```
+
+---
+
+### `GET /vendors/me/disputes/:disputeId`
+
+Get dispute detail (vendor view).
+
+**Role:** `vendor`  
+**Permission:** `VENDOR_DISPUTES_READ`
+
+**Response:**
+```json
+{
+  "id": "dispute-uuid",
+  "orderId": "order-uuid",
+  "customerEmail": "user@example.com",
+  "amountClaimed": "250.00",
+  "currency": "XOF",
+  "status": "open",
+  "reasonCategory": "order_issue",
+  "escalationTier": 0,
+  "openedAt": "2024-06-12T10:00:00Z",
+  "resolvedAt": null,
+  "messages": [
+    {
+      "id": "msg-uuid",
+      "body": "I received the wrong item.",
+      "internal": false,
+      "author": {
+        "id": "user-uuid",
+        "name": "John",
+        "role": "customer"
+      },
+      "createdAt": "2024-06-12T10:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### `POST /vendors/me/disputes/:disputeId/messages`
+
+Post a message in a dispute.
+
+**Role:** `vendor`  
+**Permission:** `VENDOR_DISPUTES_RESPOND`
+
+**Request Body:**
+```json
+{
+  "body": "We apologize for the inconvenience...",  // required, string, 1-8000 chars
+  "internal": false,                                   // optional, boolean — internal notes visible only to admin/vendor
+  "replyToId": "msg-uuid"                              // optional, UUID — reply to specific message
+}
+```
+
+**Response:** Dispute message record
+```json
+{
+  "id": "msg-uuid",
+  "disputeId": "dispute-uuid",
+  "authorUserId": "user-uuid",
+  "body": "We apologize for the inconvenience...",
+  "internal": false,
+  "replyToId": null,
+  "createdAt": "2024-06-12T10:00:00Z"
+}
+```
 
 ---
 
 ## Vendor Analytics
 
-All analytics endpoints require the `vendor` role + `VENDOR_ANALYTICS_READ` permission.
+All analytics endpoints require `vendor` role + `VENDOR_ANALYTICS_READ` permission.
 
 ### `GET /vendors/me/analytics/dashboard`
 
-Returns KPIs, status breakdown, top products, and new dashboard widgets.
+Returns KPIs, status breakdown, top products, geographic sales, retention, and conversion metrics.
 
+**Response:**
 ```json
 {
   "totalRevenue": "125000.0000",
@@ -596,8 +1493,8 @@ Returns KPIs, status breakdown, top products, and new dashboard widgets.
   "disputedOrders": 2,
   "topProducts": [
     {
-      "variantId": "uuid",
-      "productTitle": "string",
+      "variantId": "variant-uuid",
+      "productTitle": "Premium Cotton T-Shirt",
       "quantitySold": 100,
       "revenue": "5000.0000"
     }
@@ -605,8 +1502,8 @@ Returns KPIs, status breakdown, top products, and new dashboard widgets.
   "period": "30d",
   "geographic": [
     {
-      "countryCode": "CN",
-      "name": "CN",
+      "countryCode": "BF",
+      "name": "Burkina Faso",
       "revenue": "12500.0000",
       "orderCount": 45
     }
@@ -628,39 +1525,50 @@ Returns KPIs, status breakdown, top products, and new dashboard widgets.
 }
 ```
 
-- `geographic` is grouped by `Order.shippingAddress.country`. Missing addresses appear as `UNKNOWN`.
-- `retentionSeries` counts a customer as "returning" in a month if they had ordered in any earlier month.
-- `conversionRate` / `conversionTrend` are a **proxy** based on logged-in users who viewed any of the vendor's products vs. those who placed an order. It is not a full anonymous funnel.
+> **Notes:**
+> - `geographic` grouped by `Order.shippingAddress.country`. Missing addresses appear as `UNKNOWN`.
+> - `retentionSeries` counts a customer as "returning" in a month if they ordered in any earlier month.
+> - `conversionRate` / `conversionTrend` are a **proxy** based on logged-in users who viewed vendor products vs. those who placed orders.
+
+---
 
 ### `GET /vendors/me/analytics/orders`
 
-**Query:** `days?` (default 30)
+Daily order count and revenue.
 
-Returns daily order count and revenue.
+**Query Parameters:**
+| Param | Type | Default | Constraints |
+|-------|------|---------|-------------|
+| `days` | integer | 30 | Min 1 |
 
+**Response:**
 ```json
 {
   "items": [
-    { "date": "2024-06-01", "orders": 5, "revenue": "1200.00" }
+    { "date": "2024-06-01", "orders": 5, "revenue": "1200.00" },
+    { "date": "2024-06-02", "orders": 8, "revenue": "2100.00" }
   ]
 }
 ```
 
+---
+
 ### `GET /vendors/me/analytics/products`
 
-Returns product performance summary (up to 100 products).
+Product performance summary (up to 100 products).
 
+**Response:**
 ```json
 {
   "items": [
     {
-      "id": "uuid",
-      "title": "string",
-      "slug": "string",
+      "id": "prod-uuid",
+      "title": "Premium Cotton T-Shirt",
+      "slug": "premium-cotton-t-shirt",
       "status": "published",
-      "imageUrl": "string | null",
+      "imageUrl": "https://.../primary.webp",
       "variantCount": 3,
-      "averageRating": 4.5,
+      "averageRating": "4.50",
       "reviewsCount": 12,
       "totalSold": 45,
       "totalRevenue": "1200.00"
@@ -669,12 +1577,18 @@ Returns product performance summary (up to 100 products).
 }
 ```
 
+---
+
 ### `GET /vendors/me/analytics/inventory`
 
-**Query:** `days?` (default 30)
+Daily units sold vs. restocked.
 
-Returns daily units sold vs. restocked.
+**Query Parameters:**
+| Param | Type | Default | Constraints |
+|-------|------|---------|-------------|
+| `days` | integer | 30 | Min 1 |
 
+**Response:**
 ```json
 {
   "items": [
@@ -688,44 +1602,116 @@ Returns daily units sold vs. restocked.
 }
 ```
 
-- `unitsSold` is derived from `OrderItem` quantities for orders placed in the window.
-- `restocked` is derived from `InventoryAdjustment` records with positive quantity and reason `restock` or `return`.
-- Historical restocked data is only available from the point this model was introduced; older restocks show as `0`.
+> **Notes:**
+> - `unitsSold` derived from `OrderItem` quantities for orders placed in the window.
+> - `restocked` derived from `InventoryAdjustment` records with positive quantity and reason `restock` or `return`.
+> - Historical restocked data only available from when the model was introduced.
 
 ---
 
 ## Wallet (Vendor)
 
-Vendors can read their wallet balance and transactions, but deposit and withdrawal requests are currently restricted to the `customer` role:
+Vendors can read their wallet balance and transactions (requires `WALLET_READ` permission), but deposit and withdrawal requests are currently restricted to the `customer` role.
 
-| Method | Path | Auth |
-|--------|------|------|
-| `GET` | `/wallet/me` | `WALLET_READ` |
-| `GET` | `/wallet/me/transactions` | `WALLET_READ` |
+### `GET /wallet/me`
+
+Get wallet balance.
+
+**Permission:** `WALLET_READ`
+
+**Response:**
+```json
+{
+  "availableBalance": "1250.00",
+  "reservedBalance": "250.00",
+  "totalBalance": "1500.00",
+  "currency": "XOF"
+}
+```
+
+> Returns `"0.00"` for all balances if wallet doesn't exist yet.
+
+---
+
+### `GET /wallet/me/transactions`
+
+List wallet transactions.
+
+**Permission:** `WALLET_READ`
+
+**Query Parameters:**
+| Param | Type | Default | Constraints |
+|-------|------|---------|-------------|
+| `type` | enum | — | `credit` \| `debit` \| `deposit` \| `withdrawal` \| `reserve` \| `release` \| `refund` \| `adjustment` |
+| `limit` | integer | 20 | 1-100 |
+| `offset` | integer | 0 | Min 0 |
+
+**Response:**
+```json
+{
+  "items": [
+    {
+      "id": "tx-uuid",
+      "type": "release",
+      "direction": "credit",
+      "status": "completed",
+      "amount": "+250.00",
+      "currency": "XOF",
+      "referenceId": "order:order-uuid",
+      "description": "Order release order-uuid",
+      "createdAt": "2024-06-12T10:00:00Z"
+    }
+  ],
+  "total": 25,
+  "limit": 20,
+  "offset": 0
+}
+```
+
+> **Note:** Amounts are signed strings (`+` for credit, `-` for debit).
+
+---
+
+### `POST /wallet/change-currency`
+
+Toggle/convert wallet currency between `XOF` and `CNY`.
+
+**Permission:** `WALLET_READ`
+
+**Request Body:**
+```json
+{
+  "currency": "CNY"                       // required, enum: XOF, CNY
+}
+```
+
+**Response:** Updated wallet object (same shape as `GET /wallet/me`)
 
 ---
 
 ## Shared Endpoints Vendors Also Use
 
+> **Permission note:** The endpoints below allow authenticated vendor requests at the route level, but a few rely on permissions (such as `ADDRESSES_MANAGE`, `SHIPPING_READ`, `RECENTLY_VIEWED_MANAGE`) that are granted to the `customer` role by default. If your vendor front-end needs them, ensure the vendor role is assigned those permissions in your deployment.
+
 ### Auth
 
-| Method | Path | Body |
-|--------|------|------|
-| `POST` | `/auth/register` | `{ email, password, name?, surname?, phone?, role? }` |
-| `POST` | `/auth/login` | `{ email, password, deviceId }` |
-| `POST` | `/auth/register/phone/initiate` | `{ phone }` |
-| `POST` | `/auth/register/phone/verify` | `{ phone, code?, password?, name?, surname?, role? }` |
-| `POST` | `/auth/login/phone/initiate` | `{ phone }` |
-| `POST` | `/auth/login/phone/verify` | `{ phone, code, deviceId }` |
-| `POST` | `/auth/forgot-password` | `{ email }` |
-| `POST` | `/auth/reset-password` | `{ token, newPassword }` |
-| `POST` | `/auth/resend-verification` | `{ email }` |
-| `POST` | `/auth/change-email` | `{ newEmail, password }` |
-| `GET` | `/auth/me` | — |
-| `POST` | `/auth/sessions` | `{ refreshToken, deviceId, userAgent? }` |
-| `POST` | `/auth/refresh` | `{ sessionId, refreshToken }` |
-| `POST` | `/auth/logout` | — (needs `Session-Id` header) |
-| `POST` | `/auth/logout/all` | — |
+| Method | Path | Body | Rate Limit |
+|--------|------|------|------------|
+| `POST` | `/auth/register` | `{ email, password, name?, surname?, phone?, role? }` | 5/60s |
+| `POST` | `/auth/login` | `{ email, password, deviceId }` | 10/60s |
+| `POST` | `/auth/register/phone/initiate` | `{ phone }` | 3/60s |
+| `POST` | `/auth/register/phone/verify` | `{ phone, code?, password?, name?, surname?, role? }` | 5/60s |
+| `POST` | `/auth/login/phone/initiate` | `{ phone }` | 3/60s |
+| `POST` | `/auth/login/phone/verify` | `{ phone, code, deviceId }` | 5/60s |
+| `POST` | `/auth/forgot-password` | `{ email }` | 3/60s |
+| `POST` | `/auth/reset-password` | `{ token, newPassword }` | 5/60s |
+| `POST` | `/auth/resend-verification` | `{ email }` | 3/60s |
+| `POST` | `/auth/change-email` | `{ newEmail, password }` | 3/60s |
+| `GET` | `/auth/me` | — | — |
+| `POST` | `/auth/sessions` | `{ refreshToken, deviceId, userAgent? }` | — |
+| `POST` | `/auth/refresh` | `{ sessionId, refreshToken }` | 20/60s |
+| `POST` | `/auth/logout` | — (needs `X-Session-Id` header) | — |
+| `POST` | `/auth/logout/all` | — | — |
 
 ### Profile / Settings
 
@@ -734,15 +1720,15 @@ Vendors can read their wallet balance and transactions, but deposit and withdraw
 | `GET` | `/users/me` | — |
 | `PATCH` | `/users/me` | `{ name?, surname?, phone?, dateOfBirth?, nationality?, idCardType?, idCardNumber?, avatarUrl? }` |
 | `GET` | `/users/me/settings` | — |
-| `PATCH` | `/users/me/settings` | `{ orderUpdates?, promoMessages?, emailNewsletter?, pushEnabled? }` |
+| `PATCH` | `/users/me/settings` | `{ orderUpdates?, promoMessages?, emailNewsletter?, pushEnabled?, preferredLanguage? }` |
 | `GET` | `/users/me/viewed-products` | — |
 | `POST` | `/users/me/viewed-products` | `{ productId }` |
 
 ### Catalog (Public)
 
-| Method | Path | Body |
-|--------|------|------|
-| `GET` | `/catalog/products` | `categoryId?`, `shopSlug?`, `search?`, `skip?`, `take?` |
+| Method | Path | Query / Body |
+|--------|------|--------------|
+| `GET` | `/catalog/products` | `categoryId?`, `shopSlug?`, `search?`, `currency?` (XOF\|CNY), `skip?`, `take?` (max 48) |
 | `GET` | `/catalog/products/:productId` | — |
 | `POST` | `/catalog/products/compare` | `{ productIds: string[] }` (2–4 items) |
 
@@ -768,8 +1754,8 @@ Vendors can read their wallet balance and transactions, but deposit and withdraw
 
 ### Notifications
 
-| Method | Path | Body |
-|--------|------|------|
+| Method | Path | Query / Body |
+|--------|------|--------------|
 | `GET` | `/notifications` | `skip?`, `take?` (max 200), `unreadOnly?` |
 | `GET` | `/notifications/unread-count` | — |
 | `PATCH` | `/notifications/:notificationId` | `{ read: boolean }` |
@@ -799,7 +1785,7 @@ Vendors can read their wallet balance and transactions, but deposit and withdraw
 | Method | Path | Body |
 |--------|------|------|
 | `GET` | `/addresses` | — |
-| `POST` | `/addresses` | `{ label, street, city, region?, postalCode?, country, phone?, isDefault? }` |
+| `POST` | `/addresses` | `{ label, fullName, streetLine1, streetLine2?, city, region?, postalCode?, country, phone?, isDefault? }` |
 | `PATCH` | `/addresses/:addressId` | Same as create, all optional |
 | `DELETE` | `/addresses/:addressId` | — |
 
@@ -863,19 +1849,111 @@ Vendors can read their wallet balance and transactions, but deposit and withdraw
 |--------|------|-------------|
 | `POST` | `/storage/upload` | Multipart: `file`, `bucket`, `entityId`, `type`, `subEntityId?` |
 | `POST` | `/storage/upload/batch` | Multipart: `files[]`, `bucket`, `entityId`, `types` (JSON), `subEntityId?` |
-| `POST` | `/storage/read-urls` | `{ items: [{ bucket, path }] }` |
+| `POST` | `/storage/read-urls` | `{ items: [{ bucket, path }] }` (max 50) |
 | `GET` | `/storage/signed-url` | `bucket`, `path` |
 | `DELETE` | `/storage` | `{ bucket, path }` |
 
 ### Health & Setup
 
-| Method | Path | Response |
-|--------|------|----------|
-| `GET` | `/health/live` | `{ status: "ok" }` |
-| `GET` | `/health/ready` | Health check |
-| `GET` | `/health` | Full health check |
-| `GET` | `/health/customers` | Platform health |
-| `GET` | `/health/vendors` | Platform health |
-| `POST` | `/health/beacon` | `{ platform, appVersion, deviceId? }` |
-| `GET` | `/setup/status` | `{ setupTokenRequired, canBootstrap }` |
-| `POST` | `/setup/bootstrap-admin` | `{ email, password, name? }` |
+| Method | Path | Response | Rate Limit |
+|--------|------|----------|------------|
+| `GET` | `/health/live` | `{ status: "ok" }` | Skipped |
+| `GET` | `/health/ready` | Health check | 60/60s |
+| `GET` | `/health` | Full health check | 60/60s |
+| `GET` | `/health/customers` | Platform health | 30/60s |
+| `GET` | `/health/vendors` | Platform health | 30/60s |
+| `POST` | `/health/beacon` | `{ received: true }` | 60/60s |
+| `GET` | `/setup/status` | `{ bootstrapAvailable, setupTokenRequired }` | Skipped |
+| `POST` | `/setup/bootstrap-admin` | `{ supabaseUserId, email }` | — |
+
+---
+
+## Vendor Permission Registry
+
+| Permission | Key | Description |
+|------------|-----|-------------|
+| `VENDOR_PROFILE_WRITE` | `vendor.profile.write` | Create/update vendor profile, documents, submit verification |
+| `VENDOR_SHOPS_WRITE` | `vendor.shops.write` | Create/update shops |
+| `VENDOR_PRODUCTS_WRITE` | `vendor.products.write` | CRUD products, attributes, variants, media |
+| `CATALOG_MANAGE` | `catalog.manage` | Catalog operations |
+| `ORDERS_VENDOR_READ` | `orders.vendor.read` | View vendor orders |
+| `ORDERS_VENDOR_FULFILL` | `orders.vendor.fulfill` | Update order status (fulfillment) |
+| `VENDOR_ANALYTICS_READ` | `vendor.analytics.read` | View analytics dashboard |
+| `VENDOR_CUSTOMERS_READ` | `vendor.customers.read` | View customer list and spend |
+| `VENDOR_REVIEWS_READ` | `vendor.reviews.read` | View product reviews |
+| `VENDOR_REVIEWS_RESPOND` | `vendor.reviews.respond` | Respond to reviews |
+| `VENDOR_DISPUTES_READ` | `vendor.disputes.read` | View disputes |
+| `VENDOR_DISPUTES_RESPOND` | `vendor.disputes.respond` | Respond to disputes |
+| `PROFILE_READ` | `profile.read` | View own profile |
+| `PROFILE_WRITE` | `profile.write` | Edit own profile |
+| `SETTINGS_MANAGE` | `settings.manage` | Notification/settings preferences |
+| `WALLET_READ` | `wallet.read` | View balance & transactions |
+| `CHAT_PARTICIPATE` | `chat.participate` | Messaging |
+| `NOTIFICATIONS_READ` | `notifications.read` | In-app notifications |
+| `STORAGE_MANAGE` | `storage.manage` | Upload/download/delete files |
+| `REPORTS_SUBMIT` | `reports.submit` | Submit reports |
+| `FAVORITES_MANAGE` | `favorites.manage` | Save/unsave products |
+
+---
+
+## Rate Limiting Summary
+
+| Endpoint Group | Limit | TTL | Scope |
+|----------------|-------|-----|-------|
+| Auth register | 5 | 60s | IP |
+| Auth login | 10 | 60s | IP |
+| Auth phone initiate | 3 | 60s | IP |
+| Auth phone verify | 5 | 60s | IP |
+| Auth forgot-password | 3 | 60s | IP |
+| Auth reset-password | 5 | 60s | IP |
+| Auth resend-verification | 3 | 60s | IP |
+| Auth change-email | 3 | 60s | IP |
+| Auth refresh | 20 | 60s | IP |
+| Health ready / check | 60 | 60s | IP |
+| Health customers / vendors | 30 | 60s | IP |
+| Health beacon | 60 | 60s | IP |
+
+> **Note:** Most vendor-specific endpoints (products, variants, inventory, shops, analytics, reviews, disputes) use the global ThrottlerGuard default (typically 100 req / 60s). No custom `@Throttle` decorators are applied to these controllers.
+
+---
+
+## WebSocket / Real-Time Events
+
+Connect to `wss://api.barkosem.com/realtime` (Socket.IO).
+
+**Auth:** Pass JWT token in `auth` handshake:
+```javascript
+const socket = io('wss://api.barkosem.com/realtime', {
+  auth: { token: '<access_token>' }
+});
+```
+
+**Events:**
+
+| Event | Direction | Payload |
+|-------|-----------|---------|
+| `neoshop.order.updated` | Server → Client | `{ orderId, vendorId, customerUserId, from, to, note }` |
+| `neoshop.vendors.updated` | Server → Client | `{ vendorId, status, ... }` — emitted when your vendor lifecycle status changes |
+| `neoshop.chat.message` | Server → Client | `{ conversationId, messageId, senderUserId, body, createdAt }` |
+| `neoshop.notification.created` | Server → Client | `{ id, type, title, body, data }` |
+
+**Connection lifecycle:**
+1. Client connects with JWT token
+2. Server verifies token and checks user suspension status
+3. Client joins rooms: `user:<userId>`, `order:<orderId>` (for active orders)
+4. Server disconnects client if user is suspended
+
+---
+
+## Error Codes Reference
+
+| Status | Code | Meaning |
+|--------|------|---------|
+| `400` | `Bad Request` | Validation error, invalid input, business rule violation |
+| `401` | `Unauthorized` | Missing/invalid JWT, incorrect PIN, invalid credentials |
+| `403` | `Forbidden` | Insufficient permissions, not resource owner |
+| `404` | `Not Found` | Resource doesn't exist |
+| `409` | `Conflict` | Resource already exists, state conflict |
+| `429` | `Too Many Requests` | Rate limit exceeded |
+| `500` | `Internal Server Error` | Unexpected server error |
+| `503` | `Service Unavailable` | External service down (Supabase, Redis, etc.) |
