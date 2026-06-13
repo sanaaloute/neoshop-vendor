@@ -193,6 +193,10 @@ export function SettingsHome() {
         name: profile.name ?? undefined,
         surname: profile.surname ?? undefined,
         avatarUrl: profile.avatarUrl ?? undefined,
+        dateOfBirth: profile.dateOfBirth?.split("T")[0] ?? undefined,
+        nationality: profile.nationality ?? undefined,
+        idCardType: profile.idCardType ?? undefined,
+        idCardNumber: profile.idCardNumber ?? undefined,
       });
       setProfile(updated);
       setProfileSuccess(true);
@@ -394,6 +398,55 @@ export function SettingsHome() {
                   onChange={(e) =>
                     setProfile((prev) =>
                       prev ? { ...prev, surname: e.target.value } : prev
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dateOfBirth">{t("dateOfBirth")}</Label>
+                <Input
+                  id="dateOfBirth"
+                  type="date"
+                  value={profile?.dateOfBirth?.split("T")[0] ?? ""}
+                  onChange={(e) =>
+                    setProfile((prev) =>
+                      prev ? { ...prev, dateOfBirth: e.target.value } : prev
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nationality">{t("nationality")}</Label>
+                <Input
+                  id="nationality"
+                  value={profile?.nationality ?? ""}
+                  onChange={(e) =>
+                    setProfile((prev) =>
+                      prev ? { ...prev, nationality: e.target.value } : prev
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="idCardType">{t("idCardType")}</Label>
+                <Input
+                  id="idCardType"
+                  value={profile?.idCardType ?? ""}
+                  onChange={(e) =>
+                    setProfile((prev) =>
+                      prev ? { ...prev, idCardType: e.target.value } : prev
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="idCardNumber">{t("idCardNumber")}</Label>
+                <Input
+                  id="idCardNumber"
+                  value={profile?.idCardNumber ?? ""}
+                  onChange={(e) =>
+                    setProfile((prev) =>
+                      prev ? { ...prev, idCardNumber: e.target.value } : prev
                     )
                   }
                 />

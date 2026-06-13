@@ -3,6 +3,7 @@ import { vendorApiClient } from "@/services/api/client";
 import type {
   ApiOrderStatus,
   OrderStatsResponse,
+  OrderTrackingResponse,
   Paginated,
   UpdateOrderStatusDto,
   VendorCustomerFromApi,
@@ -38,7 +39,7 @@ export async function getOrder(orderId: string) {
 
 /** GET /orders/:orderId/tracking — get tracking events for an order */
 export async function getOrderTracking(orderId: string) {
-  const { data } = await vendorApiClient.get<unknown[]>(`/api/v1/orders/${orderId}/tracking`);
+  const { data } = await vendorApiClient.get<OrderTrackingResponse>(`/api/v1/orders/${orderId}/tracking`);
   return data;
 }
 

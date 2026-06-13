@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils";
 import { useGatewayOrdersBootstrap } from "@/hooks/use-gateway-orders-bootstrap";
 import { useRefetchVendorOrders } from "@/hooks/use-refetch-vendor-orders";
 import { useOrderStats } from "@/hooks/use-order-stats";
-import { patchOrderStatus } from "@/services/vendor/orders-api";
+import { useOrderDetail } from "@/hooks/use-order-detail";
 import type { ApiOrderStatus } from "@/services/vendor/types";
 import { useVendorWritesAllowed } from "@/hooks/use-vendor-writes";
 import { useOrdersStore } from "@/store/orders-store";
@@ -80,6 +80,7 @@ export function OrdersHome() {
   const { canWriteOrders } = useVendorWritesAllowed();
   const orders = useOrdersStore((s) => s.orders);
   const refetch = useRefetchVendorOrders();
+  const { updateStatus: updateOrderStatus } = useOrderDetail();
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
 
@@ -172,7 +173,7 @@ export function OrdersHome() {
         if (!o) continue;
         const nxt = nextWorkflowStatus(o.status);
         if (!nxt) continue;
-        await patchOrderStatus(id, { status: toApi(nxt) });
+        await updateOrderStatus(id, toApi(nxt));
       }
       await refetch();
       setSelected(new Set());
@@ -193,10 +194,7 @@ export function OrdersHome() {
     setBulkError(null);
     try {
       for (const id of selectedIds) {
-        await patchOrderStatus(id, {
-          status: "refunded",
-          note: t("bulkRefundFromList"),
-        });
+        await updateOrderStatus(id, "refunded", t("bulkRefundFromList"));
       }
       await refetch();
       setSelected(new Set());

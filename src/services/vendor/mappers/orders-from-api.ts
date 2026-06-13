@@ -6,10 +6,10 @@ import type {
   VendorOrder,
 } from "@/modules/orders/types";
 
-function money(v: unknown): number {
-  if (typeof v === "number" && !Number.isNaN(v)) return v;
-  if (typeof v === "string") return parseFloat(v) || 0;
-  return 0;
+function money(v: unknown): string {
+  if (typeof v === "string" && v.length > 0) return v;
+  if (typeof v === "number" && !Number.isNaN(v)) return v.toFixed(2);
+  return "0";
 }
 
 function iso(v: unknown): string {
@@ -61,27 +61,38 @@ export function mapGatewayOrderToVendorOrder(
           ),
           qty: Number(it.quantity ?? it.qty ?? 1),
           unitPrice: money(it.unitPrice ?? it.price),
+          variantId: String(
+            it.variantId ?? (it.variant as Record<string, unknown>)?.id ?? ""
+          ) || undefined,
         }))
       : [
           {
             sku: "—",
             name: "No line items in payload",
             qty: 1,
-            unitPrice: 0,
+            unitPrice: "0",
           },
         ];
 
   const cust = raw.customer as Record<string, unknown> | undefined;
+  const customerEmail = String(
+    cust?.email ?? raw.customerEmail ?? ""
+  );
+  const customerName = String(
+    cust?.name ??
+      cust?.fullName ??
+      raw.customerName ??
+      customerEmail ??
+      "Customer"
+  );
 
   return {
     id: String(raw.id),
     reference: String(
       raw.reference ?? raw.orderNumber ?? raw.humanId ?? raw.id
     ).slice(0, 48),
-    customerEmail: String(cust?.email ?? ""),
-    customerName: String(
-      cust?.name ?? cust?.fullName ?? cust?.email ?? "Customer"
-    ),
+    customerEmail,
+    customerName,
     status: normalizeOrderStatus(String(raw.status ?? "pending")),
     createdAt: iso(raw.placedAt ?? raw.createdAt),
     updatedAt: iso(raw.updatedAt ?? raw.placedAt ?? raw.createdAt),
@@ -91,6 +102,7 @@ export function mapGatewayOrderToVendorOrder(
     shipping: money(raw.shippingTotal ?? raw.shippingCost ?? raw.shipping),
     tax: money(raw.taxTotal ?? raw.tax),
     total: money(raw.total ?? raw.grandTotal ?? raw.amount),
+    currency: raw.currency ? String(raw.currency) : undefined,
     timeline: [],
     shippingHistory: [],
   };

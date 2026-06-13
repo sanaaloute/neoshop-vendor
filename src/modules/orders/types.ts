@@ -13,7 +13,9 @@ export type OrderLine = {
   sku: string;
   name: string;
   qty: number;
-  unitPrice: number;
+  unitPrice: string;
+  /** Variant id from the gateway, when available, used for shipping-rate lookups. */
+  variantId?: string;
 };
 
 export type TimelineEvent = {
@@ -49,10 +51,11 @@ export type VendorOrder = {
   updatedAt: string;
   shipTo: OrderShipTo;
   lines: OrderLine[];
-  subtotal: number;
-  shipping: number;
-  tax: number;
-  total: number;
+  subtotal: string;
+  shipping: string;
+  tax: string;
+  total: string;
+  currency?: string;
   timeline: TimelineEvent[];
   shippingHistory: ShippingUpdate[];
 };

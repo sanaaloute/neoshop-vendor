@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
-  Archive,
   Copy,
   Eye,
   Layers,
@@ -44,7 +43,6 @@ import { useProductCatalogStore } from "@/store/product-catalog-store";
 import { useVariantWorkbenchStore } from "@/store/variant-workbench-store";
 import { useCategoriesStore } from "@/store/categories-store";
 import {
-  archiveProductOnGateway,
   bulkPatchProductsOnGateway,
   deleteProductOnGateway,
   duplicateProductOnGateway,
@@ -93,7 +91,6 @@ export function ProductsTable({
   const t = useTranslations("products");
   const router = useRouter();
   const products = useProductCatalogStore((s) => s.products);
-  const archiveProduct = useProductCatalogStore((s) => s.archiveProduct);
   const deleteProduct = useProductCatalogStore((s) => s.deleteProduct);
   const duplicateProduct = useProductCatalogStore((s) => s.duplicateProduct);
   const bulkPatch = useProductCatalogStore((s) => s.bulkPatch);
@@ -461,34 +458,6 @@ export function ProductsTable({
                             }}
                           >
                             <Copy className="size-4" aria-hidden />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            title={t("list.archive")}
-                            disabled={listBusy || !canWriteCatalog}
-                            onClick={() => {
-                              void (async () => {
-                                setListError(null);
-                                if (getApiBaseUrl()) {
-                                  setListBusy(true);
-                                  try {
-                                    await archiveProductOnGateway(p.id);
-                                    archiveProduct(p.id);
-                                  } catch (e) {
-                                    setListError(
-                                      httpErrorMessageForUser(e, t("list.couldNotArchive"))
-                                    );
-                                  } finally {
-                                    setListBusy(false);
-                                  }
-                                  return;
-                                }
-                                archiveProduct(p.id);
-                              })();
-                            }}
-                          >
-                            <Archive className="size-4" aria-hidden />
                           </Button>
                           <Button
                             variant="ghost"

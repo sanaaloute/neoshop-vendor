@@ -144,6 +144,10 @@
     "updatePublicProfile": "Mettez à jour vos informations de profil public.",
     "firstName": "Prénom",
     "lastName": "Nom",
+    "dateOfBirth": "Date de naissance",
+    "nationality": "Nationalité",
+    "idCardType": "Type de carte d'identité",
+    "idCardNumber": "Numéro de carte d'identité",
     "email": "Email",
     "avatarUrl": "URL de l'avatar",
     "avatarPlaceholder": "https://…",
@@ -329,7 +333,14 @@
     "finance": "Finance",
     "system": "Système",
     "noNotificationsForFilter": "Aucune notification pour ce filtre.",
-    "filterAria": "Filtres de notification"
+    "filterAria": "Filtres de notification",
+    "deviceTokens": "Appareils",
+    "deviceTokensDescription": "Enregistrez ce navigateur pour recevoir les notifications push.",
+    "registerDevice": "Enregistrer ce navigateur",
+    "unregisterDevice": "Désenregistrer",
+    "sendHeartbeat": "Envoyer un heartbeat",
+    "deviceRegistered": "Appareil enregistré.",
+    "deviceUnregistered": "Appareil désenregistré."
   },
   "gatewaySync": {
     "couldNotConnect": "Impossible de se connecter à votre marketplace.",
@@ -532,7 +543,10 @@
     "couldNotLoadOrder": "Impossible de charger cette commande. Réessayez.",
     "couldNotUpdateStatus": "Impossible de mettre à jour le statut de la commande. Réessayez.",
     "markedRefundedFromDrawer": "Marqué remboursé depuis le panneau",
-    "bulkRefundFromList": "Remboursement groupé depuis la liste des commandes"
+    "bulkRefundFromList": "Remboursement groupé depuis la liste des commandes",
+    "overview": "Aperçu",
+    "trackingTab": "Suivi",
+    "noTrackingData": "Aucune donnée de suivi disponible pour cette commande."
   },
   "inventory": {
     "title": "Inventaire",
@@ -616,7 +630,8 @@
     "thread": {
       "placeholder": "Écrivez un message à l'acheteur et à la plateforme…",
       "sendHint": "⌘/Ctrl + Entrée pour envoyer.",
-      "send": "Envoyer"
+      "send": "Envoyer",
+      "internal": "Interne"
     },
     "workflow": {
       "steps": {

@@ -27,6 +27,5 @@ export * from "./promotions-api";
 export * from "./referrals-api";
 export * from "./search-api";
 export * from "./vendor-public-api";
-export * from "./setup-api";
 export * from "./mappers/catalog-from-api";
 export * from "./mappers/orders-from-api";

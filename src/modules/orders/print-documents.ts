@@ -8,11 +8,17 @@ function esc(s: string) {
     .replace(/"/g, "&quot;");
 }
 
-function money(n: number) {
+function toNumber(value: string | number): number {
+  if (typeof value === "number") return Number.isNaN(value) ? 0 : value;
+  const parsed = parseFloat(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function money(value: string | number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "CNY",
-  }).format(n);
+  }).format(toNumber(value));
 }
 
 function printStatusLabel(s: string) {
@@ -32,7 +38,7 @@ export function buildInvoiceHtml(order: VendorOrder) {
   const rows = order.lines
     .map(
       (l) =>
-        `<tr><td>${esc(l.sku)}</td><td>${esc(l.name)}</td><td style="text-align:right">${l.qty}</td><td style="text-align:right">${money(l.unitPrice)}</td><td style="text-align:right">${money(l.qty * l.unitPrice)}</td></tr>`
+        `<tr><td>${esc(l.sku)}</td><td>${esc(l.name)}</td><td style="text-align:right">${l.qty}</td><td style="text-align:right">${money(l.unitPrice)}</td><td style="text-align:right">${money(l.qty * toNumber(l.unitPrice))}</td></tr>`
     )
     .join("");
   return `

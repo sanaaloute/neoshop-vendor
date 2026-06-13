@@ -113,6 +113,10 @@ export type UserMeResponse = {
   phone?: string | null;
   name?: string | null;
   surname?: string | null;
+  dateOfBirth?: string | null;
+  nationality?: string | null;
+  idCardType?: string | null;
+  idCardNumber?: string | null;
   role: string;
   avatarUrl?: string | null;
   createdAt: string;
@@ -198,13 +202,25 @@ export type UpdateShopDto = {
 
 // --- Products ---
 
+export type Currency = "CNY" | "XOF";
+
+export type BulkPricingTierInput = {
+  minQuantity: number;
+  unitPrice: number;
+};
+
+export type BulkPricingTier = {
+  minQuantity: number;
+  unitPrice: string;
+};
+
 export type CreateProductDto = {
   title: string;
   slug: string;
   description?: string;
   moq?: number;
-  currency?: "CNY" | "XOF";
-  bulkPricing?: BulkPricingTier[];
+  currency?: Currency;
+  bulkPricing?: BulkPricingTierInput[];
   categoryIds?: string[];
 };
 
@@ -213,9 +229,9 @@ export type UpdateProductDto = {
   slug?: string;
   description?: string;
   moq?: number;
-  currency?: "CNY" | "XOF";
-  status?: ApiProductStatus;
-  bulkPricing?: BulkPricingTier[];
+  currency?: Currency;
+  status?: Extract<ApiProductStatus, "draft" | "pending_review" | "hidden">;
+  bulkPricing?: BulkPricingTierInput[];
 };
 
 export type ProductStatsResponse = {
@@ -246,27 +262,22 @@ export type AddAttributeValuesDto = {
 
 // --- Variants ---
 
-export type BulkPricingTier = {
-  minQuantity: number;
-  unitPrice: string;
-};
-
 export type CreateVariantDto = {
   attributeValueIds: string[];
-  wholesalePrice: string;
-  bulkPricing?: BulkPricingTier[];
+  wholesalePrice: number;
+  currency?: Currency;
   isActive?: boolean;
-  weightKg?: string;
-  volumeCbm?: string;
+  weightKg?: number;
+  volumeCbm?: number;
   imageUrl?: string;
 };
 
 export type UpdateVariantDto = {
-  wholesalePrice?: string;
-  bulkPricing?: BulkPricingTier[];
+  wholesalePrice?: number;
+  currency?: Currency;
   isActive?: boolean;
-  weightKg?: string;
-  volumeCbm?: string;
+  weightKg?: number;
+  volumeCbm?: number;
   imageUrl?: string;
 };
 
@@ -298,6 +309,93 @@ export type OrderStatsResponse = {
 export type UpdateOrderStatusDto = {
   status: ApiOrderStatus;
   note?: string;
+};
+
+export type OrderLineItem = {
+  id: string;
+  variantId: string;
+  quantity: number;
+  unitPrice: string;
+  lineTotal: string;
+  skuSnapshot: string;
+  titleSnapshot: string;
+  variantImageUrl: string | null;
+};
+
+export type VendorOrder = {
+  id: string;
+  checkoutGroupId: string;
+  customerUserId: string;
+  customer: { id: string; email: string };
+  status: ApiOrderStatus;
+  currency: string;
+  subtotal: string;
+  taxTotal: string;
+  shippingTotal: string;
+  grandTotal: string;
+  placedAt: string;
+  items: OrderLineItem[];
+};
+
+export type OrderDetailItem = OrderLineItem & {
+  variant: {
+    id: string;
+    sku: string;
+    imageUrl: string | null;
+    weightKg: string;
+    volumeCbm: string;
+    currency: string;
+  };
+};
+
+export type OrderStatusHistoryItem = {
+  id: string;
+  status: ApiOrderStatus;
+  note: string | null;
+  actorUserId: string | null;
+  createdAt: string;
+};
+
+export type OrderDetailResponse = {
+  id: string;
+  checkoutGroupId: string;
+  customerUserId: string;
+  customer: { id: string; email: string };
+  vendorId: string;
+  vendor: {
+    id: string;
+    tradeName: string;
+    legalBusinessName: string;
+  };
+  status: ApiOrderStatus;
+  currency: string;
+  vendorCurrency: string;
+  subtotal: string;
+  taxTotal: string;
+  shippingTotal: string;
+  grandTotal: string;
+  couponCode: string | null;
+  placedAt: string;
+  updatedAt: string;
+  items: OrderDetailItem[];
+  statusHistory: OrderStatusHistoryItem[];
+  invoices: unknown[];
+  payments: unknown[];
+  refunds: unknown[];
+};
+
+export type TrackingEvent = {
+  id: string;
+  status: ApiOrderStatus;
+  location: string;
+  note: string;
+  createdAt: string;
+};
+
+export type OrderTrackingResponse = {
+  carrier: string;
+  trackingNumber: string;
+  events: TrackingEvent[];
 };
 
 /** Product in customer's purchase history */
@@ -437,33 +535,30 @@ export type DisputeSummary = {
   id: string;
   orderId: string;
   status: DisputeStatus;
-  customerEmail?: string | null;
+  customerEmail: string;
   amountClaimed: string;
   currency: string;
   reasonCategory: string;
-  escalationTier?: number;
+  escalationTier: number;
   openedAt: string;
-  messageCount?: number;
+  messageCount: number;
 };
 
 export type DisputeMessage = {
   id: string;
   body: string;
+  internal: boolean;
   author: {
-    id?: string;
-    name?: string;
+    id: string;
+    name: string;
     role: string;
   };
   createdAt: string;
 };
 
 export type DisputeDetail = DisputeSummary & {
+  resolvedAt: string | null;
   messages: DisputeMessage[];
-  timeline: Array<{
-    status: string;
-    note?: string | null;
-    createdAt: string;
-  }>;
 };
 
 export type PostDisputeMessageDto = {
@@ -521,6 +616,7 @@ export type WalletTransaction = {
 export type Address = {
   id: string;
   label: string;
+  fullName: string;
   streetLine1: string;
   streetLine2?: string | null;
   city: string;
@@ -533,6 +629,7 @@ export type Address = {
 
 export type CreateAddressDto = {
   label: string;
+  fullName: string;
   streetLine1: string;
   streetLine2?: string;
   city: string;
@@ -654,16 +751,6 @@ export type HealthBeaconRequest = {
   platform: string;
   appVersion: string;
   deviceId?: string;
-};
-
-export type SetupStatusResponse = {
-  setupTokenRequired: boolean;
-  bootstrapAvailable: boolean;
-};
-
-export type SetupBootstrapRequest = {
-  supabaseUserId: string;
-  email: string;
 };
 
 // --- Viewed Products ---

@@ -17,7 +17,6 @@ export { useHealthCheck } from "@/hooks/use-health-check";
 export { useAddresses } from "@/hooks/use-addresses";
 export { useFavorites } from "@/hooks/use-favorites";
 export { useVendorPublic } from "@/hooks/use-vendor-public";
-export { useSetup } from "@/hooks/use-setup";
 export { useChatConversation } from "@/hooks/use-chat-conversation";
 export { useProductAttributes } from "@/hooks/use-product-attributes";
 export { useViewedProducts } from "@/hooks/use-viewed-products";
@@ -36,6 +35,7 @@ export { useRefetchVendorOrders } from "@/hooks/use-refetch-vendor-orders";
 // New guide-aligned hooks
 export { useVendorProfile } from "@/hooks/use-vendor-profile";
 export { useProductsWrite } from "@/hooks/use-products-write";
+export { useVariants } from "@/hooks/use-variants";
 export { useVariantsWrite } from "@/hooks/use-variants-write";
 export { useInventoryWrite } from "@/hooks/use-inventory-write";
 export { useOrderDetail } from "@/hooks/use-order-detail";

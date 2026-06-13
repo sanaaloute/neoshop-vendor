@@ -43,11 +43,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useIsDesktop } from "@/hooks/use-is-desktop";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
 import { cn } from "@/lib/utils";
-import { listMyProducts } from "@/services/vendor/products-api";
-import {
-  listProductQa,
-  answerQaThread,
-} from "@/services/vendor/qa-api";
+import { useQaVendor } from "@/hooks/use-qa-vendor";
+import { useProductCatalogStore } from "@/store/product-catalog-store";
 import type { QaThread } from "@/services/vendor/qa-api";
 import { useTranslations } from "next-intl";
 
@@ -75,9 +72,11 @@ function AnsweredBadge({ answered }: { answered: boolean }) {
 function ThreadDetailPanel({
   thread,
   onAnswerPosted,
+  postAnswer,
 }: {
   thread: QaThread;
   onAnswerPosted: () => void;
+  postAnswer: (threadId: string, body: { answer: string }) => Promise<unknown>;
 }) {
   const t = useTranslations("qa");
   const [answer, setAnswer] = useState("");
@@ -89,7 +88,7 @@ function ThreadDetailPanel({
     setSubmitting(true);
     setSubmitError(null);
     try {
-      await answerQaThread(thread.id, { answer: answer.trim() });
+      await postAnswer(thread.id, { answer: answer.trim() });
       setAnswer("");
       onAnswerPosted();
     } catch (e) {
@@ -183,8 +182,16 @@ function ThreadDetailPanel({
 
 export function QaHome() {
   const t = useTranslations("qa");
-  const [products, setProducts] = useState<ProductOption[]>([]);
-  const [productsLoading, setProductsLoading] = useState(true);
+  const catalogProducts = useProductCatalogStore((s) => s.products);
+  const products = useMemo<ProductOption[]>(
+    () =>
+      catalogProducts.map((p) => ({
+        id: p.id,
+        name: p.name || t("untitledProduct"),
+      })),
+    [catalogProducts, t]
+  );
+  const productsLoading = catalogProducts.length === 0;
   const [productsError, setProductsError] = useState<string | null>(null);
 
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
@@ -194,6 +201,8 @@ export function QaHome() {
   const [threadsLoading, setThreadsLoading] = useState(false);
   const [threadsError, setThreadsError] = useState<string | null>(null);
 
+  const { list: listQa, answer: answerQa } = useQaVendor();
+
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(
     null
   );
@@ -201,33 +210,14 @@ export function QaHome() {
 
   const desktop = useIsDesktop();
 
-  // Load products
+  // Surface catalog load errors once
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        setProductsLoading(true);
-        setProductsError(null);
-        const res = await listMyProducts({ take: 100 });
-        if (cancelled) return;
-        const items = (res.items ?? []) as Array<{ id: string; name: string }>;
-        setProducts(
-          items.map((p) => ({ id: p.id, name: p.name || t("untitledProduct") }))
-        );
-      } catch (e) {
-        if (cancelled) return;
-        setProductsError(
-          httpErrorMessageForUser(e, t("couldNotLoadProducts"))
-        );
-      } finally {
-        if (!cancelled) setProductsLoading(false);
-      }
+    if (!productsLoading && products.length === 0) {
+      setProductsError(t("couldNotLoadProducts"));
+    } else {
+      setProductsError(null);
     }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [t]);
+  }, [productsLoading, products.length, t]);
 
   // Load QA threads when product changes
   useEffect(() => {
@@ -240,7 +230,7 @@ export function QaHome() {
       try {
         setThreadsLoading(true);
         setThreadsError(null);
-        const data = await listProductQa(selectedProductId!);
+        const data = await listQa(selectedProductId!);
         if (cancelled) return;
         setThreads(data);
       } catch (e) {
@@ -256,7 +246,7 @@ export function QaHome() {
     return () => {
       cancelled = true;
     };
-  }, [selectedProductId, t]);
+  }, [selectedProductId, listQa, t]);
 
   // Auto-select first thread on desktop
   useEffect(() => {
@@ -284,14 +274,14 @@ export function QaHome() {
     try {
       setThreadsLoading(true);
       setThreadsError(null);
-      const data = await listProductQa(selectedProductId);
+      const data = await listQa(selectedProductId);
       setThreads(data);
     } catch (e) {
       setThreadsError(httpErrorMessageForUser(e, t("couldNotRefreshQuestions")));
     } finally {
       setThreadsLoading(false);
     }
-  }, [selectedProductId, t]);
+  }, [selectedProductId, listQa, t]);
 
   if (productsLoading) {
     return (
@@ -470,6 +460,7 @@ export function QaHome() {
               <ThreadDetailPanel
                 thread={selectedThread}
                 onAnswerPosted={refetchThreads}
+                postAnswer={answerQa}
               />
             </>
           ) : (
@@ -535,6 +526,7 @@ export function QaHome() {
                 <ThreadDetailPanel
                   thread={selectedThread}
                   onAnswerPosted={refetchThreads}
+                  postAnswer={answerQa}
                 />
               </div>
             </>

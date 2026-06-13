@@ -1,3 +1,5 @@
+import type { Currency } from "@/services/vendor/types";
+
 /** How we label an axis in the matrix (color / size / product type / custom). */
 export type VariantAttributeKind = "color" | "size" | "type" | "custom";
 
@@ -13,6 +15,7 @@ export type VariantAttributeDefinition = {
   code?: string;
 };
 
+/** UI editor row. Numeric values are converted to strings when calling the API. */
 export type VariantRow = {
   id: string;
   /** Maps attribute id → chosen value for this row. */
@@ -55,3 +58,43 @@ export function emptyGenerationDefaults(): VariantGenerationDefaults {
     barcode: "",
   };
 }
+
+// --- API response shapes (guide-aligned) ---
+
+export type VariantSelectionApiResponse = {
+  attributeValueId?: string;
+  attributeValue?: {
+    value?: string;
+    attribute?: {
+      id?: string;
+      code?: string;
+      label?: string;
+    };
+  };
+};
+
+export type VariantInventoryApiResponse = {
+  quantity?: number;
+  reservedQuantity?: number;
+};
+
+/**
+ * Raw ProductVariant returned by the gateway.
+ * Decimal fields are strings to preserve precision; the UI mapper converts them
+ * to numbers for the editor (`VariantRow`).
+ */
+export type VariantApiResponse = {
+  id: string;
+  productId?: string;
+  sku?: string | null;
+  wholesalePrice: string;
+  currency: Currency;
+  isActive: boolean;
+  imageUrl?: string | null;
+  weightKg?: string;
+  volumeCbm?: string;
+  selections?: VariantSelectionApiResponse[];
+  inventory?: VariantInventoryApiResponse;
+  createdAt?: string;
+  updatedAt?: string;
+};

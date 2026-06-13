@@ -13,18 +13,10 @@ import { useGatewayCatalogBootstrap } from "@/hooks/use-gateway-catalog-bootstra
 import { useGatewayVariantsBootstrap } from "@/hooks/use-gateway-variants-bootstrap";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
 import { slugify } from "@/lib/slugify";
-import { setVariantQuantity } from "@/services/vendor/inventory-api";
-import {
-  createProductAttribute,
-  createProductAttributeValue,
-} from "@/services/vendor/products-api";
-import {
-  createVariantsBulk,
-  deleteVariant,
-  deleteVariantsBulk,
-  listVariants,
-  updateVariantsBulk,
-} from "@/services/vendor/variants-api";
+import { useVariantsWrite } from "@/hooks/use-variants-write";
+import { useVariants } from "@/hooks/use-variants";
+import { useInventoryWrite } from "@/hooks/use-inventory-write";
+import { useProductAttributes } from "@/hooks/use-product-attributes";
 import { useCategories } from "@/hooks/use-categories";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
 import { useVariantWorkbenchStore } from "@/store/variant-workbench-store";
@@ -62,6 +54,15 @@ export function VariantsHome() {
   const catalogSync = useGatewayCatalogBootstrap();
   const variantSync = useGatewayVariantsBootstrap(selectedProductId);
   const categories = useCategories();
+  const {
+    createBulk,
+    updateBulk,
+    remove,
+    removeBulk,
+  } = useVariantsWrite();
+  const { fetchVariants } = useVariants();
+  const { setQuantity } = useInventoryWrite();
+  const { createAttribute, createAttributeValues } = useProductAttributes();
   const presetInjectedFor = useRef(new Set<string>());
 
   /*
@@ -166,7 +167,7 @@ export function VariantsHome() {
 
     setSaveMessage(null);
     try {
-      await deleteVariant(selectedProductId, variantId);
+      await remove(selectedProductId, variantId);
     } catch (e) {
       setSaveMessage(
         httpErrorMessageForUser(e, t("couldNotDeleteVariant"))
@@ -203,7 +204,7 @@ export function VariantsHome() {
       let backendAttrId = attr.id;
       if (!attr.code) {
         try {
-          const created = await createProductAttribute(productId, {
+          const created = await createAttribute(productId, {
             code: slugify(attr.name) || `attr-${crypto.randomUUID().slice(0, 8)}`,
             label: attr.name,
           });
@@ -240,7 +241,7 @@ export function VariantsHome() {
         for (const value of attr.values) {
           if (valueIdMap[value]) continue;
           try {
-            const created = await createProductAttributeValue(productId, backendAttrId, { values: [{ value }] });
+            const created = await createAttributeValues(productId, backendAttrId, { values: [{ value }] });
             const createdItems = Array.isArray(created) ? created : [created];
             const firstItem = createdItems[0] as Record<string, unknown> | undefined;
             if (firstItem?.id) {
@@ -321,7 +322,7 @@ export function VariantsHome() {
       }
 
       // 3. Discover which backend variants are being replaced.
-      const existingRaw = await listVariants(selectedProductId);
+      const existingRaw = await fetchVariants(selectedProductId);
       const existingVariants = Array.isArray(existingRaw)
         ? existingRaw
         : Array.isArray((existingRaw as Record<string, unknown>)?.items)
@@ -340,16 +341,20 @@ export function VariantsHome() {
       const toUpdate = validRows.filter((r) => !r.isLocalOnly);
       const createdMappings: { localId: string; backendId: string }[] = [];
 
+      const product = products.find((p) => p.id === selectedProductId);
+      const currency = product?.currency ?? "CNY";
+
       if (toCreate.length > 0) {
         const variants = toCreate.map((row) => {
           const weightKg =
-            row.weightGrams > 0 ? (row.weightGrams / 1000).toFixed(4) : undefined;
+            row.weightGrams > 0 ? row.weightGrams / 1000 : undefined;
           const volumeCbm =
             row.lengthCm > 0 && row.widthCm > 0 && row.heightCm > 0
-              ? ((row.lengthCm * row.widthCm * row.heightCm) / 1_000_000).toFixed(6)
+              ? (row.lengthCm * row.widthCm * row.heightCm) / 1_000_000
               : undefined;
           return {
-            wholesalePrice: row.price.toFixed(2),
+            wholesalePrice: row.price,
+            currency,
             attributeValueIds: row.selectionIds ?? [],
             isActive: true,
             weightKg,
@@ -357,7 +362,7 @@ export function VariantsHome() {
             imageUrl: row.imageUrl,
           };
         });
-        const created = await createVariantsBulk(selectedProductId, {
+        const created = await createBulk(selectedProductId, {
           variants,
         });
         const createdItems = Array.isArray(created)
@@ -384,20 +389,21 @@ export function VariantsHome() {
       if (toUpdate.length > 0) {
         const updates = toUpdate.map((row) => {
           const weightKg =
-            row.weightGrams > 0 ? (row.weightGrams / 1000).toFixed(4) : undefined;
+            row.weightGrams > 0 ? row.weightGrams / 1000 : undefined;
           const volumeCbm =
             row.lengthCm > 0 && row.widthCm > 0 && row.heightCm > 0
-              ? ((row.lengthCm * row.widthCm * row.heightCm) / 1_000_000).toFixed(6)
+              ? (row.lengthCm * row.widthCm * row.heightCm) / 1_000_000
               : undefined;
           return {
             variantId: row.id,
-            wholesalePrice: row.price.toFixed(2),
+            wholesalePrice: row.price,
+            currency,
             weightKg,
             volumeCbm,
             imageUrl: row.imageUrl,
           };
         });
-        await updateVariantsBulk(selectedProductId, { updates });
+        await updateBulk(selectedProductId, { updates });
       }
 
       // 5. Set inventory for all variants in parallel.
@@ -408,9 +414,7 @@ export function VariantsHome() {
           : row.id;
         if (variantId) {
           inventoryTasks.push(
-            setVariantQuantity(variantId, { quantity: row.stock }).then(
-              () => undefined
-            )
+            setQuantity(variantId, row.stock).then(() => undefined)
           );
         }
       }
@@ -419,14 +423,14 @@ export function VariantsHome() {
       // 7. Remove orphaned backend variants in bulk.
       if (idsToDelete.length > 0) {
         try {
-          await deleteVariantsBulk(selectedProductId, {
+          await removeBulk(selectedProductId, {
             variantIds: idsToDelete,
           });
         } catch {
           // Best-effort cleanup; fall back to single deletes.
           for (const id of idsToDelete) {
             try {
-              await deleteVariant(selectedProductId, id);
+              await remove(selectedProductId, id);
             } catch {
               /* ignore */
             }

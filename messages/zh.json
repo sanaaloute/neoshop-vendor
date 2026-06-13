@@ -144,6 +144,10 @@
     "updatePublicProfile": "更新您的公开个人资料信息。",
     "firstName": "名字",
     "lastName": "姓氏",
+    "dateOfBirth": "出生日期",
+    "nationality": "国籍",
+    "idCardType": "证件类型",
+    "idCardNumber": "证件号码",
     "email": "邮箱",
     "avatarUrl": "头像链接",
     "avatarPlaceholder": "https://…",
@@ -329,7 +333,14 @@
     "finance": "财务",
     "system": "系统",
     "noNotificationsForFilter": "此筛选条件下没有通知。",
-    "filterAria": "通知筛选"
+    "filterAria": "通知筛选",
+    "deviceTokens": "设备令牌",
+    "deviceTokensDescription": "注册此浏览器以接收推送通知。",
+    "registerDevice": "注册此浏览器",
+    "unregisterDevice": "取消注册",
+    "sendHeartbeat": "发送心跳",
+    "deviceRegistered": "设备已注册。",
+    "deviceUnregistered": "设备已取消注册。"
   },
   "gatewaySync": {
     "couldNotConnect": "无法连接到您的市场。",
@@ -532,7 +543,10 @@
     "couldNotLoadOrder": "无法加载此订单。请重试。",
     "couldNotUpdateStatus": "无法更新订单状态。请重试。",
     "markedRefundedFromDrawer": "从抽屉标记为已退款",
-    "bulkRefundFromList": "从商家订单列表批量退款"
+    "bulkRefundFromList": "从商家订单列表批量退款",
+    "overview": "概览",
+    "trackingTab": "物流追踪",
+    "noTrackingData": "该订单暂无物流追踪数据。"
   },
   "inventory": {
     "title": "库存",
@@ -616,7 +630,8 @@
     "thread": {
       "placeholder": "向买家和平台撰写消息…",
       "sendHint": "⌘/Ctrl + Enter 发送。",
-      "send": "发送"
+      "send": "发送",
+      "internal": "内部"
     },
     "workflow": {
       "steps": {

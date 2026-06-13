@@ -34,10 +34,7 @@ import {
   useGatewayChatMessages,
 } from "@/hooks/use-gateway-chat-bootstrap";
 import { useIsDesktop } from "@/hooks/use-is-desktop";
-import {
-  postConversationMessage,
-  deleteConversationMessage,
-} from "@/services/vendor/chat-api";
+import { useChatMessages } from "@/hooks/use-chat-messages";
 import {
   useChatTypingRealtimeEvents,
   useRealtimeVendorStatus,
@@ -110,6 +107,7 @@ export function MessagingHome() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const desktop = useIsDesktop();
+  const { sendMessage, deleteMessage: deleteChatMessage } = useChatMessages();
   const endRef = useRef<HTMLDivElement>(null);
   const typingIdleRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined
@@ -279,7 +277,7 @@ export function MessagingHome() {
     if (getApiBaseUrl()) {
       void (async () => {
         try {
-          await postConversationMessage(selectedId, { body: msg.body });
+          await sendMessage(selectedId, msg.body);
         } catch (e) {
           const status = (e as { response?: { status?: number } })?.response
             ?.status;
@@ -311,7 +309,7 @@ export function MessagingHome() {
 
     if (getApiBaseUrl()) {
       try {
-        await deleteConversationMessage(selectedId, messageId);
+        await deleteChatMessage(selectedId, messageId);
       } catch (e) {
         const status = (e as { response?: { status?: number } })?.response
           ?.status;

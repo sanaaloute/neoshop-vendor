@@ -11,16 +11,12 @@ import {
 } from "./products-api";
 import type { ApiProductStatus } from "./types";
 
-function toApiMoney(n: number): string {
-  return Number(n).toFixed(2);
-}
-
 function uiBulkPricingToApi(
   tiers: { minQuantity: number; unitPrice: number }[]
-): { minQuantity: number; unitPrice: string }[] {
+): { minQuantity: number; unitPrice: number }[] {
   return tiers.map((t) => ({
     minQuantity: t.minQuantity,
-    unitPrice: toApiMoney(t.unitPrice),
+    unitPrice: t.unitPrice,
   }));
 }
 
@@ -58,14 +54,11 @@ export async function createProductFromForm(
   const pid = String((row as Record<string, unknown>).id);
 
   const apiStatus = uiStatusToApi(values.status);
-  const vendorControlledStatuses: ApiProductStatus[] = [
-    "draft",
-    "pending_review",
-    "hidden",
-    "archived",
-    "published",
-  ];
-  if (vendorControlledStatuses.includes(apiStatus) && apiStatus !== "draft") {
+  // Vendor may only set draft, pending_review, or hidden via PATCH.
+  if (
+    apiStatus === "pending_review" ||
+    apiStatus === "hidden"
+  ) {
     await updateProduct(pid, { status: apiStatus });
   }
 
@@ -79,15 +72,6 @@ export async function updateProductFromForm(
   values: ProductFormValues
 ): Promise<Product> {
   const apiStatus = uiStatusToApi(values.status);
-  // Vendors may set draft, pending_review, hidden, archived, or published.
-  // published is only allowed when the product is already in published status.
-  const vendorControlledStatuses: ApiProductStatus[] = [
-    "draft",
-    "pending_review",
-    "hidden",
-    "archived",
-    "published",
-  ];
   const body: Record<string, unknown> = {
     title: values.name.trim(),
     slug: values.seo.slug.trim().toLowerCase(),
@@ -96,18 +80,18 @@ export async function updateProductFromForm(
     currency: values.currency,
     bulkPricing: values.bulkPricing.length > 0 ? uiBulkPricingToApi(values.bulkPricing) : undefined,
   };
-  if (vendorControlledStatuses.includes(apiStatus)) {
+  // Vendor may only set draft, pending_review, or hidden via PATCH.
+  if (
+    apiStatus === "draft" ||
+    apiStatus === "pending_review" ||
+    apiStatus === "hidden"
+  ) {
     body.status = apiStatus;
   }
   await updateProduct(productId, body);
   await setProductCategories(productId, { categoryIds: values.categoryIds });
   const refreshed = await getProduct(productId);
   return mapApiProductRowToProduct(refreshed as Record<string, unknown>);
-}
-
-export async function archiveProductOnGateway(productId: string) {
-  // Vendors can PATCH status to "archived" per the API guide.
-  await updateProduct(productId, { status: "archived" });
 }
 
 export async function deleteProductOnGateway(productId: string) {

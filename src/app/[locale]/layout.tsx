@@ -10,6 +10,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { AppShellProvider } from "@/components/providers/app-shell-provider";
 import { AuthProvider } from "@/providers/auth-provider";
+import { HealthBeaconProvider } from "@/providers/health-beacon-provider";
 import { cn } from "@/lib/utils";
 
 const fontSans = Plus_Jakarta_Sans({
@@ -47,7 +48,9 @@ export default async function LocaleLayout({
       >
         <NextIntlClientProvider messages={messages}>
           <AppShellProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              <HealthBeaconProvider>{children}</HealthBeaconProvider>
+            </AuthProvider>
           </AppShellProvider>
         </NextIntlClientProvider>
         <Analytics />

@@ -23,7 +23,9 @@ export function useNotificationsDevice() {
     try {
       await registerNotificationDevice(body);
     } catch (e) {
-      setError(httpErrorMessageForUser(e, "Could not register device."));
+      const message = httpErrorMessageForUser(e, "Could not register device.");
+      setError(message);
+      throw new Error(message);
     } finally {
       setLoading(false);
     }
@@ -36,7 +38,9 @@ export function useNotificationsDevice() {
     try {
       await heartbeatNotificationDevice(token);
     } catch (e) {
-      setError(httpErrorMessageForUser(e, "Could not send device heartbeat."));
+      const message = httpErrorMessageForUser(e, "Could not send device heartbeat.");
+      setError(message);
+      throw new Error(message);
     } finally {
       setLoading(false);
     }
@@ -49,7 +53,9 @@ export function useNotificationsDevice() {
     try {
       await unregisterNotificationDevice(token);
     } catch (e) {
-      setError(httpErrorMessageForUser(e, "Could not unregister device."));
+      const message = httpErrorMessageForUser(e, "Could not unregister device.");
+      setError(message);
+      throw new Error(message);
     } finally {
       setLoading(false);
     }

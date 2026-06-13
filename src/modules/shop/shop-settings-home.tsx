@@ -42,12 +42,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getApiBaseUrl } from "@/config/auth";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
-import {
-  listMyShops,
-  createShop,
-  updateShop,
-  getShopPublicBySlug,
-} from "@/services/vendor/shops-api";
+import { useShops } from "@/hooks/use-shops";
 import {
   useShopSettingsHydrated,
   useShopSettingsStore,
@@ -246,6 +241,7 @@ function FloatingSaveBar({
 export function ShopSettingsHome() {
   const t = useTranslations();
   useShopGatewayBootstrap();
+  const { shops, create: createShopHook, update: updateShopHook, previewPublic } = useShops();
   const state = useShopSettingsStore((s) => s.data);
   const patch = useShopSettingsStore((s) => s.patch);
   const reset = useShopSettingsStore((s) => s.reset);
@@ -313,17 +309,16 @@ export function ShopSettingsHome() {
       return;
     }
     try {
-      const shops = await listMyShops();
       const list = Array.isArray(shops) ? shops : [];
       const first = list[0] as { id?: string } | undefined;
       let shopId = first?.id;
 
       if (!shopId) {
-        const created = (await createShop({
+        const created = await createShopHook({
           name: state.profile.shopName || t("shop.profile.defaultShopName"),
           slug: state.profile.slug || t("defaultShopSlug"),
           description: state.profile.description || undefined,
-        })) as { id?: string } | undefined;
+        });
         shopId = created?.id;
         if (!shopId) {
           setSaveHint(t("shop.saveHint.noIdReturned"));
@@ -333,7 +328,7 @@ export function ShopSettingsHome() {
         }
       }
 
-      await updateShop(shopId, {
+      await updateShopHook(shopId, {
         name: state.profile.shopName,
         slug: state.profile.slug,
         description: state.profile.description || undefined,
@@ -368,13 +363,13 @@ export function ShopSettingsHome() {
     }
     setSaving(false);
     clearSaveHintSoon();
-  }, [state, clearSaveHintSoon, t]);
+  }, [state, clearSaveHintSoon, t, shops, createShopHook, updateShopHook]);
 
   const runPreview = useCallback(async () => {
     if (!getApiBaseUrl() || !state.profile.slug) return;
     setPreviewLoading(true);
     try {
-      const data = await getShopPublicBySlug(state.profile.slug);
+      const data = await previewPublic(state.profile.slug);
       setPreviewData(data as typeof previewData);
       setPreviewOpen(true);
     } catch (e) {
@@ -385,7 +380,7 @@ export function ShopSettingsHome() {
     } finally {
       setPreviewLoading(false);
     }
-  }, [state.profile.slug, clearSaveHintSoon, t]);
+  }, [state.profile.slug, clearSaveHintSoon, t, previewPublic]);
 
   const bind =
     <S extends keyof ShopSettingsState>(section: S) =>

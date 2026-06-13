@@ -144,6 +144,10 @@
     "updatePublicProfile": "Update your public profile information.",
     "firstName": "First name",
     "lastName": "Last name",
+    "dateOfBirth": "Date of birth",
+    "nationality": "Nationality",
+    "idCardType": "ID card type",
+    "idCardNumber": "ID card number",
     "email": "Email",
     "avatarUrl": "Avatar URL",
     "avatarPlaceholder": "https://…",
@@ -329,7 +333,14 @@
     "finance": "Finance",
     "system": "System",
     "noNotificationsForFilter": "No notifications for this filter.",
-    "filterAria": "Notification filters"
+    "filterAria": "Notification filters",
+    "deviceTokens": "Device tokens",
+    "deviceTokensDescription": "Register this browser to receive push notifications.",
+    "registerDevice": "Register this browser",
+    "unregisterDevice": "Unregister",
+    "sendHeartbeat": "Send heartbeat",
+    "deviceRegistered": "Device registered.",
+    "deviceUnregistered": "Device unregistered."
   },
   "gatewaySync": {
     "couldNotConnect": "Couldn't connect to your marketplace.",
@@ -431,7 +442,10 @@
     "couldNotLoadOrder": "Could not load this order. Try again.",
     "couldNotUpdateStatus": "Could not update order status. Try again.",
     "markedRefundedFromDrawer": "Marked refunded from drawer",
-    "bulkRefundFromList": "Bulk refund from vendor orders list"
+    "bulkRefundFromList": "Bulk refund from vendor orders list",
+    "overview": "Overview",
+    "trackingTab": "Tracking",
+    "noTrackingData": "No tracking data available for this order."
   },
   "inventory": {
     "title": "Inventory",
@@ -616,7 +630,8 @@
     "thread": {
       "placeholder": "Write a message to the buyer and platform…",
       "sendHint": "⌘/Ctrl + Enter to send.",
-      "send": "Send"
+      "send": "Send",
+      "internal": "Internal"
     },
     "workflow": {
       "steps": {

@@ -31,12 +31,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
-
-import {
-  listVendorDisputes,
-  getVendorDispute,
-  postDisputeMessage,
-} from "@/services/vendor/disputes-api";
+import { useDisputes } from "@/hooks/use-disputes";
 
 import { DisputeThread } from "./dispute-thread";
 import { DisputeWorkflow } from "./dispute-workflow";
@@ -159,38 +154,23 @@ export function DisputesHome() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [listLoading, setListLoading] = useState(true);
-  const [listError, setListError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [sendLoading, setSendLoading] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const desktop = useIsDesktop();
+  const {
+    disputes,
+    loading: listLoading,
+    error: listError,
+    fetchDetail,
+    postMessage,
+  } = useDisputes();
 
+  // Sync hook-loaded disputes into the local cases array (preserves existing UI state).
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        setListLoading(true);
-        setListError(null);
-        const paginated = await listVendorDisputes();
-        if (cancelled) return;
-        const mapped = paginated.items.map((s) => toDisputeCase(s));
-        setCases(mapped);
-      } catch (err) {
-        if (cancelled) return;
-        setListError(
-          err instanceof Error ? err.message : t("disputes.home.loadError")
-        );
-      } finally {
-        if (!cancelled) setListLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [t]);
+    setCases(disputes.map((s) => toDisputeCase(s)));
+  }, [disputes]);
 
   useEffect(() => {
     if (!selectedId) {
@@ -203,8 +183,8 @@ export function DisputesHome() {
       try {
         setDetailLoading(true);
         setDetailError(null);
-        const detail = await getVendorDispute(id);
-        if (cancelled) return;
+        const detail = await fetchDetail(id);
+        if (cancelled || !detail) return;
         setCases((prev) =>
           prev.map((c) =>
             c.id === selectedId ? toDisputeCase(detail, detail) : c
@@ -223,7 +203,7 @@ export function DisputesHome() {
     return () => {
       cancelled = true;
     };
-  }, [selectedId, t]);
+  }, [selectedId, t, fetchDetail]);
 
   useEffect(() => {
     if (desktop && !selectedId && cases[0]) {
@@ -262,13 +242,15 @@ export function DisputesHome() {
       try {
         setSendLoading(true);
         setSendError(null);
-        await postDisputeMessage(selectedId, { body });
-        const detail = await getVendorDispute(selectedId);
-        setCases((prev) =>
-          prev.map((c) =>
-            c.id === selectedId ? toDisputeCase(detail, detail) : c
-          )
-        );
+        await postMessage(selectedId, { body });
+        const detail = await fetchDetail(selectedId);
+        if (detail) {
+          setCases((prev) =>
+            prev.map((c) =>
+              c.id === selectedId ? toDisputeCase(detail, detail) : c
+            )
+          );
+        }
       } catch (err) {
         setSendError(
           err instanceof Error ? err.message : t("disputes.home.loadDetailsError")
@@ -277,7 +259,7 @@ export function DisputesHome() {
         setSendLoading(false);
       }
     },
-    [selectedId, t]
+    [selectedId, t, postMessage, fetchDetail]
   );
 
   const panelProps = selected

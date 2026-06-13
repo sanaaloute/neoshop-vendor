@@ -67,7 +67,10 @@ export function useDashboardMetrics(): DashboardMetrics {
   const products = useProductCatalogStore((s) => s.products);
 
   return useMemo(() => {
-    const revenueTotal = orders.reduce((s, o) => s + o.total, 0);
+    const revenueTotal = orders.reduce(
+      (s, o) => s + (Number.parseFloat(o.total) || 0),
+      0
+    );
     const pendingOrders = orders.filter((o) => ACTIVE_ORDER.has(o.status)).length;
 
     const bestProducts = [...products]

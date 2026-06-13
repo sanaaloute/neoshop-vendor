@@ -56,7 +56,7 @@ import {
   deleteProductMedia,
   getProduct,
 } from "@/services/vendor/products-api";
-import { uploadStorageObject } from "@/services/vendor/storage-api";
+import { useStorageUpload } from "@/hooks/use-storage-upload";
 import { useVendorWritesAllowed } from "@/hooks/use-vendor-writes";
 import { useCategories } from "@/hooks/use-categories";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
@@ -68,6 +68,20 @@ import { BulkPricingEditor } from "./bulk-pricing-editor";
 import { ProductMediaGallery } from "./product-media-gallery";
 import { productFormSchema } from "./schemas";
 import type { ProductFormValues } from "./types";
+
+function extractStoragePath(url: string, bucket: string): string | null {
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split("/").filter(Boolean);
+    const idx = parts.indexOf(bucket);
+    if (idx >= 0 && idx < parts.length - 1) {
+      return parts.slice(idx + 1).join("/");
+    }
+  } catch {
+    /* not a valid URL */
+  }
+  return null;
+}
 
 type ProductFormProps = {
   editorKey: string;
@@ -103,8 +117,10 @@ export function ProductForm({
   const filesByMediaId = useRef(new Map<string, File>());
   const removedMediaIds = useRef(new Set<string>());
   const originalMediaIds = useRef(new Set<string>());
+  const storagePathsByMediaId = useRef(new Map<string, string>());
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const { uploadBatch, readUrls, signedUrl, remove } = useStorageUpload();
 
   useEffect(() => {
     onSavingChange?.(saving);
@@ -202,7 +218,7 @@ export function ProductForm({
   );
 
   const handleRemoveMedia = useCallback(
-    (id: string) => {
+    async (id: string) => {
       if (!canWriteCatalog) return;
       const url = previews[id];
       if (url?.startsWith("blob:")) {
@@ -212,6 +228,11 @@ export function ProductForm({
       filesByMediaId.current.delete(id);
       if (originalMediaIds.current.has(id)) {
         removedMediaIds.current.add(id);
+        const mediaUrl = form.getValues("media").find((m) => m.id === id)?.url;
+        const path = mediaUrl ? extractStoragePath(mediaUrl, "product-media") : null;
+        if (path) {
+          storagePathsByMediaId.current.set(id, path);
+        }
       }
       setPreviews((p) => {
         const n = { ...p };
@@ -244,31 +265,82 @@ export function ProductForm({
     productId: string,
     media: ProductFormValues["media"]
   ) => {
+    const entries = media
+      .map((m) => ({ m, file: filesByMediaId.current.get(m.id) }))
+      .filter((e): e is { m: ProductFormValues["media"][number]; file: File } => Boolean(e.file));
+
     const uploadedLocalIds: string[] = [];
-    for (const m of media) {
-      const file = filesByMediaId.current.get(m.id);
-      if (!file) continue;
-      const up = await uploadStorageObject({
-        file,
+
+    if (entries.length > 0) {
+      const files = entries.map((e) => e.file);
+      const types = entries.map((_, i) => `img_${i}`);
+      const batch = await uploadBatch({
+        files,
         bucket: "product-media",
         entityId: productId,
-        type: `img_${m.sortIndex}`,
+        types,
       });
-      const url = up.publicUrl;
-      if (!url) continue;
-      await attachProductMedia(productId, {
-        url,
-        sortOrder: m.sortIndex,
-        isPrimary: m.sortIndex === 0,
-      });
-      filesByMediaId.current.delete(m.id);
-      uploadedLocalIds.push(m.id);
+
+      const needReadUrls = batch.results
+        .filter((r) => !r.publicUrl && r.path)
+        .map((r) => ({ bucket: r.bucket || "product-media", path: r.path }));
+      let readResults: Awaited<ReturnType<typeof readUrls>> | null = null;
+      if (needReadUrls.length > 0) {
+        readResults = await readUrls(needReadUrls);
+      }
+
+      for (let i = 0; i < entries.length; i++) {
+        const { m } = entries[i];
+        const result = batch.results[i];
+        if (!result) continue;
+
+        let url = result.publicUrl;
+        if (!url && readResults) {
+          const read = readResults.results.find(
+            (r) =>
+              r.bucket === (result.bucket || "product-media") &&
+              r.path === result.path
+          );
+          url = read?.publicUrl ?? read?.signedUrl;
+        }
+        if (!url && result.path) {
+          try {
+            const signed = await signedUrl(
+              result.bucket || "product-media",
+              result.path
+            );
+            url = signed.signedUrl;
+          } catch {
+            /* ignore */
+          }
+        }
+        if (!url) continue;
+
+        await attachProductMedia(productId, {
+          url,
+          sortOrder: m.sortIndex,
+          isPrimary: m.sortIndex === 0,
+        });
+        filesByMediaId.current.delete(m.id);
+        storagePathsByMediaId.current.set(m.id, result.path);
+        uploadedLocalIds.push(m.id);
+      }
     }
+
     for (const mediaId of removedMediaIds.current) {
       try {
         await deleteProductMedia(productId, mediaId);
       } catch (e) {
         console.warn("Failed to delete product media", mediaId, e);
+      }
+      const path = storagePathsByMediaId.current.get(mediaId);
+      if (path) {
+        try {
+          await remove("product-media", path);
+        } catch {
+          /* best-effort storage cleanup */
+        }
+        storagePathsByMediaId.current.delete(mediaId);
       }
     }
     removedMediaIds.current.clear();

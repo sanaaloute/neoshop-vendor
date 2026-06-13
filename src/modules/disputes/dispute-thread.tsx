@@ -11,7 +11,10 @@ import { cn } from "@/lib/utils";
 
 import type { DisputeMessage } from "./types";
 
-function bubbleStyles(role: DisputeMessage["author"]["role"]) {
+function bubbleStyles(role: DisputeMessage["author"]["role"], internal: boolean) {
+  if (internal) {
+    return "mr-auto max-w-[92%] border-amber-500/25 bg-amber-500/10 text-foreground dark:bg-amber-500/5";
+  }
   switch (role) {
     case "vendor":
       return "ml-auto max-w-[92%] border-primary/25 bg-primary/10 text-foreground";
@@ -64,12 +67,17 @@ export function DisputeThread({
               <div
                 className={cn(
                   "rounded-xl border px-3 py-2 text-sm shadow-sm",
-                  bubbleStyles(msg.author.role)
+                  bubbleStyles(msg.author.role, msg.internal)
                 )}
               >
                 <div className="text-muted-foreground mb-1 flex flex-wrap items-center justify-between gap-2 text-[11px]">
                   <span className="text-foreground font-semibold capitalize">
                     {msg.author.name || msg.author.role}
+                    {msg.internal ? (
+                      <span className="ml-2 inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                        {t("internal")}
+                      </span>
+                    ) : null}
                   </span>
                   <time dateTime={msg.createdAt} className="tabular-nums">
                     {new Date(msg.createdAt).toLocaleString(undefined, {
