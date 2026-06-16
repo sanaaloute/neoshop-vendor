@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Building2,
   Camera,
@@ -79,10 +79,7 @@ function verificationBadge(
       );
     case "pending":
       return (
-        <Badge
-          variant="secondary"
-          className="gap-1.5 px-2.5 py-1 font-medium"
-        >
+        <Badge variant="secondary" className="gap-1.5 px-2.5 py-1 font-medium">
           <Loader2 className="size-3.5 animate-spin" aria-hidden />
           {t("shop.verification.pendingReview")}
         </Badge>
@@ -102,26 +99,29 @@ function verificationBadge(
   }
 }
 
-/* ── Nav Pill ── */
-function NavPill({
+/* ── Vertical Tabs Nav ── */
+function VerticalTabsNav({
   links,
   activeId,
   ariaLabel,
+  onSelect,
 }: {
   links: { id: string; label: string; icon: React.ReactNode }[];
   activeId: string;
   ariaLabel: string;
+  onSelect: (id: string) => void;
 }) {
   return (
     <nav className="flex flex-col gap-1" aria-label={ariaLabel}>
       {links.map((l) => {
         const active = activeId === l.id;
         return (
-          <a
+          <button
             key={l.id}
-            href={`#${l.id}`}
+            type="button"
+            onClick={() => onSelect(l.id)}
             className={cn(
-              "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+              "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200",
               active
                 ? "bg-primary/10 text-primary shadow-sm"
                 : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
@@ -143,7 +143,7 @@ function NavPill({
                 transition={{ duration: 0.25, ease: easeOutExpo }}
               />
             ) : null}
-          </a>
+          </button>
         );
       })}
     </nav>
@@ -179,15 +179,13 @@ function FloatingSaveBar({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.96 }}
           transition={{ duration: 0.3, ease: easeOutExpo }}
-          className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-border/60 bg-card/90 px-5 py-3 shadow-2xl shadow-black/20 ring-1 ring-white/5 backdrop-blur-xl dark:shadow-black/40"
+          className="border-border/60 bg-card/90 fixed bottom-2 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border px-5 py-3 shadow-2xl ring-1 shadow-black/20 ring-white/5 backdrop-blur-xl dark:shadow-black/40"
         >
           <div className="flex items-center gap-2">
             <div className="bg-primary/15 flex size-8 items-center justify-center rounded-full">
               <Store className="text-primary size-4" />
             </div>
-            <span className="text-sm font-medium">
-              {labels.unsavedChanges}
-            </span>
+            <span className="text-sm font-medium">{labels.unsavedChanges}</span>
           </div>
           <Separator orientation="vertical" className="h-6" />
           <div className="flex items-center gap-2">
@@ -195,7 +193,7 @@ function FloatingSaveBar({
               type="button"
               size="sm"
               variant="ghost"
-              className="gap-1.5 text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground gap-1.5"
               onClick={onReset}
               disabled={saving}
             >
@@ -241,7 +239,12 @@ function FloatingSaveBar({
 export function ShopSettingsHome() {
   const t = useTranslations();
   useShopGatewayBootstrap();
-  const { shops, create: createShopHook, update: updateShopHook, previewPublic } = useShops();
+  const {
+    shops,
+    create: createShopHook,
+    update: updateShopHook,
+    previewPublic,
+  } = useShops();
   const state = useShopSettingsStore((s) => s.data);
   const patch = useShopSettingsStore((s) => s.patch);
   const reset = useShopSettingsStore((s) => s.reset);
@@ -261,37 +264,6 @@ export function ShopSettingsHome() {
     bannerUrl?: string | null;
   } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
-
-  /* Track active section via IntersectionObserver */
-  useEffect(() => {
-    const sections = [
-      "shop-profile",
-      "shop-branding",
-      "shop-shipping",
-      "shop-returns",
-      "shop-business",
-      "shop-verification",
-      "shop-payout",
-    ];
-    const observers: IntersectionObserver[] = [];
-    sections.forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const obs = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              setActiveSection(id);
-            }
-          });
-        },
-        { rootMargin: "-20% 0px -60% 0px", threshold: 0 }
-      );
-      obs.observe(el);
-      observers.push(obs);
-    });
-    return () => observers.forEach((o) => o.disconnect());
-  }, []);
 
   const clearSaveHintSoon = useCallback(() => {
     if (saveHintTimerRef.current !== undefined) {
@@ -357,9 +329,7 @@ export function ShopSettingsHome() {
           : t("shop.saveHint.shopCreatedSaved")
       );
     } catch (e) {
-      setSaveHint(
-        httpErrorMessageForUser(e, t("shop.saveHint.couldNotSave"))
-      );
+      setSaveHint(httpErrorMessageForUser(e, t("shop.saveHint.couldNotSave")));
     }
     setSaving(false);
     clearSaveHintSoon();
@@ -426,13 +396,17 @@ export function ShopSettingsHome() {
     },
   ];
 
-  
   return (
-    <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start">
+    <div className="relative flex flex-col gap-6 pb-24 lg:flex-row lg:items-start">
       {/* ── Sticky Sidebar Nav ── */}
       <aside className="lg:sticky lg:top-24 lg:w-60 lg:shrink-0">
         <div className="bg-card/50 border-border/60 rounded-2xl border p-3 shadow-sm backdrop-blur-sm">
-          <NavPill links={navLinks} activeId={activeSection} ariaLabel={t("shop.nav.ariaLabel")} />
+          <VerticalTabsNav
+            links={navLinks}
+            activeId={activeSection}
+            ariaLabel={t("shop.nav.ariaLabel")}
+            onSelect={setActiveSection}
+          />
         </div>
       </aside>
 
@@ -443,7 +417,7 @@ export function ShopSettingsHome() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: easeOutExpo }}
-          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/60 bg-gradient-to-r from-primary/5 via-transparent to-chart-2/5 px-5 py-3.5 shadow-sm"
+          className="border-border/60 from-primary/5 to-chart-2/5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-gradient-to-r via-transparent px-5 py-3.5 shadow-sm"
         >
           <div className="flex items-center gap-3">
             <div className="bg-primary/15 flex size-10 items-center justify-center rounded-xl">
@@ -499,502 +473,507 @@ export function ShopSettingsHome() {
         </motion.div>
 
         {/* ── Profile ── */}
-        <SettingsSectionCard
-          id="shop-profile"
-          index={0}
-          icon={<Store className="size-4" />}
-          overline={t("shop.profile.title")}
-          title={t("shop.profile.description")}
-        >
-          <div className="grid gap-5 sm:grid-cols-2">
-            <SettingsField
-              label={t("shop.profile.shopName")}
-              htmlFor="shop-name"
-              fullWidth
-            >
-              <Input
-                id="shop-name"
-                value={state.profile.shopName}
-                onChange={(e) =>
-                  bind("profile")({ shopName: e.target.value })
-                }
-                className="h-10"
-              />
-            </SettingsField>
+        {activeSection === "shop-profile" && (
+          <SettingsSectionCard
+            id="shop-profile"
+            index={0}
+            icon={<Store className="size-4" />}
+            overline={t("shop.profile.title")}
+            title={t("shop.profile.description")}
+          >
+            <div className="grid gap-5 sm:grid-cols-2">
+              <SettingsField
+                label={t("shop.profile.shopName")}
+                htmlFor="shop-name"
+                fullWidth
+              >
+                <Input
+                  id="shop-name"
+                  value={state.profile.shopName}
+                  onChange={(e) =>
+                    bind("profile")({ shopName: e.target.value })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
 
-            <SettingsField
-              label={t("shop.profile.slug")}
-              htmlFor="shop-slug"
-            >
-              <Input
-                id="shop-slug"
-                value={state.profile.slug}
-                onChange={(e) =>
-                  bind("profile")({
-                    slug: e.target.value
-                      .toLowerCase()
-                      .replace(/[^a-z0-9-]/g, "-")
-                      .replace(/-+/g, "-"),
-                  })
-                }
-                className="h-10"
-              />
-            </SettingsField>
+              <SettingsField label={t("shop.profile.slug")} htmlFor="shop-slug">
+                <Input
+                  id="shop-slug"
+                  value={state.profile.slug}
+                  onChange={(e) =>
+                    bind("profile")({
+                      slug: e.target.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9-]/g, "-")
+                        .replace(/-+/g, "-"),
+                    })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
 
-            <SettingsField
-              label={t("shop.profile.tagline")}
-              htmlFor="shop-tag"
-            >
-              <Input
-                id="shop-tag"
-                value={state.profile.tagline}
-                onChange={(e) =>
-                  bind("profile")({ tagline: e.target.value })
-                }
-                className="h-10"
-              />
-            </SettingsField>
+              <SettingsField
+                label={t("shop.profile.tagline")}
+                htmlFor="shop-tag"
+              >
+                <Input
+                  id="shop-tag"
+                  value={state.profile.tagline}
+                  onChange={(e) => bind("profile")({ tagline: e.target.value })}
+                  className="h-10"
+                />
+              </SettingsField>
 
-            <SettingsField
-              label={t("shop.profile.descriptionLabel")}
-              htmlFor="shop-desc"
-              fullWidth
-            >
-              <Textarea
-                id="shop-desc"
-                className="min-h-[110px] resize-y"
-                value={state.profile.description}
-                onChange={(e) =>
-                  bind("profile")({ description: e.target.value })
-                }
-              />
-            </SettingsField>
-          </div>
-        </SettingsSectionCard>
+              <SettingsField
+                label={t("shop.profile.descriptionLabel")}
+                htmlFor="shop-desc"
+                fullWidth
+              >
+                <Textarea
+                  id="shop-desc"
+                  className="min-h-[110px] resize-y"
+                  value={state.profile.description}
+                  onChange={(e) =>
+                    bind("profile")({ description: e.target.value })
+                  }
+                />
+              </SettingsField>
+            </div>
+          </SettingsSectionCard>
+        )}
 
         {/* ── Branding ── */}
-        <SettingsSectionCard
-          id="shop-branding"
-          index={1}
-          icon={<Camera className="size-4" />}
-          overline={t("shop.branding.title")}
-          title={t("shop.branding.description")}
-        >
-          <div className="space-y-6">
-            <BrandingDrop
-              label={t("shop.branding.logo")}
-              preview={state.branding.logoDataUrl}
-              fileName={state.branding.logoFileName}
-              accept="image/png,image/jpeg,image/svg+xml"
-              onPick={async (file) => {
-                const url = await fileToDataUrl(file);
-                bind("branding")({
-                  logoDataUrl: url,
-                  logoFileName: file.name,
-                });
-              }}
-              onClear={() =>
-                bind("branding")({ logoDataUrl: null, logoFileName: null })
-              }
-            />
-            <Separator className="bg-border/40" />
-            <BrandingDrop
-              label={t("shop.branding.banner")}
-              preview={state.branding.bannerDataUrl}
-              fileName={state.branding.bannerFileName}
-              accept="image/png,image/jpeg"
-              onPick={async (file) => {
-                const url = await fileToDataUrl(file);
-                bind("branding")({
-                  bannerDataUrl: url,
-                  bannerFileName: file.name,
-                });
-              }}
-              onClear={() =>
-                bind("branding")({
-                  bannerDataUrl: null,
-                  bannerFileName: null,
-                })
-              }
-              tall
-            />
-          </div>
-        </SettingsSectionCard>
+        {activeSection === "shop-branding" && (
+          <SettingsSectionCard
+            id="shop-branding"
+            index={1}
+            icon={<Camera className="size-4" />}
+            overline={t("shop.branding.title")}
+            title={t("shop.branding.description")}
+          >
+            <div className="space-y-6">
+              <BrandingDrop
+                label={t("shop.branding.logo")}
+                preview={state.branding.logoDataUrl}
+                fileName={state.branding.logoFileName}
+                accept="image/png,image/jpeg,image/svg+xml"
+                onPick={async (file) => {
+                  const url = await fileToDataUrl(file);
+                  bind("branding")({
+                    logoDataUrl: url,
+                    logoFileName: file.name,
+                  });
+                }}
+                onClear={() =>
+                  bind("branding")({ logoDataUrl: null, logoFileName: null })
+                }
+              />
+              <Separator className="bg-border/40" />
+              <BrandingDrop
+                label={t("shop.branding.banner")}
+                preview={state.branding.bannerDataUrl}
+                fileName={state.branding.bannerFileName}
+                accept="image/png,image/jpeg"
+                onPick={async (file) => {
+                  const url = await fileToDataUrl(file);
+                  bind("branding")({
+                    bannerDataUrl: url,
+                    bannerFileName: file.name,
+                  });
+                }}
+                onClear={() =>
+                  bind("branding")({
+                    bannerDataUrl: null,
+                    bannerFileName: null,
+                  })
+                }
+                tall
+              />
+            </div>
+          </SettingsSectionCard>
+        )}
 
         {/* ── Shipping ── */}
-        <SettingsSectionCard
-          id="shop-shipping"
-          index={2}
-          icon={<Truck className="size-4" />}
-          overline={t("shop.shipping.title")}
-          title={t("shop.shipping.description")}
-        >
-          <div className="grid gap-5 sm:grid-cols-2">
-            <SettingsField
-              label={t("shop.shipping.processingMin")}
-              htmlFor="proc-min"
-            >
-              <Input
-                id="proc-min"
-                type="number"
-                min={0}
-                value={state.shipping.processingDaysMin}
-                onChange={(e) =>
-                  bind("shipping")({
-                    processingDaysMin: Number(e.target.value) || 0,
-                  })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-            <SettingsField
-              label={t("shop.shipping.processingMax")}
-              htmlFor="proc-max"
-            >
-              <Input
-                id="proc-max"
-                type="number"
-                min={0}
-                value={state.shipping.processingDaysMax}
-                onChange={(e) =>
-                  bind("shipping")({
-                    processingDaysMax: Number(e.target.value) || 0,
-                  })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-            <SettingsField
-              label={t("shop.shipping.freeThreshold")}
-              htmlFor="free-threshold"
-            >
-              <Input
-                id="free-threshold"
-                inputMode="decimal"
-                placeholder={t("shop.shipping.freeThresholdPlaceholder")}
-                value={state.shipping.freeShippingThresholdUsd}
-                onChange={(e) =>
-                  bind("shipping")({
-                    freeShippingThresholdUsd: e.target.value,
-                  })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-            <SettingsField
-              label={t("shop.shipping.carrierNotes")}
-              htmlFor="carriers"
-              fullWidth
-            >
-              <Textarea
-                id="carriers"
-                value={state.shipping.carriersNote}
-                onChange={(e) =>
-                  bind("shipping")({ carriersNote: e.target.value })
-                }
-              />
-            </SettingsField>
-          </div>
-        </SettingsSectionCard>
+        {activeSection === "shop-shipping" && (
+          <SettingsSectionCard
+            id="shop-shipping"
+            index={2}
+            icon={<Truck className="size-4" />}
+            overline={t("shop.shipping.title")}
+            title={t("shop.shipping.description")}
+          >
+            <div className="grid gap-5 sm:grid-cols-2">
+              <SettingsField
+                label={t("shop.shipping.processingMin")}
+                htmlFor="proc-min"
+              >
+                <Input
+                  id="proc-min"
+                  type="number"
+                  min={0}
+                  value={state.shipping.processingDaysMin}
+                  onChange={(e) =>
+                    bind("shipping")({
+                      processingDaysMin: Number(e.target.value) || 0,
+                    })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
+              <SettingsField
+                label={t("shop.shipping.processingMax")}
+                htmlFor="proc-max"
+              >
+                <Input
+                  id="proc-max"
+                  type="number"
+                  min={0}
+                  value={state.shipping.processingDaysMax}
+                  onChange={(e) =>
+                    bind("shipping")({
+                      processingDaysMax: Number(e.target.value) || 0,
+                    })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
+              <SettingsField
+                label={t("shop.shipping.freeThreshold")}
+                htmlFor="free-threshold"
+              >
+                <Input
+                  id="free-threshold"
+                  inputMode="decimal"
+                  placeholder={t("shop.shipping.freeThresholdPlaceholder")}
+                  value={state.shipping.freeShippingThresholdUsd}
+                  onChange={(e) =>
+                    bind("shipping")({
+                      freeShippingThresholdUsd: e.target.value,
+                    })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
+              <SettingsField
+                label={t("shop.shipping.carrierNotes")}
+                htmlFor="carriers"
+                fullWidth
+              >
+                <Textarea
+                  id="carriers"
+                  value={state.shipping.carriersNote}
+                  onChange={(e) =>
+                    bind("shipping")({ carriersNote: e.target.value })
+                  }
+                />
+              </SettingsField>
+            </div>
+          </SettingsSectionCard>
+        )}
 
         {/* ── Returns ── */}
-        <SettingsSectionCard
-          id="shop-returns"
-          index={3}
-          icon={<RotateCcw className="size-4" />}
-          overline={t("shop.returns.title")}
-          title={t("shop.returns.description")}
-        >
-          <div className="grid gap-5 sm:grid-cols-2">
-            <SettingsField
-              label={t("shop.returns.windowDays")}
-              htmlFor="ret-days"
-            >
-              <Input
-                id="ret-days"
-                type="number"
-                min={0}
-                value={state.returnPolicy.windowDays}
-                onChange={(e) =>
-                  bind("returnPolicy")({
-                    windowDays: Number(e.target.value) || 0,
-                  })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-            <SettingsField
-              label={t("shop.returns.restockingFee")}
-              htmlFor="restock"
-            >
-              <Input
-                id="restock"
-                type="number"
-                min={0}
-                max={100}
-                value={state.returnPolicy.restockingFeePercent}
-                onChange={(e) =>
-                  bind("returnPolicy")({
-                    restockingFeePercent: Number(e.target.value) || 0,
-                  })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-            <SettingsField
-              label={t("shop.returns.policyDetails")}
-              htmlFor="ret-details"
-              fullWidth
-            >
-              <Textarea
-                id="ret-details"
-                className="min-h-[120px] resize-y"
-                value={state.returnPolicy.details}
-                onChange={(e) =>
-                  bind("returnPolicy")({ details: e.target.value })
-                }
-              />
-            </SettingsField>
-          </div>
-        </SettingsSectionCard>
+        {activeSection === "shop-returns" && (
+          <SettingsSectionCard
+            id="shop-returns"
+            index={3}
+            icon={<RotateCcw className="size-4" />}
+            overline={t("shop.returns.title")}
+            title={t("shop.returns.description")}
+          >
+            <div className="grid gap-5 sm:grid-cols-2">
+              <SettingsField
+                label={t("shop.returns.windowDays")}
+                htmlFor="ret-days"
+              >
+                <Input
+                  id="ret-days"
+                  type="number"
+                  min={0}
+                  value={state.returnPolicy.windowDays}
+                  onChange={(e) =>
+                    bind("returnPolicy")({
+                      windowDays: Number(e.target.value) || 0,
+                    })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
+              <SettingsField
+                label={t("shop.returns.restockingFee")}
+                htmlFor="restock"
+              >
+                <Input
+                  id="restock"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={state.returnPolicy.restockingFeePercent}
+                  onChange={(e) =>
+                    bind("returnPolicy")({
+                      restockingFeePercent: Number(e.target.value) || 0,
+                    })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
+              <SettingsField
+                label={t("shop.returns.policyDetails")}
+                htmlFor="ret-details"
+                fullWidth
+              >
+                <Textarea
+                  id="ret-details"
+                  className="min-h-[120px] resize-y"
+                  value={state.returnPolicy.details}
+                  onChange={(e) =>
+                    bind("returnPolicy")({ details: e.target.value })
+                  }
+                />
+              </SettingsField>
+            </div>
+          </SettingsSectionCard>
+        )}
 
         {/* ── Business ── */}
-        <SettingsSectionCard
-          id="shop-business"
-          index={4}
-          icon={<Building2 className="size-4" />}
-          overline={t("shop.business.title")}
-          title={t("shop.business.description")}
-        >
-          <div className="grid gap-5 sm:grid-cols-2">
-            <SettingsField
-              label={t("shop.business.legalName")}
-              htmlFor="legal-name"
-              fullWidth
-            >
-              <Input
-                id="legal-name"
-                value={state.business.legalName}
-                onChange={(e) =>
-                  bind("business")({ legalName: e.target.value })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-            <SettingsField label={t("shop.business.taxId")} htmlFor="ein">
-              <Input
-                id="ein"
-                value={state.business.einMasked}
-                readOnly
-                className="bg-muted/40 h-10"
-              />
-            </SettingsField>
-            <SettingsField
-              label={t("shop.business.supportEmail")}
-              htmlFor="support-email"
-            >
-              <Input
-                id="support-email"
-                type="email"
-                value={state.business.supportEmail}
-                onChange={(e) =>
-                  bind("business")({ supportEmail: e.target.value })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-            <SettingsField
-              label={t("shop.business.address1")}
-              htmlFor="addr1"
-              fullWidth
-            >
-              <Input
-                id="addr1"
-                value={state.business.addressLine1}
-                onChange={(e) =>
-                  bind("business")({ addressLine1: e.target.value })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-            <SettingsField
-              label={t("shop.business.address2")}
-              htmlFor="addr2"
-              fullWidth
-            >
-              <Input
-                id="addr2"
-                value={state.business.addressLine2}
-                onChange={(e) =>
-                  bind("business")({ addressLine2: e.target.value })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-            <SettingsField label={t("shop.business.city")} htmlFor="city">
-              <Input
-                id="city"
-                value={state.business.city}
-                onChange={(e) =>
-                  bind("business")({ city: e.target.value })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-            <SettingsField label={t("shop.business.region")} htmlFor="region">
-              <Input
-                id="region"
-                value={state.business.region}
-                onChange={(e) =>
-                  bind("business")({ region: e.target.value })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-            <SettingsField
-              label={t("shop.business.postalCode")}
-              htmlFor="postal"
-            >
-              <Input
-                id="postal"
-                value={state.business.postalCode}
-                onChange={(e) =>
-                  bind("business")({ postalCode: e.target.value })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-            <SettingsField
-              label={t("shop.business.country")}
-              htmlFor="country"
-            >
-              <Input
-                id="country"
-                value={state.business.country}
-                onChange={(e) =>
-                  bind("business")({ country: e.target.value })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-            <SettingsField
-              label={t("shop.business.supportPhone")}
-              htmlFor="phone"
-              fullWidth
-            >
-              <Input
-                id="phone"
-                value={state.business.supportPhone}
-                onChange={(e) =>
-                  bind("business")({ supportPhone: e.target.value })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-          </div>
-        </SettingsSectionCard>
+        {activeSection === "shop-business" && (
+          <SettingsSectionCard
+            id="shop-business"
+            index={4}
+            icon={<Building2 className="size-4" />}
+            overline={t("shop.business.title")}
+            title={t("shop.business.description")}
+          >
+            <div className="grid gap-5 sm:grid-cols-2">
+              <SettingsField
+                label={t("shop.business.legalName")}
+                htmlFor="legal-name"
+                fullWidth
+              >
+                <Input
+                  id="legal-name"
+                  value={state.business.legalName}
+                  onChange={(e) =>
+                    bind("business")({ legalName: e.target.value })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
+              <SettingsField label={t("shop.business.taxId")} htmlFor="ein">
+                <Input
+                  id="ein"
+                  value={state.business.einMasked}
+                  readOnly
+                  className="bg-muted/40 h-10"
+                />
+              </SettingsField>
+              <SettingsField
+                label={t("shop.business.supportEmail")}
+                htmlFor="support-email"
+              >
+                <Input
+                  id="support-email"
+                  type="email"
+                  value={state.business.supportEmail}
+                  onChange={(e) =>
+                    bind("business")({ supportEmail: e.target.value })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
+              <SettingsField
+                label={t("shop.business.address1")}
+                htmlFor="addr1"
+                fullWidth
+              >
+                <Input
+                  id="addr1"
+                  value={state.business.addressLine1}
+                  onChange={(e) =>
+                    bind("business")({ addressLine1: e.target.value })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
+              <SettingsField
+                label={t("shop.business.address2")}
+                htmlFor="addr2"
+                fullWidth
+              >
+                <Input
+                  id="addr2"
+                  value={state.business.addressLine2}
+                  onChange={(e) =>
+                    bind("business")({ addressLine2: e.target.value })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
+              <SettingsField label={t("shop.business.city")} htmlFor="city">
+                <Input
+                  id="city"
+                  value={state.business.city}
+                  onChange={(e) => bind("business")({ city: e.target.value })}
+                  className="h-10"
+                />
+              </SettingsField>
+              <SettingsField label={t("shop.business.region")} htmlFor="region">
+                <Input
+                  id="region"
+                  value={state.business.region}
+                  onChange={(e) => bind("business")({ region: e.target.value })}
+                  className="h-10"
+                />
+              </SettingsField>
+              <SettingsField
+                label={t("shop.business.postalCode")}
+                htmlFor="postal"
+              >
+                <Input
+                  id="postal"
+                  value={state.business.postalCode}
+                  onChange={(e) =>
+                    bind("business")({ postalCode: e.target.value })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
+              <SettingsField
+                label={t("shop.business.country")}
+                htmlFor="country"
+              >
+                <Input
+                  id="country"
+                  value={state.business.country}
+                  onChange={(e) =>
+                    bind("business")({ country: e.target.value })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
+              <SettingsField
+                label={t("shop.business.supportPhone")}
+                htmlFor="phone"
+                fullWidth
+              >
+                <Input
+                  id="phone"
+                  value={state.business.supportPhone}
+                  onChange={(e) =>
+                    bind("business")({ supportPhone: e.target.value })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
+            </div>
+          </SettingsSectionCard>
+        )}
 
         {/* ── Verification ── */}
-        <SettingsSectionCard
-          id="shop-verification"
-          index={5}
-          icon={<Shield className="size-4" />}
-          overline={t("shop.verification.title")}
-          title={t("shop.verification.description")}
-        >
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              {verificationBadge(state.verification.status, t)}
-              {state.verification.submittedAt ? (
-                <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                  <Clock className="size-3.5" aria-hidden />
-                  {t("shop.verification.submitted")}{" "}
-                  {new Date(
-                    state.verification.submittedAt
-                  ).toLocaleDateString()}
-                </span>
+        {activeSection === "shop-verification" && (
+          <SettingsSectionCard
+            id="shop-verification"
+            index={5}
+            icon={<Shield className="size-4" />}
+            overline={t("shop.verification.title")}
+            title={t("shop.verification.description")}
+          >
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
+                {verificationBadge(state.verification.status, t)}
+                {state.verification.submittedAt ? (
+                  <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                    <Clock className="size-3.5" aria-hidden />
+                    {t("shop.verification.submitted")}{" "}
+                    {new Date(
+                      state.verification.submittedAt
+                    ).toLocaleDateString()}
+                  </span>
+                ) : null}
+              </div>
+              {state.verification.reviewerNote ? (
+                <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {state.verification.reviewerNote}
+                  </p>
+                </div>
               ) : null}
             </div>
-            {state.verification.reviewerNote ? (
-              <div className="bg-muted/30 rounded-lg border border-border/40 p-3">
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  {state.verification.reviewerNote}
-                </p>
-              </div>
-            ) : null}
-          </div>
-        </SettingsSectionCard>
+          </SettingsSectionCard>
+        )}
 
         {/* ── Payout ── */}
-        <SettingsSectionCard
-          id="shop-payout"
-          index={6}
-          icon={<CreditCard className="size-4" />}
-          overline={t("shop.payout.title")}
-          title={t("shop.payout.description")}
-        >
-          <div className="grid gap-5 sm:grid-cols-2">
-            <SettingsField
-              label={t("shop.payout.frequency")}
-              htmlFor="payout-freq"
-            >
-              <Select
-                value={state.payout.frequency}
-                onValueChange={(v) =>
-                  bind("payout")({
-                    frequency: v as ShopSettingsState["payout"]["frequency"],
-                  })
-                }
+        {activeSection === "shop-payout" && (
+          <SettingsSectionCard
+            id="shop-payout"
+            index={6}
+            icon={<CreditCard className="size-4" />}
+            overline={t("shop.payout.title")}
+            title={t("shop.payout.description")}
+          >
+            <div className="grid gap-5 sm:grid-cols-2">
+              <SettingsField
+                label={t("shop.payout.frequency")}
+                htmlFor="payout-freq"
               >
-                <SelectTrigger id="payout-freq" className="h-10 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">
-                    {t("shop.payout.weekly")}
-                  </SelectItem>
-                  <SelectItem value="biweekly">
-                    {t("shop.payout.biweekly")}
-                  </SelectItem>
-                  <SelectItem value="monthly">
-                    {t("shop.payout.monthly")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </SettingsField>
-            <SettingsField
-              label={t("shop.payout.minimumPayout")}
-              htmlFor="min-pay"
-            >
-              <Input
-                id="min-pay"
-                inputMode="decimal"
-                value={state.payout.minimumPayoutUsd}
-                onChange={(e) =>
-                  bind("payout")({ minimumPayoutUsd: e.target.value })
-                }
-                className="h-10"
-              />
-            </SettingsField>
-            <div className="flex items-start gap-3 sm:col-span-2">
-              <Checkbox
-                id="tax-form"
-                checked={state.payout.taxFormOnFile}
-                onCheckedChange={(checked) =>
-                  bind("payout")({ taxFormOnFile: checked === true })
-                }
-              />
-              <div className="space-y-1">
-                <Label htmlFor="tax-form" className="text-sm font-medium">
-                  {t("shop.payout.taxFormOnFile")}
-                </Label>
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  {t("shop.payout.taxFormHint")}
-                </p>
+                <Select
+                  value={state.payout.frequency}
+                  onValueChange={(v) =>
+                    bind("payout")({
+                      frequency: v as ShopSettingsState["payout"]["frequency"],
+                    })
+                  }
+                >
+                  <SelectTrigger id="payout-freq" className="h-10 w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">
+                      {t("shop.payout.weekly")}
+                    </SelectItem>
+                    <SelectItem value="biweekly">
+                      {t("shop.payout.biweekly")}
+                    </SelectItem>
+                    <SelectItem value="monthly">
+                      {t("shop.payout.monthly")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </SettingsField>
+              <SettingsField
+                label={t("shop.payout.minimumPayout")}
+                htmlFor="min-pay"
+              >
+                <Input
+                  id="min-pay"
+                  inputMode="decimal"
+                  value={state.payout.minimumPayoutUsd}
+                  onChange={(e) =>
+                    bind("payout")({ minimumPayoutUsd: e.target.value })
+                  }
+                  className="h-10"
+                />
+              </SettingsField>
+              <div className="flex items-start gap-3 sm:col-span-2">
+                <Checkbox
+                  id="tax-form"
+                  checked={state.payout.taxFormOnFile}
+                  onCheckedChange={(checked) =>
+                    bind("payout")({ taxFormOnFile: checked === true })
+                  }
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="tax-form" className="text-sm font-medium">
+                    {t("shop.payout.taxFormOnFile")}
+                  </Label>
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    {t("shop.payout.taxFormHint")}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        </SettingsSectionCard>
+          </SettingsSectionCard>
+        )}
       </div>
 
       {/* ── Floating Save Bar ── */}
@@ -1017,9 +996,7 @@ export function ShopSettingsHome() {
         <SheetContent side="right" className="w-full sm:max-w-lg">
           <SheetHeader>
             <SheetTitle>{t("shop.preview.title")}</SheetTitle>
-            <SheetDescription>
-              {t("shop.preview.description")}
-            </SheetDescription>
+            <SheetDescription>{t("shop.preview.description")}</SheetDescription>
           </SheetHeader>
           <div className="flex flex-col gap-4 px-4 py-4">
             {previewData ? (

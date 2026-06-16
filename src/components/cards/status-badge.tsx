@@ -17,7 +17,7 @@ const statusVariants = cva("", {
       neutral:
         "border-border/80 bg-muted/60 text-muted-foreground dark:text-muted-foreground",
       pending:
-        "border-primary/25 bg-primary/10 text-primary dark:text-primary-foreground/90",
+        "border-primary/25 bg-primary/10 text-white dark:text-white",
     },
   },
   defaultVariants: {

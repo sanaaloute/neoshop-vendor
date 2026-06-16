@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCategories } from "@/hooks/use-categories";
+import { cn } from "@/lib/utils";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
 import { useVariantWorkbenchStore } from "@/store/variant-workbench-store";
 
@@ -42,6 +43,9 @@ export function VariantMatrixPanel() {
   );
   const generateMatrix = useVariantWorkbenchStore((s) => s.generateMatrix);
   const variants = useVariantWorkbenchStore((s) => s.variants);
+  const bulkUpdateVariants = useVariantWorkbenchStore(
+    (s) => s.bulkUpdateVariants
+  );
   const resetWorkbench = useVariantWorkbenchStore((s) => s.resetWorkbench);
 
   const [defaults, setDefaults] = useState(emptyGenerationDefaults);
@@ -147,6 +151,7 @@ export function VariantMatrixPanel() {
               onChange={(stock) => setDefaults((d) => ({ ...d, stock }))}
               min={0}
               step={1}
+              className="w-60"
             />
             <DefaultNum
               label={t("price")}
@@ -154,6 +159,7 @@ export function VariantMatrixPanel() {
               onChange={(price) => setDefaults((d) => ({ ...d, price }))}
               min={0.01}
               step={0.01}
+              className="w-60"
             />
             <DefaultNum
               label={t("weightG")}
@@ -190,7 +196,7 @@ export function VariantMatrixPanel() {
                 {t("barcode")}
               </Label>
               <Input
-                className="h-8 w-28 text-xs"
+                className="h-8 w-28 text-xs font-mono"
                 value={defaults.barcode}
                 onChange={(e) =>
                   setDefaults((d) => ({ ...d, barcode: e.target.value }))
@@ -198,6 +204,28 @@ export function VariantMatrixPanel() {
                 placeholder={t("ean13")}
               />
             </div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="h-8"
+              disabled={variants.length === 0}
+              onClick={() =>
+                bulkUpdateVariants(
+                  variants.map((v) => v.id),
+                  {
+                    stock: defaults.stock,
+                    weightGrams: defaults.weightGrams,
+                    lengthCm: defaults.lengthCm,
+                    widthCm: defaults.widthCm,
+                    heightCm: defaults.heightCm,
+                    barcode: defaults.barcode.trim(),
+                  }
+                )
+              }
+            >
+              {t("applyDefaultsToAll")}
+            </Button>
           </div>
         </div>
       </div>
@@ -377,21 +405,23 @@ function DefaultNum({
   onChange,
   min,
   step,
+  className = "w-20",
 }: {
   label: string;
   value: number;
   onChange: (n: number) => void;
   min: number;
   step: number;
+  className?: string;
 }) {
   return (
-    <div className="grid gap-0.5">
+    <div className={cn("grid gap-0.5", className)}>
       <Label className="text-muted-foreground text-[10px] tracking-wide uppercase">
         {label}
       </Label>
       <Input
         type="number"
-        className="h-8 w-20 text-xs tabular-nums"
+        className="h-8 w-full text-xs tabular-nums font-mono"
         min={min}
         step={step}
         value={Number.isFinite(value) ? String(value) : ""}

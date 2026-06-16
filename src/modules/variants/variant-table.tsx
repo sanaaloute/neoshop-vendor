@@ -113,11 +113,7 @@ export function VariantTable({
               </TableHead>
               <TableHead className="min-w-[200px]">{t("combination")}</TableHead>
               <TableHead className="w-14">{t("image")}</TableHead>
-              <TableHead className="w-20">{t("stock")}</TableHead>
-              <TableHead className="w-24">{t("price")}</TableHead>
-              <TableHead className="w-20">{t("weightGramsOptional")}</TableHead>
-              <TableHead className="min-w-[120px]">{t("dimensionsOptional")}</TableHead>
-              <TableHead className="min-w-[120px]">{t("barcodeOptionalCol")}</TableHead>
+              <TableHead className="w-48">{t("price")}</TableHead>
               <TableHead className="w-10 text-right">{t("actions")}</TableHead>
             </TableRow>
           </TableHeader>
@@ -148,23 +144,7 @@ export function VariantTable({
                 <TableCell>
                   <Input
                     type="number"
-                    className="h-8 w-14 text-xs tabular-nums"
-                    min={0}
-                    value={row.stock}
-                    onChange={(e) =>
-                      updateVariant(row.id, {
-                        stock: Math.max(
-                          0,
-                          Number.parseInt(e.target.value, 10) || 0
-                        ),
-                      })
-                    }
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    className="h-8 w-16 text-xs tabular-nums"
+                    className="h-8 w-48 text-xs tabular-nums font-mono"
                     min={0}
                     step={0.01}
                     value={row.price}
@@ -176,78 +156,6 @@ export function VariantTable({
                         ),
                       })
                     }
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    className="h-8 w-14 text-xs tabular-nums"
-                    min={0}
-                    value={row.weightGrams}
-                    onChange={(e) =>
-                      updateVariant(row.id, {
-                        weightGrams: Math.max(
-                          0,
-                          Number.parseInt(e.target.value, 10) || 0
-                        ),
-                      })
-                    }
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Input
-                      type="number"
-                      className="h-8 w-10 px-0.5 text-center text-[10px] tabular-nums"
-                      title={t("lengthCm")}
-                      value={row.lengthCm}
-                      onChange={(e) =>
-                        updateVariant(row.id, {
-                          lengthCm: Math.max(
-                            0,
-                            Number.parseFloat(e.target.value) || 0
-                          ),
-                        })
-                      }
-                    />
-                    <Input
-                      type="number"
-                      className="h-8 w-10 px-0.5 text-center text-[10px] tabular-nums"
-                      title={t("widthCm")}
-                      value={row.widthCm}
-                      onChange={(e) =>
-                        updateVariant(row.id, {
-                          widthCm: Math.max(
-                            0,
-                            Number.parseFloat(e.target.value) || 0
-                          ),
-                        })
-                      }
-                    />
-                    <Input
-                      type="number"
-                      className="h-8 w-10 px-0.5 text-center text-[10px] tabular-nums"
-                      title={t("heightCm")}
-                      value={row.heightCm}
-                      onChange={(e) =>
-                        updateVariant(row.id, {
-                          heightCm: Math.max(
-                            0,
-                            Number.parseFloat(e.target.value) || 0
-                          ),
-                        })
-                      }
-                    />
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Input
-                    className="h-8 min-w-[80px] font-mono text-xs"
-                    value={row.barcode}
-                    onChange={(e) =>
-                      updateVariant(row.id, { barcode: e.target.value })
-                    }
-                    placeholder={t("barcodePlaceholder")}
                   />
                 </TableCell>
                 <TableCell className="text-right">

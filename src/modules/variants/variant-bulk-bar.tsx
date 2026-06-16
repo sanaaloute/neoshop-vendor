@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { useVariantWorkbenchStore } from "@/store/variant-workbench-store";
 
 type VariantBulkBarProps = {
@@ -23,30 +24,18 @@ export function VariantBulkBar({
     (s) => s.bulkUpdateVariants
   );
 
-  const [stock, setStock] = useState("");
   const [price, setPrice] = useState("");
-  const [weight, setWeight] = useState("");
-  const [barcode, setBarcode] = useState("");
 
   if (selected.size === 0) return null;
 
   const apply = () => {
     const ids = [...selected];
     const patch: Parameters<typeof bulkUpdateVariants>[1] = {};
-    if (stock.trim())
-      patch.stock = Math.max(0, Number.parseInt(stock, 10) || 0);
     if (price.trim()) patch.price = Math.max(0, Number.parseFloat(price) || 0);
-    if (weight.trim()) {
-      patch.weightGrams = Math.max(0, Number.parseInt(weight, 10) || 0);
-    }
-    if (barcode.trim()) patch.barcode = barcode.trim();
     if (Object.keys(patch).length) {
       bulkUpdateVariants(ids, patch);
     }
-    setStock("");
     setPrice("");
-    setWeight("");
-    setBarcode("");
     onClearSelection();
   };
 
@@ -57,18 +46,7 @@ export function VariantBulkBar({
           {t("bulkUpdate", { count: selected.size })}
         </p>
         <div className="flex flex-wrap items-end gap-3">
-          <Field label={t("stock")} value={stock} onChange={setStock} />
-          <Field label={t("price")} value={price} onChange={setPrice} />
-          <Field label={t("weightOptional")} value={weight} onChange={setWeight} />
-          <div className="grid min-w-[8rem] gap-1">
-            <Label className="text-xs">{t("barcodeOptional")}</Label>
-            <Input
-              className="h-9 text-xs"
-              value={barcode}
-              onChange={(e) => setBarcode(e.target.value)}
-              placeholder={t("barcodePlaceholder")}
-            />
-          </div>
+          <Field label={t("price")} value={price} onChange={setPrice} className="w-60" />
           <Button type="button" size="sm" onClick={() => apply()}>
             {t("apply")}
           </Button>
@@ -91,17 +69,19 @@ function Field({
   value,
   onChange,
   placeholder = "—",
+  className = "w-20",
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  className?: string;
 }) {
   return (
-    <div className="grid w-20 gap-1">
+    <div className={cn("grid gap-1", className)}>
       <Label className="text-xs">{label}</Label>
       <Input
-        className="h-9 text-xs tabular-nums"
+        className="h-9 text-xs tabular-nums font-mono"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

@@ -30,19 +30,19 @@ export function isTerminalStatus(s: OrderStatus) {
 export function statusLabel(s: OrderStatus): string {
   switch (s) {
     case "pending":
-      return "orders.status.pending";
+      return "status.pending";
     case "paid":
-      return "orders.status.paid";
+      return "status.paid";
     case "processing":
-      return "orders.status.processing";
+      return "status.processing";
     case "shipped":
-      return "orders.status.shipped";
+      return "status.shipped";
     case "delivered":
-      return "orders.status.delivered";
+      return "status.delivered";
     case "disputed":
-      return "orders.status.disputed";
+      return "status.disputed";
     case "refunded":
-      return "orders.status.refunded";
+      return "status.refunded";
     default:
       return s;
   }

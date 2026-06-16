@@ -494,7 +494,7 @@ export function OrdersHome() {
                   {t("customer")}
                 </TableHead>
                 <TableHead className="text-xs font-medium uppercase tracking-wider">
-                  {t("status")}
+                  {t("statusFilter")}
                 </TableHead>
                 <TableHead className="text-right text-xs font-medium uppercase tracking-wider">
                   {t("total")}
