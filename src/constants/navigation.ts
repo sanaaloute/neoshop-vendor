@@ -46,30 +46,9 @@ export function useVendorMainNav(): VendorNavItem[] {
       permission: "products",
     },
     {
-      href: "/inventory",
-      label: t("inventory"),
-      icon: Warehouse,
-      permission: "products",
-    },
-    {
       href: "/orders",
       label: t("orders"),
       icon: ShoppingCart,
-      permission: "orders",
-    },
-    { href: "/customers", label: t("customers"), icon: Users },
-    { href: "/reviews", label: t("reviews"), icon: Star },
-    { href: "/product-qa", label: t("qa"), icon: HelpCircle },
-    {
-      href: "/analytics",
-      label: t("analytics"),
-      icon: LineChart,
-      permission: "analytics",
-    },
-    {
-      href: "/disputes",
-      label: t("disputes"),
-      icon: Scale,
       permission: "orders",
     },
     {
@@ -84,8 +63,29 @@ export function useVendorMainNav(): VendorNavItem[] {
       icon: MessageSquare,
       permission: "chat",
     },
-    { href: "/shop", label: t("shopSettings"), icon: Store },
+    { href: "/customers", label: t("customers"), icon: Users },
+    {
+      href: "/disputes",
+      label: t("disputes"),
+      icon: Scale,
+      permission: "orders",
+    },
     { href: "/notifications", label: t("notifications"), icon: Bell },
+    {
+      href: "/inventory",
+      label: t("inventory"),
+      icon: Warehouse,
+      permission: "products",
+    },
+    { href: "/reviews", label: t("reviews"), icon: Star },
+    {
+      href: "/analytics",
+      label: t("analytics"),
+      icon: LineChart,
+      permission: "analytics",
+    },
+    { href: "/product-qa", label: t("qa"), icon: HelpCircle },
+    { href: "/shop", label: t("shopSettings"), icon: Store },
     { href: "/settings", label: t("accountSettings"), icon: UserCog },
   ];
 }

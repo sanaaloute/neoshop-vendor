@@ -6,6 +6,7 @@ import {
   Wallet,
   TrendingUp,
 } from "lucide-react";
+import { useRouter } from "@/i18n/routing";
 
 import { MetricCard } from "@/components/cards/metric-card";
 import { formatCurrency, formatCompact } from "@/lib/format";
@@ -13,6 +14,12 @@ import { httpErrorMessageForUser } from "@/lib/http-error-message";
 import { getApiBaseUrl } from "@/config/auth";
 import { fadeUp, staggerContainer } from "@/lib/motion";
 import { useTranslations } from "next-intl";
+
+import { createConversation } from "@/services/vendor/chat-api";
+import { mapConversationToThread } from "@/services/vendor/mappers/chat-from-api";
+import { useAuthStore } from "@/store/auth-store";
+import { useChatStore } from "@/store/chat-store";
+import { useVendorProfileStore } from "@/store/vendor-profile-store";
 
 import { CustomerProfileDrawer } from "./customer-profile-drawer";
 import { CustomerCardGrid } from "./customer-card-grid";
@@ -60,9 +67,17 @@ function AnimatedValue({
 
 export function CustomersHome() {
   const t = useTranslations("customers");
+  const router = useRouter();
   const [customers, setCustomers] = useState<VendorCustomer[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [conversationError, setConversationError] = useState<string | null>(null);
+  const [startingConversationId, setStartingConversationId] = useState<string | null>(null);
+
+  const mergeThreads = useChatStore((s) => s.mergeThreads);
+  const setSelectedThreadId = useChatStore((s) => s.setSelectedThreadId);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
+  const vendorId = useVendorProfileStore((s) => s.profile?.id ?? null);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -113,6 +128,25 @@ export function CustomersHome() {
     () => customers.find((c) => c.id === activeId) ?? null,
     [customers, activeId]
   );
+
+  const handleStartConversation = async (customer: VendorCustomer) => {
+    if (startingConversationId) return;
+    setConversationError(null);
+    setStartingConversationId(customer.id);
+    try {
+      const raw = await createConversation({ withUserId: customer.id });
+      const currentUserIds = [userId, vendorId].filter((id): id is string => Boolean(id));
+      const thread = mapConversationToThread(raw as Record<string, unknown>, currentUserIds);
+      mergeThreads([thread]);
+      setSelectedThreadId(thread.id);
+      router.push("/chat");
+    } catch (e) {
+      // Conversation could not be started; keep user on customers page
+      setConversationError(httpErrorMessageForUser(e, t("couldNotStartConversation")));
+    } finally {
+      setStartingConversationId(null);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -205,6 +239,16 @@ export function CustomersHome() {
       </motion.div>
 
       {/* Customer Grid */}
+      {conversationError ? (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-destructive bg-destructive/10 border-destructive/20 rounded-lg border px-4 py-3 text-sm"
+        >
+          {conversationError}
+        </motion.div>
+      ) : null}
+
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -218,6 +262,8 @@ export function CustomersHome() {
             setActiveId(id);
             setDrawerOpen(true);
           }}
+          onStartConversation={handleStartConversation}
+          startingConversationId={startingConversationId}
         />
       </motion.div>
 

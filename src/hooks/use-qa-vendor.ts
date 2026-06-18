@@ -24,8 +24,9 @@ export function useQaVendor() {
     setError(null);
     try {
       const data = await listProductQa(productId);
-      setThreads(data);
-      return data;
+      const normalized = Array.isArray(data) ? data : [];
+      setThreads(normalized);
+      return normalized;
     } catch (e) {
       setError(httpErrorMessageForUser(e, "Could not load Q&A threads."));
       throw e;

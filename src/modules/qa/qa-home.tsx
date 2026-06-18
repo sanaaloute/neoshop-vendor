@@ -232,7 +232,7 @@ export function QaHome() {
         setThreadsError(null);
         const data = await listQa(selectedProductId!);
         if (cancelled) return;
-        setThreads(data);
+        setThreads(Array.isArray(data) ? data : []);
       } catch (e) {
         if (cancelled) return;
         setThreadsError(
@@ -260,7 +260,10 @@ export function QaHome() {
   }, [desktop]);
 
   const selectedThread = useMemo(
-    () => threads.find((t) => t.id === selectedThreadId) ?? null,
+    () =>
+      (Array.isArray(threads) ? threads : []).find(
+        (t) => t.id === selectedThreadId
+      ) ?? null,
     [threads, selectedThreadId]
   );
 
@@ -275,7 +278,7 @@ export function QaHome() {
       setThreadsLoading(true);
       setThreadsError(null);
       const data = await listQa(selectedProductId);
-      setThreads(data);
+      setThreads(Array.isArray(data) ? data : []);
     } catch (e) {
       setThreadsError(httpErrorMessageForUser(e, t("couldNotRefreshQuestions")));
     } finally {

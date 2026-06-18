@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import {
   Loader2,
   Mail,
+  MessageCircle,
   Phone,
   Search,
   ShoppingBag,
@@ -116,10 +117,14 @@ function CustomerCard({
   customer,
   index,
   onOpenProfile,
+  onStartConversation,
+  startingConversation,
 }: {
   customer: VendorCustomer;
   index: number;
   onOpenProfile: (id: string) => void;
+  onStartConversation?: (customer: VendorCustomer) => void;
+  startingConversation?: boolean;
 }) {
   const t = useTranslations("customers");
   const repeat = isRepeatBuyer(customer.tags);
@@ -180,6 +185,27 @@ function CustomerCard({
                 </span>
               )}
             </div>
+            {onStartConversation && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="text-muted-foreground hover:text-primary shrink-0"
+                aria-label={t("startConversation")}
+                title={t("startConversation")}
+                disabled={startingConversation}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStartConversation(customer);
+                }}
+              >
+                {startingConversation ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <MessageCircle className="size-4" />
+                )}
+              </Button>
+            )}
           </div>
 
           {/* Stats Row */}
@@ -271,6 +297,8 @@ type CustomerCardGridProps = {
   syncLoading?: boolean;
   syncError?: string | null;
   onOpenProfile: (id: string) => void;
+  onStartConversation?: (customer: VendorCustomer) => void;
+  startingConversationId?: string | null;
 };
 
 export function CustomerCardGrid({
@@ -278,6 +306,8 @@ export function CustomerCardGrid({
   syncLoading = false,
   syncError = null,
   onOpenProfile,
+  onStartConversation,
+  startingConversationId = null,
 }: CustomerCardGridProps) {
   const t = useTranslations("customers");
   const api = getApiBaseUrl();
@@ -422,6 +452,8 @@ export function CustomerCardGrid({
               customer={customer}
               index={i}
               onOpenProfile={onOpenProfile}
+              onStartConversation={onStartConversation}
+              startingConversation={startingConversationId === customer.id}
             />
           ))}
         </motion.div>
