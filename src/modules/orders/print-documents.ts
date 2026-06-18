@@ -44,7 +44,7 @@ export function buildInvoiceHtml(order: VendorOrder) {
   return `
     <h1>Invoice</h1>
     <p><strong>${esc(order.reference)}</strong> · ${esc(order.id)}</p>
-    <p>Bill to: ${esc(order.customerName)} &lt;${esc(order.customerEmail)}&gt;</p>
+    <p>Bill to: ${esc(order.customerEmail)}</p>
     <p>Status: ${esc(printStatusLabel(order.status))}</p>
     <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;margin-top:16px">
       <thead><tr><th>SKU</th><th>Description</th><th align="right">Qty</th><th align="right">Unit</th><th align="right">Line</th></tr></thead>
@@ -65,15 +65,10 @@ export function buildPackingSlipHtml(order: VendorOrder) {
         `<tr><td>${esc(l.sku)}</td><td>${esc(l.name)}</td><td style="text-align:right;font-weight:bold">${l.qty}</td></tr>`
     )
     .join("");
-  const a = order.shipTo;
   return `
     <h1>Packing slip</h1>
     <p><strong>${esc(order.reference)}</strong></p>
-    <p>Ship to:<br/>
-    ${esc(a.line1)}<br/>
-    ${esc(a.postal)} ${esc(a.city)}<br/>
-    ${esc(a.country)}
-    </p>
+    <p>Ship to: <em>Address not available to vendor</em></p>
     <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;margin-top:16px">
       <thead><tr><th>SKU</th><th>Item</th><th align="right">Qty</th></tr></thead>
       <tbody>${rows}</tbody>

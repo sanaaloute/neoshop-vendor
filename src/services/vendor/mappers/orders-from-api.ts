@@ -33,13 +33,15 @@ function normalizeOrderStatus(raw: string): OrderStatus {
     : "pending";
 }
 
-function mapShipTo(raw: Record<string, unknown>): OrderShipTo {
-  const addr = raw.shippingAddress as Record<string, unknown> | undefined;
+function mapShipTo(): OrderShipTo {
+  // Vendor order payloads do NOT include customer shipping addresses per API guide.
+  // Keep the helper returning masked placeholders so print documents never leak
+  // address data that the vendor is not authorized to view.
   return {
-    line1: String(addr?.line1 ?? addr?.street ?? raw.shipToLine1 ?? "—"),
-    city: String(addr?.city ?? raw.shipToCity ?? "—"),
-    postal: String(addr?.postalCode ?? addr?.postal ?? raw.shipToPostal ?? "—"),
-    country: String(addr?.country ?? raw.shipToCountry ?? "—"),
+    line1: "—",
+    city: "—",
+    postal: "—",
+    country: "—",
   };
 }
 
@@ -75,16 +77,8 @@ export function mapGatewayOrderToVendorOrder(
         ];
 
   const cust = raw.customer as Record<string, unknown> | undefined;
-  const customerEmail = String(
-    cust?.email ?? raw.customerEmail ?? ""
-  );
-  const customerName = String(
-    cust?.name ??
-      cust?.fullName ??
-      raw.customerName ??
-      customerEmail ??
-      "Customer"
-  );
+  // Vendor order endpoints only expose the customer email, not name/address.
+  const customerEmail = String(cust?.email ?? raw.customerEmail ?? "");
 
   return {
     id: String(raw.id),
@@ -92,11 +86,13 @@ export function mapGatewayOrderToVendorOrder(
       raw.reference ?? raw.orderNumber ?? raw.humanId ?? raw.id
     ).slice(0, 48),
     customerEmail,
-    customerName,
+    customerName: customerEmail || "Customer",
     status: normalizeOrderStatus(String(raw.status ?? "pending")),
     createdAt: iso(raw.placedAt ?? raw.createdAt),
     updatedAt: iso(raw.updatedAt ?? raw.placedAt ?? raw.createdAt),
-    shipTo: mapShipTo(raw),
+    shipTo: mapShipTo(),
+    // Vendor payloads expose statusHistory but no detailed invoices/payments/refunds.
+    // The mapper keeps those fields off the VendorOrder view model.
     lines,
     subtotal: money(raw.subtotal),
     shipping: money(raw.shippingTotal ?? raw.shippingCost ?? raw.shipping),

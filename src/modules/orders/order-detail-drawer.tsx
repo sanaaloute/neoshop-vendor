@@ -2,7 +2,7 @@
 
 import type { ComponentProps } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight, Ban, FileText, Loader2, Package, Printer, Truck } from "lucide-react";
+import { ArrowRight, Ban, FileText, Package, Printer, Truck } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +26,6 @@ import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { mapGatewayOrderDetailToVendorOrder } from "@/services/vendor/mappers/orders-from-api";
 import { getOrder, getOrderTracking, patchOrderStatus } from "@/services/vendor/orders-api";
-import { useShipping } from "@/hooks/use-shipping";
 import type { ApiOrderStatus, OrderTrackingResponse } from "@/services/vendor/types";
 import { useOrdersStore } from "@/store/orders-store";
 
@@ -69,13 +68,6 @@ export function OrderDetailDrawer({
 }: OrderDetailDrawerProps) {
   const t = useTranslations("orders");
   const { canWriteOrders } = useVendorWritesAllowed();
-  const {
-    methods: shippingMethods,
-    rates: shippingRates,
-    ratesLoading,
-    ratesError,
-    fetchRates,
-  } = useShipping();
   const orders = useOrdersStore((s) => s.orders);
   const upsertOrder = useOrdersStore((s) => s.upsertOrder);
 
@@ -228,7 +220,7 @@ export function OrderDetailDrawer({
             </Badge>
           </div>
           <p className="text-muted-foreground mt-2 text-sm">
-            {order.customerName} · {order.customerEmail}
+            {order.customerEmail}
           </p>
           {actionError ? (
             <p className="text-destructive mt-2 text-xs">{actionError}</p>
@@ -314,9 +306,9 @@ export function OrderDetailDrawer({
                 {t("lines")}
               </h3>
               <ul className="space-y-2 text-sm">
-                {order.lines.map((l) => (
+                {order.lines.map((l, index) => (
                   <li
-                    key={`${l.sku}-${l.name}`}
+                    key={l.variantId ? `line-${l.variantId}` : `line-${index}-${l.sku}-${l.name}`}
                     className="border-border/60 bg-muted/20 flex justify-between gap-2 rounded-md border px-2 py-1.5"
                   >
                     <span className="min-w-0">
@@ -361,70 +353,6 @@ export function OrderDetailDrawer({
                 <Truck className="size-3.5" aria-hidden />
                 {t("shippingUpdates")}
               </h3>
-              {shippingMethods.length > 0 ? (
-                <div className="mb-2 flex flex-wrap gap-1">
-                  {shippingMethods.map((m) => (
-                    <span
-                      key={m.id}
-                      className="bg-muted/40 border-border/60 inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium"
-                      title={m.description ?? ""}
-                    >
-                      {m.name} · {formatCurrency(m.baseCost, m.currency)}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-
-              <Card className="border-border/70 bg-muted/15 mb-3 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-muted-foreground text-[11px]">
-                    {t("calculateShippingRatesHint")}
-                  </p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={ratesLoading}
-                    onClick={() =>
-                      void fetchRates({
-                        items: order.lines
-                          .filter((l) => l.variantId)
-                          .map((l) => ({
-                          variantId: l.variantId!,
-                          quantity: l.qty,
-                        })),
-                      })
-                    }
-                  >
-                    {ratesLoading ? (
-                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                    ) : (
-                      <Truck className="size-3.5" aria-hidden />
-                    )}
-                    {t("calculateRates")}
-                  </Button>
-                </div>
-                {ratesError ? (
-                  <p className="text-destructive mt-2 text-xs">{ratesError}</p>
-                ) : null}
-                {shippingRates.length > 0 ? (
-                  <ul className="mt-2 space-y-1.5">
-                    {shippingRates.map((r) => (
-                      <li
-                        key={r.methodId}
-                        className="flex items-center justify-between rounded-md border border-border/60 bg-background/40 px-2 py-1 text-xs"
-                      >
-                        <span className="font-medium">{r.methodName}</span>
-                        <span className="text-muted-foreground">
-                          {formatCurrency(r.cost, r.currency)} ·{" "}
-                          {t("estimatedDays", { days: r.estimatedDays })}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </Card>
-
               <Card className="border-border/70 bg-muted/15 p-3">
                 <p className="text-muted-foreground mb-2 text-[11px]">
                   Carrier and tracking are saved on the order when you update

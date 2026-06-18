@@ -324,7 +324,7 @@ export function MessagingHome() {
   const liveConnected = socketIoStatus === "live";
 
   return (
-    <div className="flex min-h-[560px] flex-col gap-4">
+    <div className="flex min-h-[420px] max-h-[calc(100vh-120px)] flex-col gap-4 sm:min-h-[520px] lg:min-h-[calc(100vh-220px)] lg:max-h-[calc(100vh-160px)]">
       <GatewaySyncBanner loading={chatSyncLoading} error={chatSyncError} />
       <div className="flex flex-wrap items-center justify-end gap-2">
         <Badge
@@ -348,8 +348,8 @@ export function MessagingHome() {
         </Badge>
       </div>
 
-      <div className="border-border/60 bg-card/40 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border lg:flex-row">
-        <aside className="border-border/60 flex max-h-[min(520px,55vh)] flex-col border-b lg:max-h-none lg:w-[min(100%,340px)] lg:shrink-0 lg:border-r lg:border-b-0">
+      <div className="border-border/60 bg-card/40 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border lg:flex-row">
+        <aside className="border-border/60 flex max-h-[min(420px,55vh)] flex-col border-b sm:max-h-[min(520px,60vh)] lg:max-h-none lg:w-[min(100%,340px)] lg:shrink-0 lg:border-r lg:border-b-0">
           <div className="border-border/60 border-b p-2">
             <Input
               placeholder={t("searchConversations")}
