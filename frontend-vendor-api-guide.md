@@ -47,12 +47,34 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 ```json
 {
   "statusCode": 400,
-  "message": "Validation error description",
+  "message": "Invalid request data. Please verify your input and try again.",
   "error": "Bad Request",
+  "details": {
+    "fields": [
+      { "property": "email", "messages": ["email must be an email"] }
+    ]
+  },
   "path": "/api/v1/...",
   "requestId": "req-uuid",
   "correlationId": "corr-uuid",
   "timestamp": "2024-06-12T10:00:00.000Z"
+}
+```
+
+- Validation errors return a professional top-level `message`, but the user-friendly per-field explanations are in `details.fields[].messages`.
+- **Frontend display rule:** For `4xx` validation errors, render the messages from `details.fields` (joined by property or as a list). The top-level `message` is generic and should not be shown to users. Only fall back to `message` when `details` is absent (e.g. `5xx` server errors).
+- Server errors (`statusCode >= 500`) return a generic safe `message` and omit `details` in production so internal details (database errors, connection strings, etc.) are never exposed.
+- Error responses may also include a stable `code` field (e.g. `INSUFFICIENT_BALANCE`) for machine-readable error handling on endpoints that have been migrated to coded errors.
+
+```typescript
+// utils/errorMessage.ts
+export function getUserFacingErrorMessage(error: any): string {
+  const fields = error?.response?.data?.details?.fields ?? [];
+  if (fields.length > 0) {
+    const messages = fields.flatMap((f: any) => f.messages ?? []);
+    return messages.join('\n');
+  }
+  return error?.response?.data?.message ?? 'Something went wrong. Please try again.';
 }
 ```
 
