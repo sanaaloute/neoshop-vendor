@@ -80,13 +80,30 @@ export function RealtimeStoreBridge() {
       ];
       const isFromVendor = vendorIds.includes(payload.senderUserId);
 
+      const attachments: import("@/modules/chat/types").ChatAttachment[] | undefined =
+        payload.attachments?.map((a) => ({
+          id: a.id ?? "",
+          fileUrl: a.fileUrl ?? "",
+          fileName: a.fileName,
+          filename: a.fileName,
+          mimeType: a.mimeType,
+          mime: a.mimeType,
+          fileSize: a.fileSize,
+          sizeBytes: a.fileSize,
+          signedUrl: a.signedUrl,
+          expiresIn: a.expiresIn,
+        }));
+
       state.mergeIncomingMessage({
         id: payload.id,
         threadId: payload.conversationId,
+        conversationId: payload.conversationId,
+        messageType: payload.messageType,
         authorRole: isFromVendor ? "vendor" : "customer",
         senderUserId: payload.senderUserId,
-        body: payload.body,
+        body: payload.body ?? null,
         sentAt: payload.createdAt,
+        attachments,
         translatedBody: payload.translatedBody,
         originalLanguage: payload.originalLanguage,
         targetLanguage: payload.targetLanguage,

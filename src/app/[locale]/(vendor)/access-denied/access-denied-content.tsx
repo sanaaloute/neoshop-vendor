@@ -19,6 +19,7 @@ export function AccessDeniedContent() {
     payouts: t("payouts"),
     analytics: t("analytics"),
     chat: t("chat"),
+    reviews: t("reviews"),
   };
 
   const label = required && labelMap[required] ? labelMap[required] : t("thisArea");

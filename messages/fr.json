@@ -257,6 +257,7 @@
     "payouts": "Paiements",
     "analytics": "Analyses",
     "chat": "Messages",
+    "reviews": "Avis",
     "thisArea": "cette zone"
   },
   "loading": {
@@ -320,7 +321,13 @@
     "send": "Envoyer",
     "clear": "Effacer",
     "enterSends": "Entrée pour envoyer · Maj+Entrée pour un saut de ligne · Les pièces jointes s'envoient avec votre message (les fichiers volumineux peuvent prendre un moment).",
-    "cannotSendFirstMessage": "Vous ne pouvez pas envoyer de message tant que le client n'a pas envoyé le premier message."
+    "cannotSendFirstMessage": "Vous ne pouvez pas envoyer de message tant que le client n'a pas envoyé le premier message.",
+    "sendFailed": "Impossible d'envoyer le message. Veuillez réessayer.",
+    "attachmentUploadError": "Impossible de téléverser la pièce jointe. Veuillez réessayer.",
+    "attachment": "Pièce jointe",
+    "previewImage": "📷 Image",
+    "previewDocument": "📄 Document",
+    "previewMixed": "🖼️ Image + texte"
   },
   "notifications": {
     "notifications": "Notifications",
@@ -435,6 +442,14 @@
     "noReviewsYet": "Aucun avis pour le moment.",
     "couldNotLoad": "Impossible de charger les avis.",
     "couldNotSubmit": "Impossible d'envoyer la réponse.",
+    "retry": "Réessayer",
+    "filterByStatus": "Filtrer par statut",
+    "allStatuses": "Tous les statuts",
+    "showingResults": "{from}–{to} sur {total}",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "youReplied": "Vous avez répondu",
+    "editResponse": "Modifier la réponse",
     "respondToReview": "Répondre à l'avis",
     "replyingTo": "Réponse à <strong>{customer}</strong> pour <em>{product}</em>",
     "yourResponse": "Votre réponse",
@@ -781,6 +796,7 @@
     "buyerFacingSummary": "Résumé acheteur — comparez avec le catalogue publié lors de l'aperçu.",
     "noDescriptionYet": "Pas encore de description.",
     "mediaFiles": "{count} fichier média{count, plural, one {} other {s}}",
+    "reviewsCount": "{count, plural, one {# avis} other {# avis}}",
     "searchPreview": "Aperçu de recherche",
     "metaTitle": "Titre méta",
     "metaDescription": "La description méta apparaîtra ici.",

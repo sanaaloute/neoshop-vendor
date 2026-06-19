@@ -1362,7 +1362,6 @@ Respond to a review as the vendor.
   "helpfulCount": 3,
   "vendorResponse": "Thank you for your feedback!",
   "vendorRespondedAt": "2024-06-13T10:00:00Z",
-  "status": "approved",
   "createdAt": "2024-06-12T10:00:00Z",
   "updatedAt": "2024-06-13T10:00:00Z",
   "deletedAt": null

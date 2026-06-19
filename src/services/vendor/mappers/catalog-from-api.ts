@@ -119,6 +119,10 @@ export function mapApiProductRowToProduct(
     media,
     status,
     publishAt: null,
+    averageRating:
+      typeof row.averageRating === "string" ? row.averageRating : undefined,
+    reviewsCount:
+      typeof row.reviewsCount === "number" ? row.reviewsCount : undefined,
     createdAt: String(row.createdAt ?? new Date().toISOString()),
     updatedAt: String(row.updatedAt ?? new Date().toISOString()),
   };

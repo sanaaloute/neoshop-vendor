@@ -2,6 +2,8 @@
 
 import { useTranslations } from "next-intl";
 // NOTE: Price is managed at the variant level; preview no longer shows product-level price.
+import { Star } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import {
   Sheet,
@@ -76,6 +78,25 @@ export function ProductPreviewSheet({
             <p className="text-muted-foreground mt-2 text-xs">
               {t("mediaFiles", { count: values.media.length })}
             </p>
+            {values.reviewsCount != null && values.reviewsCount > 0 ? (
+              <div className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
+                <span className="inline-flex items-center gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`size-3 ${
+                        i < Math.round(parseFloat(values.averageRating ?? "0") || 0)
+                          ? "fill-red-400 text-red-400"
+                          : "text-muted-foreground"
+                      }`}
+                    />
+                  ))}
+                </span>
+                <span>
+                  {values.averageRating ?? "0"} · {t("reviewsCount", { count: values.reviewsCount })}
+                </span>
+              </div>
+            ) : null}
           </div>
 
           <div className="border-border/80 bg-muted/30 rounded-lg border border-dashed p-3 text-xs">

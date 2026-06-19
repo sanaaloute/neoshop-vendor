@@ -15,6 +15,7 @@ describe("vendor-permissions", () => {
     expect(getRequiredPermissionForPathname("/payouts")).toBe("payouts");
     expect(getRequiredPermissionForPathname("/analytics")).toBe("analytics");
     expect(getRequiredPermissionForPathname("/chat")).toBe("chat");
+    expect(getRequiredPermissionForPathname("/reviews")).toBe("reviews");
     expect(getRequiredPermissionForPathname("/dashboard")).toBeNull();
   });
 
@@ -27,5 +28,6 @@ describe("vendor-permissions", () => {
   it("staff role excludes payouts and analytics by default", () => {
     expect(ROLE_PERMISSIONS.staff).not.toContain("payouts");
     expect(ROLE_PERMISSIONS.staff).not.toContain("analytics");
+    expect(ROLE_PERMISSIONS.staff).toContain("reviews");
   });
 });

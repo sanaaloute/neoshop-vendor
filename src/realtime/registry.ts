@@ -42,7 +42,17 @@ export type ChatMessagePayload = {
   id: string;
   conversationId: string;
   senderUserId: string;
-  body: string;
+  messageType?: "text" | "image" | "mixed" | "document";
+  body: string | null;
+  attachments?: {
+    id?: string;
+    fileUrl?: string;
+    fileName?: string;
+    mimeType?: string;
+    fileSize?: number;
+    signedUrl?: string;
+    expiresIn?: number;
+  }[];
   createdAt: string;
   // Translation fields (only present when sender and receiver have different languages)
   translatedBody?: string;

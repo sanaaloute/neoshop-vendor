@@ -8,6 +8,8 @@ import {
   deleteConversationMessage,
   listConversationMessages,
   postConversationMessage,
+  uploadChatAttachment,
+  type ChatMessageAttachmentInput,
 } from "@/services/vendor/chat-api";
 
 export function useChatMessages() {
@@ -40,10 +42,24 @@ export function useChatMessages() {
   );
 
   const sendMessage = useCallback(
-    async (conversationId: string, body: string) => {
+    async (
+      conversationId: string,
+      body: string | undefined,
+      attachments?: ChatMessageAttachmentInput[]
+    ) => {
       return run(
-        () => postConversationMessage(conversationId, { body }),
+        () => postConversationMessage(conversationId, { body, attachments }),
         "Could not send message."
+      );
+    },
+    []
+  );
+
+  const uploadAttachment = useCallback(
+    async (conversationId: string, file: File) => {
+      return run(
+        () => uploadChatAttachment(conversationId, file),
+        "Could not upload attachment."
       );
     },
     []
@@ -64,6 +80,7 @@ export function useChatMessages() {
     error,
     fetchMessages,
     sendMessage,
+    uploadAttachment,
     deleteMessage,
   };
 }

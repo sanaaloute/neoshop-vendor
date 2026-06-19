@@ -1,10 +1,23 @@
 export type ChatAuthorRole = "vendor" | "customer";
 
+export type ChatMessageType = "text" | "image" | "mixed" | "document";
+
 export type ChatAttachment = {
   id: string;
-  filename: string;
-  mime: string;
-  sizeBytes: number;
+  /** Canonical object path returned by the chat attachment upload endpoint. */
+  fileUrl?: string;
+  /** Original file name (alias kept for backwards compatibility). */
+  filename?: string;
+  fileName?: string;
+  /** MIME type (alias kept for backwards compatibility). */
+  mime?: string;
+  mimeType?: string;
+  /** Size in bytes (alias kept for backwards compatibility). */
+  sizeBytes?: number;
+  fileSize?: number;
+  /** Temporary signed URL for rendering (present on send responses and Socket.IO events). */
+  signedUrl?: string;
+  expiresIn?: number;
 };
 
 export type ChatParticipant = {
@@ -21,11 +34,13 @@ export type ChatParticipant = {
 export type ChatMessage = {
   id: string;
   threadId: string;
+  conversationId?: string;
+  messageType?: ChatMessageType;
   /** authorRole is "vendor" when the sender is the current vendor; otherwise it keeps the peer's role */
   authorRole: ChatAuthorRole;
   /** The participant-specific sender ID (matches participants[].userId) */
   senderUserId?: string;
-  body: string;
+  body: string | null;
   sentAt: string;
   attachments?: ChatAttachment[];
   /** Delivery hint for optimistic rows */

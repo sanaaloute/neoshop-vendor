@@ -4,8 +4,8 @@ import type { Paginated, RespondToReviewDto, ReviewResponse, ReviewStatus } from
 
 /** GET /vendors/me/reviews — list reviews on products owned by this vendor */
 export async function listVendorReviews(params?: {
-  page?: number;
-  limit?: number;
+  skip?: number;
+  take?: number;
   status?: ReviewStatus;
 }) {
   const { data } = await vendorApiClient.get<Paginated<ReviewResponse>>(

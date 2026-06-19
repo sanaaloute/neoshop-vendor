@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
+  ExternalLink,
   FileIcon,
   Image as ImageIcon,
   Languages,
@@ -28,7 +29,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { GatewaySyncBanner } from "@/components/feedback/gateway-sync-banner";
 import { getApiBaseUrl } from "@/config/auth";
-import { getVendorChatWsUrl } from "@/config/messaging";
 import {
   useGatewayChatBootstrap,
   useGatewayChatMessages,
@@ -42,6 +42,8 @@ import {
 import { useRealtimeContext } from "@/realtime/context";
 import { useAuthStore } from "@/store/auth-store";
 import { useVendorProfileStore } from "@/store/vendor-profile-store";
+import { readStorageUrls } from "@/services/vendor/storage-api";
+import { mapChatMessage } from "@/services/vendor/mappers/chat-from-api";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store/chat-store";
 
@@ -89,6 +91,31 @@ function formatShortTime(iso: string) {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function inferMessageType(
+  body: string | null,
+  attachments?: ChatAttachment[]
+): import("./types").ChatMessageType {
+  const hasText = Boolean(body && body.trim().length > 0);
+  const hasImage = attachments?.some((a) =>
+    (a.mimeType ?? a.mime ?? "").startsWith("image/")
+  );
+  const hasDoc = attachments?.some((a) => {
+    const mime = (a.mimeType ?? a.mime ?? "").toLowerCase();
+    return mime === "application/pdf" || (!mime.startsWith("image/") && mime);
+  });
+  if (hasImage && hasText) return "mixed";
+  if (hasImage) return "image";
+  if (hasDoc) return "document";
+  return "text";
+}
+
+function formatFileSize(bytes?: number): string {
+  if (!bytes) return "0 KB";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function MessagingHome() {
   const t = useTranslations("chat");
   const { loading: chatSyncLoading, error: chatSyncError } =
@@ -97,6 +124,7 @@ export function MessagingHome() {
   const selectedId = useChatStore((s) => s.selectedThreadId);
   const setSelectedThreadId = useChatStore((s) => s.setSelectedThreadId);
   const appendVendorMessage = useChatStore((s) => s.appendVendorMessage);
+  const replaceMessage = useChatStore((s) => s.replaceMessage);
   const markThreadRead = useChatStore((s) => s.markThreadRead);
   const deleteMessage = useChatStore((s) => s.deleteMessage);
   const vendorUserId = useAuthStore((s) => s.user?.id ?? null);
@@ -106,8 +134,10 @@ export function MessagingHome() {
   const [peerTyping, setPeerTyping] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const desktop = useIsDesktop();
-  const { sendMessage, deleteMessage: deleteChatMessage } = useChatMessages();
+  const { sendMessage, deleteMessage: deleteChatMessage, uploadAttachment } =
+    useChatMessages();
   const endRef = useRef<HTMLDivElement>(null);
   const typingIdleRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined
@@ -115,7 +145,6 @@ export function MessagingHome() {
   const peerTypingClearRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined
   );
-  const wsConfigured = Boolean(getVendorChatWsUrl());
   const socketIoStatus = useRealtimeVendorStatus();
   const { socket } = useRealtimeContext();
 
@@ -184,6 +213,40 @@ export function MessagingHome() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selected?.messages.length, peerTyping]);
 
+  // Resolve signed URLs for history attachments that don't have one
+  useEffect(() => {
+    if (!getApiBaseUrl() || !selectedId || !selected) return;
+    const attachments = selected.messages.flatMap(
+      (m) =>
+        m.attachments?.filter(
+          (a) => a.fileUrl && !a.signedUrl && !signedUrls[a.fileUrl]
+        ) ?? []
+    );
+    if (attachments.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await readStorageUrls(
+          attachments.map((a) => ({ bucket: "chat-media", path: a.fileUrl! }))
+        );
+        if (cancelled) return;
+        const next: Record<string, string> = {};
+        for (const r of res.results) {
+          if (r.path && (r.signedUrl || r.publicUrl)) {
+            next[r.path] = r.signedUrl ?? r.publicUrl!;
+          }
+        }
+        setSignedUrls((prev) => ({ ...prev, ...next }));
+      } catch {
+        /* ignore transient signed-url failures */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, signedUrls, selected, selected?.messages.length]);
+
   const selectThread = (id: string) => {
     setSelectedThreadId(id);
     if (!desktop) setSheetOpen(true);
@@ -224,17 +287,6 @@ export function MessagingHome() {
     }
   };
 
-  const buildAttachmentsFromFiles = async (
-    files: File[]
-  ): Promise<ChatAttachment[]> => {
-    return files.map((f, i) => ({
-      id: `att-${Date.now()}-${i}`,
-      filename: f.name,
-      mime: f.type || "application/octet-stream",
-      sizeBytes: f.size,
-    }));
-  };
-
   /** Check if the vendor is trying to send the first message in a customer thread.
    *  Returns true if the customer has sent at least one message. */
   const canVendorSend = (thread: ChatThread): boolean => {
@@ -243,7 +295,7 @@ export function MessagingHome() {
 
   const sendDraft = async () => {
     if (!selectedId || !selected) return;
-    const text = draft.trim();
+    const text = draft.trim() || undefined;
     if (!text && pendingFiles.length === 0) return;
 
     // Vendor-first-message guard
@@ -254,19 +306,44 @@ export function MessagingHome() {
 
     setSendError(null);
 
-    const attachments =
-      pendingFiles.length > 0
-        ? await buildAttachmentsFromFiles(pendingFiles)
-        : undefined;
+    let uploaded: Awaited<ReturnType<typeof uploadAttachment>>[] | undefined;
+    if (pendingFiles.length > 0) {
+      try {
+        uploaded = await Promise.all(
+          pendingFiles.map((f) => uploadAttachment(selectedId, f))
+        );
+      } catch {
+        setSendError(t("attachmentUploadError"));
+        return;
+      }
+    }
+
+    const attachments: ChatAttachment[] | undefined = uploaded?.map((a) => ({
+      id: a.id,
+      fileUrl: a.fileUrl,
+      fileName: a.fileName,
+      filename: a.fileName,
+      mimeType: a.mimeType,
+      mime: a.mimeType,
+      fileSize: a.fileSize,
+      sizeBytes: a.fileSize,
+      signedUrl: a.signedUrl,
+      expiresIn: a.expiresIn,
+    }));
+
+    const messageType = inferMessageType(text ?? null, attachments);
 
     const msg: ChatMessage = {
       id: `v-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       threadId: selectedId,
+      conversationId: selectedId,
+      messageType,
       authorRole: "vendor",
       senderUserId: vendorUserId ?? undefined,
-      body: text || (attachments?.length ? t("sentAttachment") : ""),
+      body: text ?? null,
       sentAt: new Date().toISOString(),
       attachments,
+      pending: true,
     };
 
     appendVendorMessage(selectedId, msg);
@@ -277,13 +354,20 @@ export function MessagingHome() {
     if (getApiBaseUrl()) {
       void (async () => {
         try {
-          await sendMessage(selectedId, msg.body);
-        } catch (e) {
-          const status = (e as { response?: { status?: number } })?.response
-            ?.status;
-          if (status === 403) {
-            setSendError(t("cannotSendFirstMessage"));
-          }
+          const sent = (await sendMessage(
+            selectedId,
+            text,
+            attachments?.map((a) => ({
+              fileName: a.fileName ?? a.filename ?? "attachment",
+              mimeType: a.mimeType ?? a.mime ?? "application/octet-stream",
+              fileSize: a.fileSize ?? a.sizeBytes ?? 0,
+              fileUrl: a.fileUrl ?? "",
+            }))
+          )) as Record<string, unknown>;
+          const real = mapChatMessage(sent, selectedId, currentUserIds);
+          replaceMessage(selectedId, msg.id, real);
+        } catch {
+          setSendError(t("sendFailed"));
           /* message stays optimistic in thread */
         }
       })();
@@ -310,18 +394,26 @@ export function MessagingHome() {
     if (getApiBaseUrl()) {
       try {
         await deleteChatMessage(selectedId, messageId);
-      } catch (e) {
-        const status = (e as { response?: { status?: number } })?.response
-          ?.status;
-        if (status === 403 || status === 404) {
-          // Restore message on auth/not-found errors
-          useChatStore.getState().appendVendorMessage(selectedId, msg);
-        }
+      } catch {
+        // Restore message on errors
+        useChatStore.getState().appendVendorMessage(selectedId, msg);
       }
     }
   };
 
   const liveConnected = socketIoStatus === "live";
+
+  function previewText(m: ChatMessage | undefined): string {
+    if (!m) return t("noMessagesYet");
+    const isFromOther = m.authorRole !== "vendor";
+    if (isFromOther && m.translatedBody) {
+      return m.translatedBody;
+    }
+    if (m.messageType === "image") return t("previewImage");
+    if (m.messageType === "document") return t("previewDocument");
+    if (m.messageType === "mixed") return t("previewMixed");
+    return m.body ?? t("previewImage");
+  }
 
   return (
     <div className="flex min-h-[420px] max-h-[calc(100vh-120px)] flex-col gap-4 sm:min-h-[520px] lg:min-h-[calc(100vh-220px)] lg:max-h-[calc(100vh-160px)]">
@@ -399,14 +491,7 @@ export function MessagingHome() {
                         </div>
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-muted-foreground truncate text-xs">
-                            {(() => {
-                              if (!preview) return t("noMessagesYet");
-                              const isFromOther = preview.authorRole !== "vendor";
-                              if (isFromOther && preview.translatedBody) {
-                                return preview.translatedBody;
-                              }
-                              return preview.body;
-                            })()}
+                            {previewText(preview)}
                           </span>
                           {unread > 0 ? (
                             <Badge
@@ -446,6 +531,7 @@ export function MessagingHome() {
               sendError={sendError}
               onDeleteMessage={handleDeleteMessage}
               currentUserIds={currentUserIds}
+              signedUrls={signedUrls}
             />
           ) : (
             <EmptyConversation />
@@ -525,6 +611,7 @@ export function MessagingHome() {
                   sendError={sendError}
                   onDeleteMessage={handleDeleteMessage}
                   currentUserIds={currentUserIds}
+                  signedUrls={signedUrls}
                 />
               </div>
             </>
@@ -571,6 +658,63 @@ function TranslationBadge({
   );
 }
 
+function AttachmentThumbnail({
+  a,
+  signedUrl,
+}: {
+  a: ChatAttachment;
+  signedUrl?: string;
+}) {
+  const t = useTranslations("chat");
+  const url = signedUrl ?? a.signedUrl;
+  const mime = (a.mimeType ?? a.mime ?? "").toLowerCase();
+  const name = a.fileName ?? a.filename ?? t("attachment");
+
+  if (mime.startsWith("image/")) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="group/image relative block overflow-hidden rounded-md border"
+      >
+        {url ? (
+          <img
+            src={url}
+            alt={name}
+            className="max-h-[180px] max-w-[260px] object-contain transition-opacity group-hover/image:opacity-90"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-[120px] w-[160px] items-center justify-center bg-muted">
+            <ImageIcon className="text-muted-foreground size-8" />
+          </div>
+        )}
+      </a>
+    );
+  }
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-2 rounded-md border bg-background/80 px-2.5 py-1.5 text-xs font-medium ring-1 ring-border/60 backdrop-blur-sm transition-colors hover:bg-background"
+    >
+      {mime === "application/pdf" ? (
+        <FileIcon className="size-4 text-red-500" aria-hidden />
+      ) : (
+        <FileIcon className="text-muted-foreground size-4" aria-hidden />
+      )}
+      <span className="max-w-[180px] truncate">{name}</span>
+      <span className="text-muted-foreground tabular-nums">
+        {formatFileSize(a.fileSize ?? a.sizeBytes)}
+      </span>
+      <ExternalLink className="text-muted-foreground size-3" aria-hidden />
+    </a>
+  );
+}
+
 function MessageBubble({
   m,
   thread,
@@ -578,6 +722,7 @@ function MessageBubble({
   hoveredMessageId,
   setHoveredMessageId,
   onDeleteMessage,
+  signedUrls,
 }: {
   m: ChatMessage;
   thread: ChatThread;
@@ -585,6 +730,7 @@ function MessageBubble({
   hoveredMessageId: string | null;
   setHoveredMessageId: (id: string | null) => void;
   onDeleteMessage: (id: string) => void;
+  signedUrls: Record<string, string>;
 }) {
   const t = useTranslations("chat");
   const isVendor = m.authorRole === "vendor";
@@ -648,11 +794,13 @@ function MessageBubble({
               </button>
             )}
           {/* Message text: show translated by default for received messages when available */}
-          <p className="whitespace-pre-wrap">
-            {isMine || !hasTranslation || showOriginal
-              ? m.body
-              : m.translatedBody}
-          </p>
+          {m.body ? (
+            <p className="whitespace-pre-wrap">
+              {isMine || !hasTranslation || showOriginal
+                ? m.body
+                : m.translatedBody}
+            </p>
+          ) : null}
           {/* Translation toggle (receiver only, when translation exists) */}
           {!isMine && hasTranslation && (
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -671,27 +819,20 @@ function MessageBubble({
             </div>
           )}
           {m.attachments?.length ? (
-            <ul className="border-border/50 mt-2 space-y-1 border-t pt-2">
+            <div
+              className={cn(
+                "grid gap-2",
+                m.body ? "mt-2 border-t pt-2" : ""
+              )}
+            >
               {m.attachments.map((a) => (
-                <li
+                <AttachmentThumbnail
                   key={a.id}
-                  className="text-muted-foreground flex items-center gap-2 text-xs"
-                >
-                  {a.mime.startsWith("image/") ? (
-                    <ImageIcon
-                      className="size-3.5 shrink-0"
-                      aria-hidden
-                    />
-                  ) : (
-                    <FileIcon className="size-3.5 shrink-0" aria-hidden />
-                  )}
-                  <span className="truncate">{a.filename}</span>
-                  <span className="tabular-nums">
-                    {(a.sizeBytes / 1024).toFixed(1)} KB
-                  </span>
-                </li>
+                  a={a}
+                  signedUrl={a.fileUrl ? signedUrls[a.fileUrl] : undefined}
+                />
               ))}
-            </ul>
+            </div>
           ) : null}
           <p className="text-muted-foreground mt-1 text-[10px] tabular-nums">
             {formatShortTime(m.sentAt)}
@@ -715,6 +856,7 @@ function ConversationBody({
   sendError,
   onDeleteMessage,
   currentUserIds,
+  signedUrls,
 }: {
   thread: ChatThread;
   draft: string;
@@ -728,6 +870,7 @@ function ConversationBody({
   sendError: string | null;
   onDeleteMessage: (messageId: string) => void;
   currentUserIds: string[];
+  signedUrls: Record<string, string>;
 }) {
   const t = useTranslations("chat");
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
@@ -775,6 +918,7 @@ function ConversationBody({
               hoveredMessageId={hoveredMessageId}
               setHoveredMessageId={setHoveredMessageId}
               onDeleteMessage={onDeleteMessage}
+              signedUrls={signedUrls}
             />
           ))}
           {peerTyping ? (
@@ -831,6 +975,7 @@ function ConversationBody({
               id="chat-attach-input"
               type="file"
               multiple
+              accept="image/jpeg,image/png,image/webp,application/pdf"
               className="sr-only"
               onChange={(e) => {
                 onPickFiles(e.target.files);

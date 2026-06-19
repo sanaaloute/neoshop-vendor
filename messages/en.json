@@ -257,6 +257,7 @@
     "payouts": "Payouts",
     "analytics": "Analytics",
     "chat": "Messages",
+    "reviews": "Reviews",
     "thisArea": "this area"
   },
   "loading": {
@@ -320,7 +321,13 @@
     "send": "Send",
     "clear": "Clear",
     "enterSends": "Enter sends · Shift+Enter for a new line · Attachments send with your message (large files may take a moment).",
-    "cannotSendFirstMessage": "You cannot send a message until the customer has sent the first message."
+    "cannotSendFirstMessage": "You cannot send a message until the customer has sent the first message.",
+    "sendFailed": "Could not send message. Please try again.",
+    "attachmentUploadError": "Could not upload attachment. Please try again.",
+    "attachment": "Attachment",
+    "previewImage": "📷 Image",
+    "previewDocument": "📄 Document",
+    "previewMixed": "🖼️ Image + text"
   },
   "notifications": {
     "notifications": "Notifications",
@@ -556,6 +563,14 @@
     "noReviewsYet": "No reviews yet.",
     "couldNotLoad": "Could not load reviews.",
     "couldNotSubmit": "Could not submit response.",
+    "retry": "Retry",
+    "filterByStatus": "Filter by status",
+    "allStatuses": "All statuses",
+    "showingResults": "{from}–{to} of {total}",
+    "previous": "Previous",
+    "next": "Next",
+    "youReplied": "You replied",
+    "editResponse": "Edit response",
     "respondToReview": "Respond to review",
     "replyingTo": "Replying to <strong>{customer}</strong> for <em>{product}</em>",
     "yourResponse": "Your response",
@@ -781,6 +796,7 @@
     "buyerFacingSummary": "Buyer-facing summary — compare with published catalog when previewing.",
     "noDescriptionYet": "No description yet.",
     "mediaFiles": "{count} media file{count, plural, one {} other {s}}",
+    "reviewsCount": "{count, plural, one {# review} other {# reviews}}",
     "searchPreview": "Search preview",
     "metaTitle": "Meta title",
     "metaDescription": "Meta description will appear here.",

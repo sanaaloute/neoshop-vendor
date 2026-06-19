@@ -1,5 +1,14 @@
 import { vendorApiClient } from "@/services/api/client";
 
+const CHAT_UPLOAD_TIMEOUT_MS = 120_000;
+
+export type ChatMessageAttachmentInput = {
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  fileUrl: string;
+};
+
 /** POST /chat/conversations — open or resume a conversation with a user or vendor */
 export async function createConversation(body: { withUserId?: string; withVendorId?: string }) {
   const { data } = await vendorApiClient.post("/api/v1/chat/conversations", body);
@@ -30,9 +39,30 @@ export async function listConversationMessages(
 /** POST /chat/conversations/:conversationId/messages */
 export async function postConversationMessage(
   conversationId: string,
-  body: { body: string }
+  body: { body?: string; attachments?: ChatMessageAttachmentInput[] }
 ) {
   const { data } = await vendorApiClient.post(`/api/v1/chat/conversations/${conversationId}/messages`, body);
+  return data;
+}
+
+/** POST /chat/conversations/:conversationId/attachments — upload a single image or PDF */
+export async function uploadChatAttachment(conversationId: string, file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await vendorApiClient.post<{
+    id: string;
+    messageId: string | null;
+    fileUrl: string;
+    mimeType: string;
+    fileSize: number;
+    fileName: string;
+    signedUrl: string;
+    expiresIn: number;
+    createdAt: string;
+  }>(`/api/v1/chat/conversations/${conversationId}/attachments`, form, {
+    timeout: CHAT_UPLOAD_TIMEOUT_MS,
+    // Let Axios set the multipart boundary automatically
+  });
   return data;
 }
 

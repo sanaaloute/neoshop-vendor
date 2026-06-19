@@ -77,7 +77,7 @@ export function useVendorMainNav(): VendorNavItem[] {
       icon: Warehouse,
       permission: "products",
     },
-    { href: "/reviews", label: t("reviews"), icon: Star },
+    { href: "/reviews", label: t("reviews"), icon: Star, permission: "reviews" },
     {
       href: "/analytics",
       label: t("analytics"),

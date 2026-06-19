@@ -28,6 +28,11 @@ type ChatStoreState = {
   ) => void;
   mergeIncomingMessage: (message: ChatMessage) => void;
   appendVendorMessage: (threadId: string, msg: ChatMessage) => void;
+  replaceMessage: (
+    threadId: string,
+    oldMessageId: string,
+    msg: ChatMessage
+  ) => void;
   markThreadRead: (threadId: string) => void;
   deleteMessage: (threadId: string, messageId: string) => void;
 };
@@ -97,6 +102,14 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
           ? t
           : { ...t, messages: upsertMessage(t.messages, msg) }
       ),
+    })),
+  replaceMessage: (threadId, oldMessageId, msg) =>
+    set((s) => ({
+      threads: s.threads.map((t) => {
+        if (t.id !== threadId) return t;
+        const messages = t.messages.filter((m) => m.id !== oldMessageId);
+        return { ...t, messages: upsertMessage(messages, msg) };
+      }),
     })),
   markThreadRead: (threadId) => {
     const now = new Date().toISOString();

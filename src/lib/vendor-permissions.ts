@@ -15,7 +15,8 @@ export type VendorPermission =
   | "orders"
   | "payouts"
   | "analytics"
-  | "chat";
+  | "chat"
+  | "reviews";
 
 export const VENDOR_PERMISSIONS: readonly VendorPermission[] = [
   "products",
@@ -23,13 +24,14 @@ export const VENDOR_PERMISSIONS: readonly VendorPermission[] = [
   "payouts",
   "analytics",
   "chat",
+  "reviews",
 ] as const;
 
 /** Default capability matrix when JWT does not send explicit `vendor_permissions`. */
 export const ROLE_PERMISSIONS: Record<VendorTeamRole, VendorPermission[]> = {
   owner: [...VENDOR_PERMISSIONS],
   manager: [...VENDOR_PERMISSIONS],
-  staff: ["products", "orders", "chat"],
+  staff: ["products", "orders", "chat", "reviews"],
 };
 
 export function normalizeVendorTeamRole(raw: unknown): VendorTeamRole {
@@ -122,6 +124,7 @@ export function getRequiredPermissionForPathname(
   if (seg === "payouts") return "payouts";
   if (seg === "analytics") return "analytics";
   if (seg === "chat") return "chat";
+  if (seg === "reviews") return "reviews";
 
   return null;
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, Star } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import {
   DashboardCard,
@@ -11,6 +12,13 @@ import {
 } from "@/components/cards/dashboard-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -30,7 +38,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useReviews } from "@/hooks/use-reviews";
 import type { ReviewResponse, ReviewStatus } from "@/services/vendor/types";
-import { useTranslations } from "next-intl";
 
 function StatusBadge({ status }: { status: ReviewStatus }) {
   const t = useTranslations("reviews");
@@ -77,13 +84,27 @@ function RatingStars({ rating }: { rating: number }) {
 
 export function ReviewsHome() {
   const t = useTranslations("reviews");
-  const { reviews, loading, error, respond } = useReviews();
+  const {
+    reviews,
+    total,
+    params,
+    loading,
+    error,
+    refetch,
+    respond,
+    setPage,
+    setStatus,
+  } = useReviews();
 
   const [respondSheetOpen, setRespondSheetOpen] = useState(false);
   const [activeReview, setActiveReview] = useState<ReviewResponse | null>(null);
   const [responseText, setResponseText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const take = params.take ?? 20;
+  const currentPage = Math.floor((params.skip ?? 0) / take);
+  const pageCount = Math.max(1, Math.ceil(total / take));
 
   const openRespond = (review: ReviewResponse) => {
     setActiveReview(review);
@@ -108,22 +129,45 @@ export function ReviewsHome() {
     }
   };
 
+  const handleStatusChange = (value: string | null) => {
+    setStatus(value && value !== "all" ? (value as ReviewStatus) : undefined);
+  };
+
   return (
     <div className="space-y-6">
       <DashboardCard className="gap-0 py-0">
-        <DashboardCardHeader className="border-border/50 flex flex-row items-center justify-between border-b px-4 py-3">
+        <DashboardCardHeader className="border-border/50 flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <DashboardCardTitle className="text-base">{t("allReviews")}</DashboardCardTitle>
-          {loading && reviews.length === 0 ? (
-            <span className="text-muted-foreground inline-flex items-center gap-2 text-xs">
-              <Loader2 className="size-3.5 animate-spin" />
-              {t("loading")}
-            </span>
-          ) : null}
+          <div className="flex items-center gap-2">
+            <Select
+              value={params.status ?? "all"}
+              onValueChange={handleStatusChange}
+            >
+              <SelectTrigger className="w-[140px]" aria-label={t("filterByStatus")}>
+                <SelectValue placeholder={t("allStatuses")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("allStatuses")}</SelectItem>
+                <SelectItem value="pending">{t("pending")}</SelectItem>
+                <SelectItem value="approved">{t("approved")}</SelectItem>
+                <SelectItem value="rejected">{t("rejected")}</SelectItem>
+              </SelectContent>
+            </Select>
+            {loading && reviews.length === 0 ? (
+              <span className="text-muted-foreground inline-flex items-center gap-2 text-xs">
+                <Loader2 className="size-3.5 animate-spin" />
+                {t("loading")}
+              </span>
+            ) : null}
+          </div>
         </DashboardCardHeader>
         <DashboardCardContent className="px-0 py-0">
           {error && reviews.length === 0 ? (
-            <div className="text-destructive p-6 text-center text-sm">
-              {error}
+            <div className="text-destructive flex flex-col items-center gap-2 p-6 text-center text-sm">
+              <p>{error}</p>
+              <Button type="button" variant="outline" size="sm" onClick={() => refetch()}>
+                {t("retry")}
+              </Button>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -152,7 +196,14 @@ export function ReviewsHome() {
                         <RatingStars rating={r.rating} />
                       </TableCell>
                       <TableCell className="text-muted-foreground hidden max-w-xs truncate text-sm md:table-cell">
-                        {r.body}
+                        {r.vendorResponse ? (
+                          <span className="text-foreground block truncate">
+                            <span className="text-muted-foreground mr-1">{t("youReplied")}:</span>
+                            {r.vendorResponse}
+                          </span>
+                        ) : (
+                          r.body
+                        )}
                       </TableCell>
                       <TableCell><StatusBadge status={r.status} /></TableCell>
                       <TableCell className="text-muted-foreground hidden text-xs sm:table-cell">
@@ -173,9 +224,14 @@ export function ReviewsHome() {
                             {t("respond")}
                           </Button>
                         ) : (
-                          <span className="text-muted-foreground text-xs">
-                            {t("responded")}
-                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openRespond(r)}
+                          >
+                            {t("editResponse")}
+                          </Button>
                         )}
                       </TableCell>
                     </TableRow>
@@ -194,6 +250,38 @@ export function ReviewsHome() {
               </Table>
             </div>
           )}
+
+          {total > take && !error ? (
+            <div className="border-border/50 flex items-center justify-between border-t px-4 py-3">
+              <span className="text-muted-foreground text-xs">
+                {t("showingResults", {
+                  from: (params.skip ?? 0) + 1,
+                  to: Math.min((params.skip ?? 0) + take, total),
+                  total,
+                })}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 0}
+                  onClick={() => setPage(currentPage - 1)}
+                >
+                  {t("previous")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage >= pageCount - 1}
+                  onClick={() => setPage(currentPage + 1)}
+                >
+                  {t("next")}
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </DashboardCardContent>
       </DashboardCard>
 
@@ -211,6 +299,17 @@ export function ReviewsHome() {
           </SheetHeader>
 
           <div className="flex flex-1 flex-col gap-4 px-4 py-4">
+            {activeReview ? (
+              <div className="bg-muted/40 rounded-lg border p-3 text-sm">
+                <div className="mb-1 flex items-center gap-2">
+                  <RatingStars rating={activeReview.rating} />
+                  <span className="text-muted-foreground text-xs">
+                    {activeReview.customerName}
+                  </span>
+                </div>
+                <p className="text-foreground">{activeReview.body}</p>
+              </div>
+            ) : null}
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="response-text">
                 {t("yourResponse")}
