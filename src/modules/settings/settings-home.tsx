@@ -114,6 +114,7 @@ export function SettingsHome() {
 
   // ── User settings ──
   const [settings, setSettings] = useState<UserSettingsResponse | null>(null);
+  const [originalSettings, setOriginalSettings] = useState<UserSettingsResponse | null>(null);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
@@ -153,7 +154,11 @@ export function SettingsHome() {
       // Load user settings independently
       try {
         const s = await getUserSettings();
-        if (!cancelled) setSettings(s ?? {});
+        const normalized = s ?? {};
+        if (!cancelled) {
+          setSettings(normalized);
+          setOriginalSettings(normalized);
+        }
       } catch (e) {
         if (!cancelled) setSettingsError(httpErrorMessageForUser(e, t("couldNotLoadPreferences")));
       }
@@ -209,19 +214,37 @@ export function SettingsHome() {
   };
 
   const saveSettings = async () => {
-    if (!settings) return;
+    if (!settings || !originalSettings) return;
     setSettingsSaving(true);
     setSettingsError(null);
     setSettingsSuccess(false);
     try {
-      const updated = await patchUserSettings({
-        orderUpdates: settings.orderUpdates,
-        promoMessages: settings.promoMessages,
-        emailNewsletter: settings.emailNewsletter,
-        pushEnabled: settings.pushEnabled,
-        preferredLanguage: settings.preferredLanguage ?? undefined,
-      });
-      setSettings(updated ?? {});
+      // Send only fields that actually changed (partial update per API guide).
+      const body: import("@/services/vendor/users-api").UpdateUserSettingsDto = {};
+      if (settings.orderUpdates !== originalSettings.orderUpdates) {
+        body.orderUpdates = settings.orderUpdates;
+      }
+      if (settings.promoMessages !== originalSettings.promoMessages) {
+        body.promoMessages = settings.promoMessages;
+      }
+      if (settings.emailNewsletter !== originalSettings.emailNewsletter) {
+        body.emailNewsletter = settings.emailNewsletter;
+      }
+      if (settings.pushEnabled !== originalSettings.pushEnabled) {
+        body.pushEnabled = settings.pushEnabled;
+      }
+      if (settings.preferredLanguage !== originalSettings.preferredLanguage) {
+        body.preferredLanguage = settings.preferredLanguage ?? undefined;
+      }
+      if (Object.keys(body).length === 0) {
+        setSettingsSuccess(true);
+        setTimeout(() => setSettingsSuccess(false), 2000);
+        return;
+      }
+      const updated = await patchUserSettings(body);
+      const normalized = updated ?? {};
+      setSettings(normalized);
+      setOriginalSettings(normalized);
       setSettingsSuccess(true);
       setTimeout(() => setSettingsSuccess(false), 2000);
     } catch (e) {

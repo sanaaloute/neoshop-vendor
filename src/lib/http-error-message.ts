@@ -1,14 +1,42 @@
 import axios from "axios";
 
+type FieldError = {
+  property: string;
+  messages?: string[];
+};
+
+type ApiErrorData = {
+  message?: string | string[];
+  code?: string;
+  details?: {
+    fields?: FieldError[];
+  };
+};
+
 /**
  * Turns request failures into short copy suitable for vendors (not env var names or stack traces).
+ * Prefer structured per-field messages from `details.fields` when available, as documented
+ * in the vendor API and chat translation guides.
  */
 export function httpErrorMessageForUser(e: unknown, fallback: string): string {
   if (axios.isAxiosError(e)) {
-    const data = e.response?.data as { message?: string | string[] } | undefined;
+    const data = e.response?.data as ApiErrorData | undefined;
+
+    // Per-field validation messages take precedence over generic top-level messages.
+    const fields = data?.details?.fields;
+    if (fields && fields.length > 0) {
+      const messages = fields
+        .flatMap((f) => f.messages ?? [])
+        .filter((m): m is string => typeof m === "string" && m.trim().length > 0);
+      if (messages.length > 0) {
+        return messages.join("\n");
+      }
+    }
+
     const m = data?.message;
     if (typeof m === "string" && m.trim()) return m;
     if (Array.isArray(m) && m.length) return m.join(", ");
+
     const status = e.response?.status;
     if (status === 401 || status === 403) {
       return "You're signed out or not allowed to do this. Sign in again or contact support.";
@@ -44,4 +72,16 @@ export function httpErrorMessageForUser(e: unknown, fallback: string): string {
     if (msg.trim()) return msg;
   }
   return fallback;
+}
+
+/**
+ * Returns the machine-readable error code if the backend provided one.
+ * Useful for branching logic on known codes like INSUFFICIENT_BALANCE.
+ */
+export function httpErrorCode(e: unknown): string | undefined {
+  if (axios.isAxiosError(e)) {
+    const data = e.response?.data as ApiErrorData | undefined;
+    return data?.code;
+  }
+  return undefined;
 }

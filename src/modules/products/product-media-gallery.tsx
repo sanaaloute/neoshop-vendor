@@ -12,6 +12,10 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  UPLOAD_BUCKETS,
+  validateFileAgainstConfig,
+} from "@/lib/upload-config";
 
 import type { ProductMedia } from "./types";
 
@@ -65,13 +69,24 @@ export function ProductMediaGallery({
   const t = useTranslations("products.media");
   const [dragOver, setDragOver] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const ordered = useMemo(() => sortedMedia(media), [media]);
 
   const ingestFiles = useCallback(
     (list: FileList | File[]) => {
       if (mutationsDisabled) return;
-      const arr = Array.from(list).filter((f) => f.type.startsWith("image/"));
+      const config = UPLOAD_BUCKETS["product-media"];
+      const arr: File[] = [];
+      for (const file of Array.from(list)) {
+        const err = validateFileAgainstConfig(file, config);
+        if (err) {
+          setFileError(`${file.name}: ${err}`);
+          window.setTimeout(() => setFileError(null), 4000);
+          continue;
+        }
+        arr.push(file);
+      }
       if (arr.length) onAddFiles(arr);
     },
     [onAddFiles, mutationsDisabled]
@@ -153,6 +168,9 @@ export function ProductMediaGallery({
       </div>
 
       {/* Image Grid */}
+      {fileError ? (
+        <p className="text-destructive text-xs">{fileError}</p>
+      ) : null}
       {ordered.length > 0 ? (
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {ordered.map((m, index) => {

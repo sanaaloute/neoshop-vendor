@@ -141,3 +141,13 @@ export type ChangeEmailResponse = {
   sent: boolean;
   message: string;
 };
+
+// ── Reactivate account ──
+
+export type ReactivateRequest = {
+  email: string;
+  password: string;
+  deviceId?: string;
+};
+
+export type ReactivateResponse = LoginResponse;

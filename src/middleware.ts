@@ -2,6 +2,47 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 
+function getEnvOrigin(key: string): string | null {
+  try {
+    const url = process.env[key];
+    if (!url) return null;
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+const apiOrigin = getEnvOrigin("NEXT_PUBLIC_API_BASE_URL");
+const supabaseOrigin = getEnvOrigin("NEXT_PUBLIC_SUPABASE_URL");
+const socketOrigin = getEnvOrigin("NEXT_PUBLIC_SOCKET_IO_URL") ?? apiOrigin;
+
+function generateNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function buildCspHeader(nonce: string): string {
+  const isDev = process.env.NODE_ENV === "development";
+  return [
+    "default-src 'self'",
+    isDev
+      ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"
+      : `script-src 'self' 'nonce-${nonce}'`,
+    "style-src 'self' 'unsafe-inline'",
+    `img-src 'self' blob: data:${apiOrigin ? ` ${apiOrigin}` : ""}${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
+    "font-src 'self'",
+    `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ""}${socketOrigin ? ` ${socketOrigin}` : ""}`,
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+}
+
 import { routing } from "@/i18n/routing";
 import { AUTH_COOKIES, ONBOARDING_COOKIE } from "@/config/auth";
 import {
@@ -9,6 +50,7 @@ import {
   isOnboardingCompleteClaims,
   isVendorTokenClaims,
 } from "@/lib/jwt-claims";
+import { verifyAccessToken } from "@/lib/jwks";
 import {
   getRequiredPermissionForPathname,
   hasPermission,
@@ -41,39 +83,64 @@ function stripLocale(pathname: string): string {
   return pathname.replace(/^\/(en|fr|zh)(\/|$)/, "/");
 }
 
-function readAccessSession(request: NextRequest) {
+async function readAccessSession(request: NextRequest) {
   const token = request.cookies.get(AUTH_COOKIES.access)?.value;
+  const hasRefresh = Boolean(request.cookies.get(AUTH_COOKIES.refresh)?.value);
+
   if (!token) {
     return {
       ok: false as const,
       reason: "no_access" as const,
-      hasRefresh: Boolean(request.cookies.get(AUTH_COOKIES.refresh)?.value),
+      hasRefresh,
     };
   }
 
-  try {
-    const claims = decodeAccessToken(token);
+  let claims: Parameters<typeof isVendorTokenClaims>[0];
 
-    if (typeof claims.exp === "number" && claims.exp * 1000 < Date.now()) {
+  try {
+    // Verify the JWT signature with the gateway JWKS. This prevents forged
+    // tokens from passing middleware routing/permission checks.
+    const payload = await verifyAccessToken(token);
+    claims = payload as unknown as Parameters<typeof isVendorTokenClaims>[0];
+  } catch {
+    // Verification failed (bad signature, issuer, audience, or JWKS error).
+    // Decode only to check expiry so we can give the client a chance to refresh
+    // when the token is simply expired.
+    try {
+      claims = decodeAccessToken(token);
+      if (typeof claims.exp === "number" && claims.exp * 1000 < Date.now()) {
+        return {
+          ok: false as const,
+          reason: "expired" as const,
+          hasRefresh,
+        };
+      }
+    } catch {
+      // Malformed token.
       return {
         ok: false as const,
-        reason: "expired" as const,
-        hasRefresh: Boolean(request.cookies.get(AUTH_COOKIES.refresh)?.value),
+        reason: "malformed" as const,
+        hasRefresh,
       };
     }
 
-    if (!isVendorTokenClaims(claims)) {
-      return { ok: false as const, reason: "role" as const, hasRefresh: false };
-    }
-
-    return { ok: true as const, claims };
-  } catch {
+    // Token decoded but could not be verified: treat as invalid.
     return {
       ok: false as const,
-      reason: "malformed" as const,
-      hasRefresh: Boolean(request.cookies.get(AUTH_COOKIES.refresh)?.value),
+      reason: "invalid_signature" as const,
+      hasRefresh,
     };
   }
+
+  if (typeof claims.exp === "number" && claims.exp * 1000 < Date.now()) {
+    return { ok: false as const, reason: "expired" as const, hasRefresh };
+  }
+
+  if (!isVendorTokenClaims(claims)) {
+    return { ok: false as const, reason: "role" as const, hasRefresh: false };
+  }
+
+  return { ok: true as const, claims };
 }
 
 const handleI18nRouting = createMiddleware(routing);
@@ -93,11 +160,16 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Generate a per-request nonce and apply a strict CSP to HTML responses.
+  const nonce = generateNonce();
+  response.headers.set("Content-Security-Policy", buildCspHeader(nonce));
+  response.headers.set("x-nonce", nonce);
+
   const locale = getLocaleFromPath(pathname) || routing.defaultLocale;
   const prefix = `/${locale}`;
   const logicalPath = stripLocale(pathname);
 
-  const session = readAccessSession(request);
+  const session = await readAccessSession(request);
   const wizardComplete =
     request.cookies.get(ONBOARDING_COOKIE.wizardComplete)?.value === "1";
 
@@ -117,9 +189,8 @@ export async function middleware(request: NextRequest) {
 
   if (!session.ok) {
     // If the access token is expired or missing but we have a refresh token,
-    // let the request through — the client-side AuthProvider will
-    // refresh the token. Redirecting here causes a jarring logout
-    // flash on every SSR navigation after token expiry.
+    // let the request through — the client-side AuthProvider will refresh.
+    // For invalid signatures, malformed tokens, or wrong roles, force login.
     if (
       session.hasRefresh &&
       (session.reason === "expired" || session.reason === "no_access")
@@ -161,6 +232,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

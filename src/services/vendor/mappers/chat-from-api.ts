@@ -26,6 +26,11 @@ function mapParticipant(
 
   return {
     id,
+    userId: String(p.userId ?? id),
+    joinedAt:
+      typeof p.joinedAt === "string"
+        ? p.joinedAt
+        : new Date().toISOString(),
     name: displayName || firstName || "User",
     surname: lastName || undefined,
     email: String(u.email ?? "") || undefined,
@@ -124,15 +129,17 @@ export function mapChatMessage(
       ? raw.messageType
       : inferMessageType(body, attachments)) as import("@/modules/chat/types").ChatMessageType;
 
+  const createdAt = String(raw.createdAt ?? new Date().toISOString());
   return {
     id: String(raw.id),
     threadId,
     conversationId: threadId,
     messageType,
     authorRole: fromVendor ? "vendor" : "customer",
-    senderUserId: sender,
+    senderUserId: sender || "unknown",
     body,
-    sentAt: String(raw.createdAt ?? new Date().toISOString()),
+    sentAt: createdAt,
+    createdAt,
     attachments,
     translatedBody: typeof raw.translatedBody === "string" ? raw.translatedBody : undefined,
     originalLanguage: typeof raw.originalLanguage === "string" ? raw.originalLanguage : undefined,
@@ -212,6 +219,15 @@ export function mapConversationToThread(
 
   return {
     id: String(raw.id),
+    createdAt:
+      typeof raw.createdAt === "string"
+        ? raw.createdAt
+        : new Date().toISOString(),
+    updatedAt:
+      typeof raw.updatedAt === "string"
+        ? raw.updatedAt
+        : new Date().toISOString(),
+    participants: Object.values(participantMap),
     customerName: name,
     customerEmail: peerParticipant?.email ?? "",
     customerPhone: peerParticipant?.phone,

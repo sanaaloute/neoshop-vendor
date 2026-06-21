@@ -35,12 +35,13 @@ import {
   openPrintableDocument,
 } from "./print-documents";
 import type { OrderStatus, VendorOrder } from "./types";
-import { ORDER_STATUS_FLOW } from "./types";
+import { ORDER_STATUS_FLOW, ORDER_STATUS_TRANSITIONS } from "./types";
 import { isTerminalStatus, nextWorkflowStatus, statusLabel } from "./workflow";
 
 function badgeVariant(s: OrderStatus): ComponentProps<typeof Badge>["variant"] {
   if (s === "delivered") return "default";
-  if (s === "refunded" || s === "disputed") return "destructive";
+  if (s === "refunded" || s === "disputed" || s === "cancelled")
+    return "destructive";
   if (s === "shipped" || s === "processing" || s === "paid") return "secondary";
   return "outline";
 }
@@ -53,6 +54,12 @@ type OrderDetailDrawerProps = {
 
 function toApiStatus(s: OrderStatus): ApiOrderStatus {
   return s as ApiOrderStatus;
+}
+
+function canTransitionTo(current: OrderStatus, next: OrderStatus): boolean {
+  if (current === next) return false;
+  const allowed = ORDER_STATUS_TRANSITIONS[current] ?? [];
+  return allowed.includes(next);
 }
 
 function toNumber(value: string | number): number {
@@ -151,6 +158,10 @@ export function OrderDetailDrawer({
     }
     if (!getApiBaseUrl()) {
       setActionError(t("marketplaceUnavailable"));
+      return;
+    }
+    if (!canTransitionTo(o.status, status)) {
+      setActionError(t("invalidStatusTransition"));
       return;
     }
     setActionBusy(true);
@@ -288,8 +299,8 @@ export function OrderDetailDrawer({
                   onClick={() =>
                     void runStatusPatch(
                       order,
-                      "refunded",
-                      t("markedRefundedFromDrawer")
+                      "cancelled",
+                      t("markedCancelledFromDrawer")
                     )
                   }
                 >

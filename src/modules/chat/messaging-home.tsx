@@ -41,6 +41,7 @@ import {
 } from "@/realtime/hooks";
 import { useRealtimeContext } from "@/realtime/context";
 import { useAuthStore } from "@/store/auth-store";
+import { validateChatAttachment } from "@/lib/upload-config";
 import { useVendorProfileStore } from "@/store/vendor-profile-store";
 import { readStorageUrls } from "@/services/vendor/storage-api";
 import { mapChatMessage } from "@/services/vendor/mappers/chat-from-api";
@@ -48,10 +49,6 @@ import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store/chat-store";
 
 import type { ChatAttachment, ChatMessage, ChatThread } from "./types";
-import {
-  useVendorChatRealtime,
-  type ChatRealtimeEvent,
-} from "./use-vendor-chat-realtime";
 
 function unreadCount(t: ChatThread): number {
   return t.messages.filter(
@@ -135,6 +132,7 @@ export function MessagingHome() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [previewSignedUrls, setPreviewSignedUrls] = useState<Record<string, string>>({});
   const desktop = useIsDesktop();
   const { sendMessage, deleteMessage: deleteChatMessage, uploadAttachment } =
     useChatMessages();
@@ -147,6 +145,18 @@ export function MessagingHome() {
   );
   const socketIoStatus = useRealtimeVendorStatus();
   const { socket } = useRealtimeContext();
+
+  const emitTyping = useCallback(
+    (isTyping: boolean) => {
+      if (!socket || !selectedId || !vendorUserId) return;
+      socket.emit("chat:typing", {
+        threadId: selectedId,
+        userId: vendorUserId,
+        isTyping,
+      });
+    },
+    [socket, selectedId, vendorUserId]
+  );
 
   useGatewayChatMessages(selectedId);
 
@@ -172,30 +182,6 @@ export function MessagingHome() {
         4500
       );
     }
-  });
-
-  // Native WebSocket fallback for sending typing + broadcast
-  const onRealtimeEvent = useCallback(
-    (e: ChatRealtimeEvent) => {
-      if (e.kind === "peer_typing") {
-        if (peerTypingClearRef.current)
-          clearTimeout(peerTypingClearRef.current);
-        setPeerTyping(e.isTyping);
-        if (e.isTyping) {
-          peerTypingClearRef.current = setTimeout(
-            () => setPeerTyping(false),
-            4500
-          );
-        }
-      }
-    },
-    []
-  );
-
-  const { mode, sendTyping, sendChatOverWs } = useVendorChatRealtime({
-    threadId: selectedId,
-    enabled: Boolean(selectedId),
-    onEvent: onRealtimeEvent,
   });
 
   const selected = useMemo(
@@ -247,6 +233,48 @@ export function MessagingHome() {
     };
   }, [selectedId, signedUrls, selected, selected?.messages.length]);
 
+  // Resolve signed URLs for image previews in the conversation list.
+  useEffect(() => {
+    if (!getApiBaseUrl()) return;
+    const attachments = threads.flatMap((thread) => {
+      const last = thread.messages[thread.messages.length - 1];
+      return (
+        last?.attachments?.filter((a) => {
+          const mime = (a.mimeType ?? a.mime ?? "").toLowerCase();
+          return (
+            mime.startsWith("image/") &&
+            a.fileUrl &&
+            !a.signedUrl &&
+            !previewSignedUrls[a.fileUrl]
+          );
+        }) ?? []
+      );
+    });
+    if (attachments.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await readStorageUrls(
+          attachments.map((a) => ({ bucket: "chat-media", path: a.fileUrl! }))
+        );
+        if (cancelled) return;
+        const next: Record<string, string> = {};
+        for (const r of res.results) {
+          if (r.path && (r.signedUrl || r.publicUrl)) {
+            next[r.path] = r.signedUrl ?? r.publicUrl!;
+          }
+        }
+        setPreviewSignedUrls((prev) => ({ ...prev, ...next }));
+      } catch {
+        /* ignore transient signed-url failures */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [threads, previewSignedUrls]);
+
   const selectThread = (id: string) => {
     setSelectedThreadId(id);
     if (!desktop) setSheetOpen(true);
@@ -258,32 +286,17 @@ export function MessagingHome() {
 
   const flushTypingIdle = useCallback(() => {
     if (typingIdleRef.current) clearTimeout(typingIdleRef.current);
-    typingIdleRef.current = setTimeout(() => sendTyping(false), 1200);
-  }, [sendTyping]);
+    typingIdleRef.current = setTimeout(() => emitTyping(false), 1200);
+  }, [emitTyping]);
 
   const onDraftChange = (v: string) => {
     setDraft(v);
     setSendError(null);
     if (v.trim()) {
-      sendTyping(true);
-      // Also emit via Socket.IO if available
-      if (socket && selectedId && vendorUserId) {
-        socket.emit("chat:typing", {
-          threadId: selectedId,
-          userId: vendorUserId,
-          isTyping: true,
-        });
-      }
+      emitTyping(true);
       flushTypingIdle();
     } else {
-      sendTyping(false);
-      if (socket && selectedId && vendorUserId) {
-        socket.emit("chat:typing", {
-          threadId: selectedId,
-          userId: vendorUserId,
-          isTyping: false,
-        });
-      }
+      emitTyping(false);
     }
   };
 
@@ -339,9 +352,10 @@ export function MessagingHome() {
       conversationId: selectedId,
       messageType,
       authorRole: "vendor",
-      senderUserId: vendorUserId ?? undefined,
+      senderUserId: vendorUserId ?? "unknown",
       body: text ?? null,
       sentAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       attachments,
       pending: true,
     };
@@ -349,7 +363,7 @@ export function MessagingHome() {
     appendVendorMessage(selectedId, msg);
     setDraft("");
     setPendingFiles([]);
-    sendTyping(false);
+    emitTyping(false);
 
     if (getApiBaseUrl()) {
       void (async () => {
@@ -373,14 +387,20 @@ export function MessagingHome() {
       })();
     }
 
-    if (mode === "websocket") {
-      sendChatOverWs(msg);
-    }
   };
 
   const pickFiles = (list: FileList | null) => {
     if (!list?.length) return;
-    setPendingFiles((p) => [...p, ...Array.from(list)]);
+    const accepted: File[] = [];
+    for (const file of Array.from(list)) {
+      const err = validateChatAttachment(file);
+      if (err) {
+        setSendError(`${file.name}: ${err}`);
+        continue;
+      }
+      accepted.push(file);
+    }
+    if (accepted.length) setPendingFiles((p) => [...p, ...accepted]);
   };
 
   const handleDeleteMessage = async (messageId: string) => {
@@ -405,7 +425,11 @@ export function MessagingHome() {
 
   function previewText(m: ChatMessage | undefined): string {
     if (!m) return t("noMessagesYet");
-    const isFromOther = m.authorRole !== "vendor";
+    // Prefer senderUserId comparison over role heuristic so multi-user
+    // conversations and admin participants are handled correctly.
+    const isFromOther = !currentUserIds.some(
+      (id) => id.length > 0 && id === m.senderUserId
+    );
     if (isFromOther && m.translatedBody) {
       return m.translatedBody;
     }
@@ -490,7 +514,19 @@ export function MessagingHome() {
                           </span>
                         </div>
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-muted-foreground truncate text-xs">
+                          <span className="text-muted-foreground flex min-w-0 items-center gap-1.5 truncate text-xs">
+                            {preview?.messageType === "image" &&
+                              preview.attachments?.[0]?.fileUrl && (
+                                <img
+                                  src={
+                                    previewSignedUrls[preview.attachments[0].fileUrl] ??
+                                    preview.attachments[0].signedUrl ??
+                                    preview.attachments[0].fileUrl
+                                  }
+                                  alt=""
+                                  className="size-5 shrink-0 rounded object-cover"
+                                />
+                              )}
                             {previewText(preview)}
                           </span>
                           {unread > 0 ? (

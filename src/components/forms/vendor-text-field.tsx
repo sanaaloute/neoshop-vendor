@@ -22,6 +22,8 @@ type VendorTextFieldProps<TFieldValues extends FieldValues> = {
   className?: string;
   inputClassName?: string;
   labelClassName?: string;
+  onChange?: (value: string) => void;
+  onBlur?: () => void;
 };
 
 export function VendorTextField<TFieldValues extends FieldValues>({
@@ -35,6 +37,8 @@ export function VendorTextField<TFieldValues extends FieldValues>({
   className,
   inputClassName,
   labelClassName,
+  onChange,
+  onBlur,
 }: VendorTextFieldProps<TFieldValues>) {
   return (
     <Controller
@@ -54,6 +58,14 @@ export function VendorTextField<TFieldValues extends FieldValues>({
             aria-invalid={fieldState.invalid}
             className={inputClassName}
             {...field}
+            onChange={(e) => {
+              field.onChange(e);
+              onChange?.(e.target.value);
+            }}
+            onBlur={() => {
+              field.onBlur();
+              onBlur?.();
+            }}
           />
           {fieldState.error?.message ? (
             <p className="text-destructive text-xs">

@@ -145,12 +145,12 @@ export async function bulkPatchProductsOnGateway(
   productIds: string[],
   patch: { status?: ProductStatus; categoryIds?: string[] }
 ) {
+  // Vendors may only set draft, pending_review, hidden per the API guide.
+  // published, archived, and rejected are admin-only.
   const vendorControlledStatuses: ApiProductStatus[] = [
     "draft",
     "pending_review",
     "hidden",
-    "archived",
-    "published",
   ];
   for (const id of productIds) {
     const body: Record<string, unknown> = {};

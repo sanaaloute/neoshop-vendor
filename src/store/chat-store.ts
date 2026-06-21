@@ -48,10 +48,16 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
       const merged = incoming.map((incomingThread) => {
         const existing = existingById.get(incomingThread.id);
         if (!existing) return incomingThread;
-        // Preserve local state: messages, lastReadAt, plus any locally-known participants
+        // Preserve local state: lastReadAt and locally-known participants.
+        // Merge the server's latest preview message into the local message list
+        // so the thread preview stays fresh without overwriting full history.
+        const latestIncoming = incomingThread.messages[incomingThread.messages.length - 1];
+        const nextMessages = latestIncoming
+          ? upsertMessage(existing.messages, latestIncoming)
+          : existing.messages;
         return {
           ...incomingThread,
-          messages: existing.messages.length > 0 ? existing.messages : incomingThread.messages,
+          messages: nextMessages,
           lastReadAt: existing.lastReadAt,
           participantMap: {
             ...incomingThread.participantMap,

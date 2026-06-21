@@ -1,9 +1,12 @@
 /**
- * Minimal notifications push server for local development.
+ * Minimal notifications push server for local development ONLY.
  * Usage: npm run notifications:ws
  * Set NEXT_PUBLIC_NOTIFICATIONS_WS_URL=ws://localhost:3457 in .env.local
  *
  * Broadcasts JSON: { "type": "notification", "payload": NotificationRecord }
+ *
+ * ⚠️ This server has no authentication and is intended purely for local
+ * development. Never expose it to a network or production environment.
  */
 
 import { WebSocketServer } from "ws";
@@ -46,7 +49,24 @@ function randomPayload() {
   };
 }
 
-wss.on("connection", (ws) => {
+function isLocalAddress(addr) {
+  return (
+    addr === "127.0.0.1" ||
+    addr === "::1" ||
+    addr === "::ffff:127.0.0.1"
+  );
+}
+
+wss.on("connection", (ws, req) => {
+  const remoteAddress = req.socket.remoteAddress ?? "";
+  if (!isLocalAddress(remoteAddress)) {
+    console.warn(
+      `Rejected non-local notifications WS connection from ${remoteAddress}`
+    );
+    ws.close(1008, "localhost_only");
+    return;
+  }
+
   const timer = setInterval(() => {
     if (ws.readyState !== 1) return;
     ws.send(
@@ -61,3 +81,7 @@ wss.on("connection", (ws) => {
 });
 
 console.log(`Notifications WebSocket listening on ws://localhost:${PORT}`);
+console.log(
+  "WARNING: This is a local-development relay with no authentication."
+);
+console.log("Never expose this server to a network or use it in production.");

@@ -10,7 +10,9 @@ import {
 import { getSocketIoUrl, getSocketIoPath } from "@/config/realtime";
 
 const defaultOptions: Partial<ManagerOptions & SocketOptions> = {
-  transports: ["websocket", "polling"],
+  // WebSocket only: polling fallback can leak the Bearer token into server
+  // logs/query params. The production gateway should provide reliable WS.
+  transports: ["websocket"],
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 1_000,

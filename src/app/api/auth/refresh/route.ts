@@ -91,7 +91,9 @@ export async function POST(request: Request) {
 
   jar.set(AUTH_COOKIES.access, payload.accessToken, {
     ...cookieBase(),
-    maxAge: 60 * 60 * 24 * 7, // 7 days — cookie persists so client can refresh
+    // Derive max-age from the JWT expiry so stolen/forged tokens have a short
+    // window. Fall back to one hour if the token has no exp claim.
+    maxAge: maxAgeFromJwtOrFallback(payload.accessToken, 60 * 60),
   });
 
   if (payload.refreshToken) {

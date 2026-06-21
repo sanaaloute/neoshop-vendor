@@ -79,9 +79,11 @@ export async function fetchSessionUser(): Promise<VendorUser | null> {
 }
 
 export async function fetchAccessTokenFromCookie(): Promise<string | null> {
+  const csrf = await fetchCsrfToken();
   const res = await fetch("/api/auth/token", {
     credentials: "include",
     cache: "no-store",
+    headers: { [CSRF_HEADER]: csrf },
   });
   if (!res.ok) return null;
   const data = (await res.json()) as { accessToken: string };

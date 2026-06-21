@@ -177,22 +177,6 @@ export function ProductForm({
   }, []);
 
   const mediaList = useWatch({ control: form.control, name: "media" }) ?? [];
-  const watchedName = useWatch({ control: form.control, name: "name" });
-
-  useEffect(() => {
-    if (!watchedName?.trim()) return;
-    const currentSlug = form.getValues("seo.slug");
-    const generated = slugify(watchedName);
-    if (
-      !currentSlug ||
-      currentSlug === slugify(watchedName.slice(0, -1) || watchedName)
-    ) {
-      form.setValue("seo.slug", generated, {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
-    }
-  }, [watchedName, form]);
 
   const handleAddFiles = useCallback(
     (files: File[]) => {
@@ -744,6 +728,24 @@ function SeoSection() {
   const t = useTranslations("products");
   const [open, setOpen] = useState(false);
   const { control, setValue, getValues } = useFormContext<ProductFormValues>();
+  const watchedName = useWatch({ control, name: "name" });
+  const watchedSlug = useWatch({ control, name: "seo.slug" });
+  const slugManuallySet = useRef(Boolean(getValues("seo.slug")));
+
+  useEffect(() => {
+    if (slugManuallySet.current) return;
+    if (!watchedName?.trim()) return;
+    const generated = slugify(watchedName);
+    if (
+      !watchedSlug ||
+      watchedSlug === slugify(watchedName.slice(0, -1) || watchedName)
+    ) {
+      setValue("seo.slug", generated, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+  }, [watchedName, watchedSlug, setValue]);
 
   return (
     <Card className="glass-card shadow-glass overflow-hidden">
@@ -776,6 +778,9 @@ function SeoSection() {
                 name="seo.slug"
                 label={t("urlSlug")}
                 placeholder={t("urlSlugPlaceholder")}
+                onChange={() => {
+                  slugManuallySet.current = true;
+                }}
               />
             </div>
             <Button
@@ -785,6 +790,7 @@ function SeoSection() {
               onClick={() => {
                 const name = getValues("name");
                 if (name?.trim()) {
+                  slugManuallySet.current = false;
                   setValue("seo.slug", slugify(name), {
                     shouldDirty: true,
                     shouldValidate: true,

@@ -9,7 +9,9 @@ import type {
   VendorCustomerFromApi,
 } from "./types";
 
-/** GET /orders/vendor — list orders for the authenticated vendor */
+/** GET /orders/vendor — list orders for the authenticated vendor.
+ *  `status` is not documented in the vendor API guide but is supported as a
+ *  backend extension for filtering. Confirm backend support before relying on it. */
 export async function listVendorOrders(params?: {
   status?: ApiOrderStatus;
 }) {

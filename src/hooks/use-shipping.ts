@@ -20,7 +20,7 @@ export function useShipping() {
     Array<{
       methodId: string;
       methodName: string;
-      cost: number;
+      cost: string;
       currency: string;
       estimatedDays: number;
     }>

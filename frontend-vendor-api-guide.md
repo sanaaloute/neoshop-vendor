@@ -4,7 +4,7 @@
 > **Auth:** Supabase JWT Bearer token (`Authorization: Bearer <access_token>`)  
 > **Version:** `v1`
 
-Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me`, `/chat`, `/addresses`, `/shipping`, etc.) — those are listed in the *Shared Endpoints* section at the bottom of this doc. Some endpoints (cart, checkout, returns, RFQ, customer reviews) are restricted to the `customer` role and require a separate customer account.
+Vendors **also** have access to many customer endpoints (`/auth/me`, `/chat`, `/notifications`, `/storage`, etc.) — those are listed in the *Shared Endpoints* section at the bottom of this doc. Some endpoints (cart, checkout, wallet, returns, RFQ, customer reviews, referrals, coupons, addresses, shipping) are restricted to the `customer` role (or require customer-only permissions) and need a separate customer account.
 
 ---
 
@@ -61,22 +61,9 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/wallet/me
 }
 ```
 
-- Validation errors return a professional top-level `message`, but the user-friendly per-field explanations are in `details.fields[].messages`.
-- **Frontend display rule:** For `4xx` validation errors, render the messages from `details.fields` (joined by property or as a list). The top-level `message` is generic and should not be shown to users. Only fall back to `message` when `details` is absent (e.g. `5xx` server errors).
-- Server errors (`statusCode >= 500`) return a generic safe `message` and omit `details` in production so internal details (database errors, connection strings, etc.) are never exposed.
+- Validation errors return a professional `message`; per-field problems are in `details.fields`.
+- Server errors (`statusCode >= 500`) return a generic safe message and omit `details` in production so internal details (database errors, connection strings, etc.) are never exposed.
 - Error responses may also include a stable `code` field (e.g. `INSUFFICIENT_BALANCE`) for machine-readable error handling on endpoints that have been migrated to coded errors.
-
-```typescript
-// utils/errorMessage.ts
-export function getUserFacingErrorMessage(error: any): string {
-  const fields = error?.response?.data?.details?.fields ?? [];
-  if (fields.length > 0) {
-    const messages = fields.flatMap((f: any) => f.messages ?? []);
-    return messages.join('\n');
-  }
-  return error?.response?.data?.message ?? 'Something went wrong. Please try again.';
-}
-```
 
 ### Data Types
 
@@ -1320,6 +1307,8 @@ Get tracking events for an order.
 }
 ```
 
+> ⚠️ **Vendor caveat:** Although the route allows the `vendor` role, it requires the `ORDERS_CUSTOMER_READ` permission, which is **not** granted to vendors in the current permission registry. Vendors should rely on `GET /orders/:orderId` for tracking/timeline information instead.
+
 ---
 
 ## Vendor Reviews
@@ -1632,87 +1621,13 @@ Daily units sold vs. restocked.
 
 ## Wallet (Vendor)
 
-Vendors can read their wallet balance and transactions (requires `WALLET_READ` permission), but deposit and withdrawal requests are currently restricted to the `customer` role.
-
-### `GET /wallet/me`
-
-Get wallet balance.
-
-**Permission:** `WALLET_READ`
-
-**Response:**
-```json
-{
-  "availableBalance": "1250.00",
-  "reservedBalance": "250.00",
-  "totalBalance": "1500.00",
-  "currency": "XOF"
-}
-```
-
-> Returns `"0.00"` for all balances if wallet doesn't exist yet.
-
----
-
-### `GET /wallet/me/transactions`
-
-List wallet transactions.
-
-**Permission:** `WALLET_READ`
-
-**Query Parameters:**
-| Param | Type | Default | Constraints |
-|-------|------|---------|-------------|
-| `type` | enum | — | `credit` \| `debit` \| `deposit` \| `withdrawal` \| `reserve` \| `release` \| `refund` \| `adjustment` |
-| `limit` | integer | 20 | 1-100 |
-| `offset` | integer | 0 | Min 0 |
-
-**Response:**
-```json
-{
-  "items": [
-    {
-      "id": "tx-uuid",
-      "type": "release",
-      "direction": "credit",
-      "status": "completed",
-      "amount": "+250.00",
-      "currency": "XOF",
-      "referenceId": "order:order-uuid",
-      "description": "Order release order-uuid",
-      "createdAt": "2024-06-12T10:00:00Z"
-    }
-  ],
-  "total": 25,
-  "limit": 20,
-  "offset": 0
-}
-```
-
-> **Note:** Amounts are signed strings (`+` for credit, `-` for debit).
-
----
-
-### `POST /wallet/change-currency`
-
-Toggle/convert wallet currency between `XOF` and `CNY`.
-
-**Permission:** `WALLET_READ`
-
-**Request Body:**
-```json
-{
-  "currency": "CNY"                       // required, enum: XOF, CNY
-}
-```
-
-**Response:** Updated wallet object (same shape as `GET /wallet/me`)
+> ⚠️ **Currently not vendor-usable.** Wallet controllers (`/wallet/*`) require `WALLET_READ` / `WALLET_WRITE` permissions. The current `vendor` role permission registry does **not** include these permissions, so all wallet endpoints will return `403 Forbidden` for vendor accounts. Wallet functionality is restricted to `customer` and admin roles at this time.
 
 ---
 
 ## Shared Endpoints Vendors Also Use
 
-> **Permission note:** The endpoints below allow authenticated vendor requests at the route level, but a few rely on permissions (such as `ADDRESSES_MANAGE`, `SHIPPING_READ`, `RECENTLY_VIEWED_MANAGE`) that are granted to the `customer` role by default. If your vendor front-end needs them, ensure the vendor role is assigned those permissions in your deployment.
+> **Permission note:** The endpoints below are accessible to a vendor account because the route allows the `vendor` role and the vendor permission registry includes the required permission. Endpoints that require permissions **not** granted to vendors (e.g. `ADDRESSES_MANAGE`, `SHIPPING_READ`, `WALLET_READ`, `REFERRALS_READ`, `COUPONS_VALIDATE`, `RECENTLY_VIEWED_MANAGE`) are excluded from this list. If your deployment needs vendors to use those endpoints, update `ROLE_PERMISSIONS.vendor` in `backend/src/modules/permissions/permission.registry.ts`.
 
 ### Auth
 
@@ -1727,6 +1642,7 @@ Toggle/convert wallet currency between `XOF` and `CNY`.
 | `POST` | `/auth/forgot-password` | `{ email }` | 3/60s |
 | `POST` | `/auth/reset-password` | `{ token, newPassword }` | 5/60s |
 | `POST` | `/auth/resend-verification` | `{ email }` | 3/60s |
+| `POST` | `/auth/reactivate` | `{ email, password, deviceId? }` | 5/60s |
 | `POST` | `/auth/change-email` | `{ newEmail, password }` | 3/60s |
 | `GET` | `/auth/me` | — | — |
 | `POST` | `/auth/sessions` | `{ refreshToken, deviceId, userAgent? }` | — |
@@ -1742,8 +1658,8 @@ Toggle/convert wallet currency between `XOF` and `CNY`.
 | `PATCH` | `/users/me` | `{ name?, surname?, phone?, dateOfBirth?, nationality?, idCardType?, idCardNumber?, avatarUrl? }` |
 | `GET` | `/users/me/settings` | — |
 | `PATCH` | `/users/me/settings` | `{ orderUpdates?, promoMessages?, emailNewsletter?, pushEnabled?, preferredLanguage? }` |
-| `GET` | `/users/me/viewed-products` | — |
-| `POST` | `/users/me/viewed-products` | `{ productId }` |
+| `POST` | `/users/me/suspend` | — |
+| `POST` | `/users/me/request-deletion` | `{ password }` |
 
 ### Catalog (Public)
 
@@ -1767,6 +1683,8 @@ Toggle/convert wallet currency between `XOF` and `CNY`.
 | `GET` | `/vendors/public/:vendorId` | Public vendor profile |
 
 ### Shipping
+
+> ⚠️ **Not vendor-usable by default.** Requires `SHIPPING_READ`, which is not in the vendor permission registry.
 
 | Method | Path | Body |
 |--------|------|------|
@@ -1799,9 +1717,12 @@ Toggle/convert wallet currency between `XOF` and `CNY`.
 | `GET` | `/chat/conversations/:conversationId` | — |
 | `GET` | `/chat/conversations/:conversationId/messages` | `skip?`, `take?` (50, max 100) |
 | `POST` | `/chat/conversations/:conversationId/messages` | `{ body }` (1–4000 chars) |
+| `POST` | `/chat/conversations/:conversationId/attachments` | Multipart: `file` (image max 1 MB, PDF max 5 MB) |
 | `DELETE` | `/chat/conversations/:conversationId/messages/:messageId` | — |
 
 ### Addresses
+
+> ⚠️ **Not vendor-usable by default.** Requires `ADDRESSES_MANAGE`, which is not in the vendor permission registry.
 
 | Method | Path | Body |
 |--------|------|------|
@@ -1826,13 +1747,6 @@ Toggle/convert wallet currency between `XOF` and `CNY`.
 | `POST` | `/products/:productId/qa` | `{ question }` (max 1000) |
 | `POST` | `/qa/:threadId/answers` | `{ answer }` (max 2000) |
 
-### Referrals
-
-| Method | Path | Body |
-|--------|------|------|
-| `GET` | `/referrals/me` | — |
-| `POST` | `/referrals/redeem` | `{ code }` |
-
 ### Reports
 
 | Method | Path | Body |
@@ -1854,8 +1768,9 @@ Toggle/convert wallet currency between `XOF` and `CNY`.
 
 | Method | Path | Body |
 |--------|------|------|
-| `POST` | `/coupons/validate` | `{ code, cartId? }` |
 | `GET` | `/promotions/active` | — |
+
+> `/coupons/validate` requires `COUPONS_VALIDATE` and is **not** vendor-usable by default.
 
 ### Exchange Rates
 
@@ -1908,7 +1823,6 @@ Toggle/convert wallet currency between `XOF` and `CNY`.
 | `PROFILE_READ` | `profile.read` | View own profile |
 | `PROFILE_WRITE` | `profile.write` | Edit own profile |
 | `SETTINGS_MANAGE` | `settings.manage` | Notification/settings preferences |
-| `WALLET_READ` | `wallet.read` | View balance & transactions |
 | `CHAT_PARTICIPATE` | `chat.participate` | Messaging |
 | `NOTIFICATIONS_READ` | `notifications.read` | In-app notifications |
 | `STORAGE_MANAGE` | `storage.manage` | Upload/download/delete files |
@@ -1928,6 +1842,7 @@ Toggle/convert wallet currency between `XOF` and `CNY`.
 | Auth forgot-password | 3 | 60s | IP |
 | Auth reset-password | 5 | 60s | IP |
 | Auth resend-verification | 3 | 60s | IP |
+| Auth reactivate | 5 | 60s | IP |
 | Auth change-email | 3 | 60s | IP |
 | Auth refresh | 20 | 60s | IP |
 | Health ready / check | 60 | 60s | IP |

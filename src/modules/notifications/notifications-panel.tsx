@@ -62,6 +62,17 @@ function useFilterTabs() {
   ];
 }
 
+function isSafeNotificationHref(href: string): boolean {
+  // Allow same-origin relative paths and absolute URLs that match the current origin.
+  if (href.startsWith("/") && !href.startsWith("//")) return true;
+  try {
+    const url = new URL(href, window.location.href);
+    return url.origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 type NotificationsPanelProps = {
   variant?: "compact" | "full";
   className?: string;
@@ -208,7 +219,7 @@ export function NotificationsPanel({
 
               return (
                 <li key={row.id}>
-                  {row.href ? (
+                  {row.href && isSafeNotificationHref(row.href) ? (
                     <Link
                       href={row.href}
                       className={rowClass}

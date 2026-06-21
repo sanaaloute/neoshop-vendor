@@ -173,7 +173,7 @@ export function OrdersHome() {
         if (!o) continue;
         const nxt = nextWorkflowStatus(o.status);
         if (!nxt) continue;
-        await updateOrderStatus(id, toApi(nxt));
+        await updateOrderStatus(id, toApi(nxt), undefined, toApi(o.status));
       }
       await refetch();
       setSelected(new Set());
@@ -194,7 +194,13 @@ export function OrdersHome() {
     setBulkError(null);
     try {
       for (const id of selectedIds) {
-        await updateOrderStatus(id, "refunded", t("bulkRefundFromList"));
+        const o = orders.find((x) => x.id === id);
+        if (!o) continue;
+        // Only refund orders that have been paid or are in a refundable state.
+        if (!["paid", "processing", "shipped", "delivered"].includes(o.status)) {
+          continue;
+        }
+        await updateOrderStatus(id, "refunded", t("bulkRefundFromList"), toApi(o.status));
       }
       await refetch();
       setSelected(new Set());

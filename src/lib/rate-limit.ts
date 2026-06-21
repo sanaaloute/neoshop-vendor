@@ -1,6 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+
+/**
+ * ⚠️ CLIENT-SIDE ONLY — NOT A SECURITY BOUNDARY
+ *
+ * This module is a UX helper: it records recent request timestamps in
+ * localStorage so the UI can show cooldown timers and reduce accidental
+ * double-clicks. It must NOT be relied on to stop abuse because:
+ *
+ * - localStorage can be cleared, edited, or disabled by the user.
+ * - It is per-browser/profile and does not survive incognito windows.
+ * - A malicious client can call the API directly without using this UI.
+ *
+ * The upstream gateway is the authoritative rate limiter. The frontend
+ * should always send the request and surface the server's 429 response.
+ */
 
 const STORAGE_KEY = "neoshop-vendor-rate-limits";
 
@@ -80,49 +95,31 @@ export function getRemainingCooldown(
 
 // ── React hook ──
 
+/**
+ * React wrapper around the client-side rate-limit tracker.
+ *
+ * IMPORTANT: The returned helpers always allow the caller to proceed. They
+ * exist only to record request timestamps for UX/debugging and to keep the
+ * existing component signatures working. The upstream gateway is the only
+ * authoritative rate limiter; the UI must send the request and handle 429.
+ */
 export function useRateLimit(
   endpoint: string,
-  limit: number,
-  windowMs: number
+  _limit: number,
+  _windowMs: number
 ) {
-  // Start at 0 to avoid SSR/hydration mismatch; sync with localStorage on mount.
-  const [remainingMs, setRemainingMs] = useState(0);
-
-  const refresh = useCallback(() => {
-    setRemainingMs(getRemainingCooldown(endpoint, limit, windowMs));
-  }, [endpoint, limit, windowMs]);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  useEffect(() => {
-    if (remainingMs <= 0) return;
-    const id = setInterval(() => {
-      const next = getRemainingCooldown(endpoint, limit, windowMs);
-      setRemainingMs(next);
-      if (next <= 0) clearInterval(id);
-    }, 1000);
-    return () => clearInterval(id);
-  }, [endpoint, limit, windowMs, remainingMs]);
-
-  const canRequest = remainingMs <= 0;
+  // Parameters kept for API compatibility with existing callers.
+  void _limit;
+  void _windowMs;
 
   const tryRecord = useCallback(() => {
-    if (!canMakeRequest(endpoint, limit, windowMs)) {
-      refresh();
-      return false;
-    }
     recordRequest(endpoint);
-    refresh();
     return true;
-  }, [endpoint, limit, windowMs, refresh]);
+  }, [endpoint]);
 
   return {
-    canRequest,
-    remainingMs,
-    remainingSeconds: Math.ceil(remainingMs / 1000),
+    canRequest: true,
+    remainingSeconds: 0,
     tryRecord,
-    refresh,
   };
 }

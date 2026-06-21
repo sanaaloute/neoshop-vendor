@@ -9,6 +9,9 @@ type NotificationsState = {
   items: NotificationRecord[];
   filter: NotificationFilter;
   unreadCount: number;
+  /** IDs that have already contributed to unreadCount. Prevents double-counting
+   *  when the same notification arrives through multiple channels (Socket.IO + WS). */
+  countedUnreadIds: Set<string>;
   seedIfEmpty: (rows: NotificationRecord[]) => void;
   loadItems: (rows: NotificationRecord[]) => void;
   ingestPush: (row: NotificationRecord) => void;
@@ -32,6 +35,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
   items: [],
   filter: "all",
   unreadCount: 0,
+  countedUnreadIds: new Set(),
 
   seedIfEmpty(rows) {
     if (get().items.length > 0) return;
@@ -46,9 +50,14 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     set((s) => {
       const exists = s.items.find((x) => x.id === row.id);
       const wasRead = exists?.read ?? true;
+      const alreadyCounted = s.countedUnreadIds.has(row.id);
+      const shouldCount = wasRead && !alreadyCounted;
+      const nextCounted = new Set(s.countedUnreadIds);
+      if (shouldCount) nextCounted.add(row.id);
       return {
         items: dedupeMerge(s.items, { ...row, read: false }),
-        unreadCount: wasRead ? s.unreadCount + 1 : s.unreadCount,
+        unreadCount: shouldCount ? s.unreadCount + 1 : s.unreadCount,
+        countedUnreadIds: nextCounted,
       };
     });
   },
@@ -57,11 +66,14 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     set((s) => {
       const item = s.items.find((x) => x.id === id);
       const wasUnread = item && !item.read;
+      const nextCounted = new Set(s.countedUnreadIds);
+      nextCounted.delete(id);
       return {
         items: s.items.map((x) => (x.id === id ? { ...x, read: true } : x)),
         unreadCount: wasUnread
           ? Math.max(0, s.unreadCount - 1)
           : s.unreadCount,
+        countedUnreadIds: nextCounted,
       };
     });
   },
@@ -70,6 +82,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     set((s) => ({
       items: s.items.map((x) => ({ ...x, read: true })),
       unreadCount: 0,
+      countedUnreadIds: new Set(),
     }));
   },
 

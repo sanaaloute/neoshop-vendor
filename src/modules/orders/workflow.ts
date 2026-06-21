@@ -5,7 +5,8 @@ export function nextWorkflowStatus(current: OrderStatus): OrderStatus | null {
   if (
     current === "delivered" ||
     current === "disputed" ||
-    current === "refunded"
+    current === "refunded" ||
+    current === "cancelled"
   ) {
     return null;
   }
@@ -17,14 +18,15 @@ export function nextWorkflowStatus(current: OrderStatus): OrderStatus | null {
 export function previousWorkflowStatus(
   current: OrderStatus
 ): OrderStatus | null {
-  if (current === "pending" || current === "refunded") return null;
+  if (current === "pending" || current === "refunded" || current === "cancelled")
+    return null;
   const i = ORDER_STATUS_FLOW.indexOf(current);
   if (i <= 0) return null;
   return ORDER_STATUS_FLOW[i - 1] ?? null;
 }
 
 export function isTerminalStatus(s: OrderStatus) {
-  return s === "delivered" || s === "disputed" || s === "refunded";
+  return s === "delivered" || s === "disputed" || s === "refunded" || s === "cancelled";
 }
 
 export function statusLabel(s: OrderStatus): string {
@@ -43,6 +45,8 @@ export function statusLabel(s: OrderStatus): string {
       return "status.disputed";
     case "refunded":
       return "status.refunded";
+    case "cancelled":
+      return "status.cancelled";
     default:
       return s;
   }

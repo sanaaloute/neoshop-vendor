@@ -60,14 +60,39 @@ export async function patchUserSettings(body: UpdateUserSettingsDto) {
   }
 }
 
-/** GET /users/me/viewed-products — list recently viewed products */
+/**
+ * GET /users/me/viewed-products — list recently viewed products
+ * @deprecated Not listed in the vendor API guide; may be removed in a future cleanup.
+ */
 export async function getViewedProducts() {
   const { data } = await vendorApiClient.get<ViewedProduct[]>("/api/v1/users/me/viewed-products");
   return data;
 }
 
-/** POST /users/me/viewed-products — record a product view */
+/**
+ * POST /users/me/viewed-products — record a product view
+ * @deprecated Not listed in the vendor API guide; may be removed in a future cleanup.
+ */
 export async function postViewedProduct(body: { productId: string }) {
   const { data } = await vendorApiClient.post<ViewedProduct>("/api/v1/users/me/viewed-products", body);
+  return data;
+}
+
+export type RequestDeletionDto = {
+  password: string;
+};
+
+/** POST /users/me/suspend — suspend the current user's account */
+export async function suspendUserMe() {
+  const { data } = await vendorApiClient.post<UserMeResponse>("/api/v1/users/me/suspend");
+  return data;
+}
+
+/** POST /users/me/request-deletion — request account deletion */
+export async function requestDeletionUserMe(body: RequestDeletionDto) {
+  const { data } = await vendorApiClient.post<{ success: boolean; message?: string }>(
+    "/api/v1/users/me/request-deletion",
+    body
+  );
   return data;
 }

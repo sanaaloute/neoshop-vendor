@@ -5,19 +5,12 @@ import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Plus_Jakarta_Sans } from "next/font/google";
 
 import { routing } from "@/i18n/routing";
 import { AppShellProvider } from "@/components/providers/app-shell-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { HealthBeaconProvider } from "@/providers/health-beacon-provider";
 import { cn } from "@/lib/utils";
-
-const fontSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  weight: ["400", "500", "600", "700", "800"],
-});
 
 export default async function LocaleLayout({
   children,
@@ -38,7 +31,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={cn("dark", fontSans.variable)}
+      className={cn("dark")}
     >
       <body
         className={cn(

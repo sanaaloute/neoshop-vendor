@@ -68,3 +68,15 @@ export const ORDER_STATUS_FLOW: OrderStatus[] = [
   "shipped",
   "delivered",
 ];
+
+/** Allowed vendor-initiated status transitions. The backend remains authoritative. */
+export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  pending: ["paid", "cancelled"],
+  paid: ["processing", "cancelled", "refunded"],
+  processing: ["shipped", "cancelled", "refunded"],
+  shipped: ["delivered", "cancelled", "refunded"],
+  delivered: ["refunded"],
+  disputed: ["refunded"],
+  refunded: [],
+  cancelled: [],
+};

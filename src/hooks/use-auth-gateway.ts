@@ -8,8 +8,10 @@ import {
   postAuthRefresh,
   getAuthMe,
   postAuthLogout,
+  postAuthReactivate,
 } from "@/services/vendor/auth-gateway-api";
 import type { AuthMeResponse, AuthRefreshRequest } from "@/services/vendor/types";
+import type { ReactivateRequest } from "@/types/auth";
 
 /** Direct gateway auth operations (bypasses the Next.js proxy when needed). */
 export function useAuthGateway() {
@@ -59,5 +61,20 @@ export function useAuthGateway() {
     }
   }, []);
 
-  return { me, loading, error, refresh, fetchMe, logout };
+  const reactivate = useCallback(async (body: ReactivateRequest) => {
+    if (!getApiBaseUrl()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await postAuthReactivate(body);
+      return data;
+    } catch (e) {
+      setError(httpErrorMessageForUser(e, "Reactivation failed."));
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { me, loading, error, refresh, fetchMe, logout, reactivate };
 }

@@ -21,6 +21,7 @@ export { useChatConversation } from "@/hooks/use-chat-conversation";
 export { useProductAttributes } from "@/hooks/use-product-attributes";
 export { useViewedProducts } from "@/hooks/use-viewed-products";
 export { useAuthGateway } from "@/hooks/use-auth-gateway";
+export { useUserLifecycle } from "@/hooks/use-user-lifecycle";
 export { useQaVendor } from "@/hooks/use-qa-vendor";
 export { useCategories } from "@/hooks/use-categories";
 export { useShops } from "@/hooks/use-shops";

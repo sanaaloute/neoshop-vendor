@@ -48,6 +48,8 @@ export function useShopGatewayBootstrap() {
         const list = Array.isArray(shops) ? shops : [];
         const row = list[0] as Record<string, unknown> | undefined;
         if (!row || cancelled) return;
+        // Read current store state immediately before patching so concurrent user
+        // edits are not overwritten by stale data from before the API call.
         const cur = useShopSettingsStore.getState().data;
         const shippingConfig = objectValue(row.shippingConfig);
         const paymentConfig = objectValue(row.paymentConfig);

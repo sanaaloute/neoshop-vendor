@@ -7,7 +7,8 @@ export type ShippingMethod = {
   description?: string | null;
   estimatedDaysMin?: number | null;
   estimatedDaysMax?: number | null;
-  baseCost: number;
+  // Decimal values are returned as strings per API guide global conventions.
+  baseCost: string;
   currency: string;
   enabled: boolean;
 };
@@ -27,7 +28,8 @@ export async function calculateShippingRates(body: {
     Array<{
       methodId: string;
       methodName: string;
-      cost: number;
+      // Decimal values are returned as strings per API guide global conventions.
+      cost: string;
       currency: string;
       estimatedDays: number;
     }>

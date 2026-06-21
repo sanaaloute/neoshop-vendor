@@ -36,7 +36,7 @@ export function useGatewayVariantsBootstrap(productId: string | null) {
           listVariants(productId),
         ]);
 
-        const product = (productRaw ?? {}) as Record<string, unknown>;
+        const product = { ...((productRaw ?? {}) as Record<string, unknown>) };
         const variantItems = Array.isArray(variantsRaw)
           ? variantsRaw
           : Array.isArray((variantsRaw as Record<string, unknown>)?.items)
@@ -44,6 +44,7 @@ export function useGatewayVariantsBootstrap(productId: string | null) {
             : [];
 
         // Override the product's variants with the dedicated endpoint result.
+        // Clone first to avoid mutating the object returned by getProduct.
         product.variants = variantItems;
 
         const mapped = mapApiProductDetailToVariantWorkbench(product);

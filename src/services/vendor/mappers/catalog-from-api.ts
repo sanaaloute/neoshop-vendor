@@ -36,17 +36,19 @@ export function mapApiProductRowToProduct(
     ? (row.variants as Record<string, unknown>[])
     : [];
   const first = variants[0];
-  const price = money(
-    row.price ?? row.wholesalePrice ?? (first ? first.wholesalePrice : undefined)
-  );
+  // Price is only documented inside variants[].wholesalePrice. Do not fall back
+  // to undocumented product-level price fields.
+  const price = money(first ? first.wholesalePrice : undefined);
   const skuRaw = row.sku ?? (first ? first.sku : undefined);
   const sku = typeof skuRaw === "string" && skuRaw.trim() ? skuRaw : undefined;
 
   const categories = Array.isArray(row.categories) ? row.categories : [];
+  // API guide defines categories as [{ category: { id, name, slug } }].
   const categoryIds = categories
     .map((c) => {
       const cat = c as Record<string, unknown>;
-      return String(cat.categoryId ?? (cat.category as Record<string, unknown>)?.id ?? "");
+      const category = cat.category as Record<string, unknown> | undefined;
+      return String(category?.id ?? "");
     })
     .filter(Boolean);
 

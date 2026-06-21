@@ -192,32 +192,42 @@ export function VariantsHome() {
     productId: string,
     attributes: VariantAttributeDefinition[]
   ): Promise<{ oldId: string; attr: VariantAttributeDefinition }[]> {
-    const result: { oldId: string; attr: VariantAttributeDefinition }[] = [];
-    for (const attr of attributes) {
+    const syncOne = async (attr: VariantAttributeDefinition) => {
       const valueIdMap: Record<string, string> = { ...(attr.valueIdMap ?? {}) };
-      const allValuesHaveIds = attr.values.every((v) => valueIdMap[v]);
-      if (allValuesHaveIds) {
-        result.push({ oldId: attr.id, attr });
-        continue;
-      }
-
       let backendAttrId = attr.id;
+
       if (!attr.code) {
         try {
           const created = await createAttribute(productId, {
-            code: slugify(attr.name) || `attr-${crypto.randomUUID().slice(0, 8)}`,
+            code:
+              slugify(attr.name) || `attr-${crypto.randomUUID().slice(0, 8)}`,
             label: attr.name,
           });
-          const createdItem = Array.isArray(created) ? (created as unknown[])[0] : created;
-          const extractedId = (createdItem as Record<string, unknown> | undefined)?.id;
+          const createdItem = Array.isArray(created)
+            ? (created as unknown[])[0]
+            : created;
+          const extractedId = (
+            createdItem as Record<string, unknown> | undefined
+          )?.id;
           if (extractedId) {
             backendAttrId = String(extractedId);
           }
         } catch (e) {
-          const ax = e as { response?: { data?: { message?: string | string[] } } };
+          const ax = e as {
+            response?: { data?: { message?: string | string[] } };
+          };
           const m = ax.response?.data?.message;
-          const backendMsg = (typeof m === "string" ? m : Array.isArray(m) ? m.join(", ") : "").toLowerCase();
-          const errMsg = (backendMsg || (e instanceof Error ? e.message : String(e))).toLowerCase();
+          const backendMsg = (
+            typeof m === "string"
+              ? m
+              : Array.isArray(m)
+                ? m.join(", ")
+                : ""
+          ).toLowerCase();
+          const errMsg = (
+            backendMsg ||
+            (e instanceof Error ? e.message : String(e))
+          ).toLowerCase();
           if (
             errMsg.includes("variants have been created") ||
             errMsg.includes("cannot define")
@@ -235,45 +245,74 @@ export function VariantsHome() {
         }
       }
 
-      // Only attempt to create values when we are sure backendAttrId is a
-      // real backend identifier (not a local attr_… id).
+      // Batch-create all missing values for this attribute in a single call.
       if (isUuidV4(backendAttrId)) {
-        for (const value of attr.values) {
-          if (valueIdMap[value]) continue;
+        const missingValues = attr.values.filter((v) => !valueIdMap[v]);
+        if (missingValues.length > 0) {
           try {
-            const created = await createAttributeValues(productId, backendAttrId, { values: [{ value }] });
+            const created = await createAttributeValues(productId, backendAttrId, {
+              values: missingValues.map((value) => ({ value })),
+            });
             const createdItems = Array.isArray(created) ? created : [created];
-            const firstItem = createdItems[0] as Record<string, unknown> | undefined;
-            if (firstItem?.id) {
-              valueIdMap[value] = String(firstItem.id);
+            for (const item of createdItems as Array<Record<string, unknown>>) {
+              const id = item?.id;
+              const value =
+                typeof item?.value === "string" ? item.value : undefined;
+              if (id) {
+                if (value && missingValues.includes(value)) {
+                  valueIdMap[value] = String(id);
+                } else {
+                  // Fallback: assign to the first missing value still without an id.
+                  const next = missingValues.find((v) => !valueIdMap[v]);
+                  if (next) valueIdMap[next] = String(id);
+                }
+              }
             }
           } catch (e) {
-            const ax = e as { response?: { data?: { message?: string | string[] } } };
+            const ax = e as {
+              response?: { data?: { message?: string | string[] } };
+            };
             const m = ax.response?.data?.message;
-            const backendMsg = (typeof m === "string" ? m : Array.isArray(m) ? m.join(", ") : "").toLowerCase();
-            const errMsg = (backendMsg || (e instanceof Error ? e.message : String(e))).toLowerCase();
+            const backendMsg = (
+              typeof m === "string"
+                ? m
+                : Array.isArray(m)
+                  ? m.join(", ")
+                  : ""
+            ).toLowerCase();
+            const errMsg = (
+              backendMsg ||
+              (e instanceof Error ? e.message : String(e))
+            ).toLowerCase();
             if (
-              errMsg.includes("variants have been created") ||
-              errMsg.includes("cannot define")
+              !errMsg.includes("variants have been created") &&
+              !errMsg.includes("cannot define")
             ) {
-              // Value likely already exists or backend locked; skip it.
-              continue;
-            } else {
               throw e;
             }
+            // Otherwise backend is locked or values already exist; leave ids blank.
           }
         }
       }
 
-      result.push({
+      return {
         oldId: attr.id,
-        attr: { ...attr, id: backendAttrId, code: attr.code || slugify(attr.name), valueIdMap },
-      });
-    }
-    return result;
+        attr: {
+          ...attr,
+          id: backendAttrId,
+          code: attr.code || slugify(attr.name),
+          valueIdMap,
+        },
+      };
+    };
+
+    return Promise.all(attributes.map(syncOne));
   }
 
-  const saveRows = async (rows: VariantRow[]) => {
+  const saveRows = async (
+    rows: VariantRow[],
+    options: { deleteOrphans?: boolean } = {}
+  ) => {
     if (!getApiBaseUrl()) {
       setSaveMessage(t("marketplaceUnavailable"));
       return;
@@ -322,19 +361,26 @@ export function VariantsHome() {
       }
 
       // 3. Discover which backend variants are being replaced.
-      const existingRaw = await fetchVariants(selectedProductId);
-      const existingVariants = Array.isArray(existingRaw)
-        ? existingRaw
-        : Array.isArray((existingRaw as Record<string, unknown>)?.items)
-          ? ((existingRaw as Record<string, unknown>).items as unknown[])
-          : [];
-      const existingIds = new Set(
-        existingVariants
-          .map((v) => (v as Record<string, unknown>).id)
-          .filter((id): id is string => typeof id === "string")
-      );
-      const keptIds = new Set(validRows.filter((r) => !r.isLocalOnly).map((r) => r.id));
-      const idsToDelete = [...existingIds].filter((id) => !keptIds.has(id));
+      // Only delete orphan backend variants when explicitly requested (Save All).
+      // Save Selected must not touch unselected backend rows.
+      let idsToDelete: string[] = [];
+      if (options.deleteOrphans !== false) {
+        const existingRaw = await fetchVariants(selectedProductId);
+        const existingVariants = Array.isArray(existingRaw)
+          ? existingRaw
+          : Array.isArray((existingRaw as Record<string, unknown>)?.items)
+            ? ((existingRaw as Record<string, unknown>).items as unknown[])
+            : [];
+        const existingIds = new Set(
+          existingVariants
+            .map((v) => (v as Record<string, unknown>).id)
+            .filter((id): id is string => typeof id === "string")
+        );
+        const keptIds = new Set(
+          validRows.filter((r) => !r.isLocalOnly).map((r) => r.id)
+        );
+        idsToDelete = [...existingIds].filter((id) => !keptIds.has(id));
+      }
 
       // 4. Create / update variants in bulk.
       const toCreate = validRows.filter((r) => r.isLocalOnly);
@@ -527,7 +573,7 @@ export function VariantsHome() {
               !selectedRows.length ||
               !selectedProductId
             }
-            onClick={() => void saveRows(selectedRows)}
+            onClick={() => void saveRows(selectedRows, { deleteOrphans: false })}
           >
             {saveBusy ? (
               <Loader2 className="size-4 animate-spin" aria-hidden />

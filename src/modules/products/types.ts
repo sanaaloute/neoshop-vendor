@@ -47,6 +47,8 @@ export type Product = {
   reviewsCount?: number;
   createdAt: string;
   updatedAt: string;
+  /** True for products created locally that have not yet been synced to the gateway. */
+  isLocalOnly?: boolean;
 };
 
 export type ProductFormValues = {

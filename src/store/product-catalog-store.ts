@@ -20,6 +20,7 @@ type CatalogState = {
   updateProduct: (id: string, values: ProductFormValues) => void;
   archiveProduct: (id: string) => void;
   deleteProduct: (id: string) => void;
+  markProductSynced: (id: string) => void;
   duplicateProduct: (id: string) => string | null;
   bulkPatch: (
     ids: string[],
@@ -42,16 +43,20 @@ export const useProductCatalogStore = create<CatalogState>()(
           const merged = products.map((p) => {
             const ex = byId.get(p.id);
             if (!ex) return p;
-            return {
-              ...ex,
-              ...p,
-              price:
-                p.price === 0 && ex.price !== 0 ? ex.price : p.price,
-            };
+            // Trust the API price; do not fall back to stale local values.
+            return { ...ex, ...p };
           });
-          // Preserve store-only products that haven't appeared in the API yet.
+          // Preserve store-only products that haven't appeared in the API yet,
+          // but only if they were touched recently. This prevents phantom local
+          // products from surviving forever in the persisted store.
           const apiIds = new Set(products.map((p) => p.id));
-          const preserved = s.products.filter((p) => !apiIds.has(p.id));
+          const oneHourAgo = Date.now() - 60 * 60 * 1000;
+          const preserved = s.products.filter((p) => {
+            if (apiIds.has(p.id)) return false;
+            if (!p.isLocalOnly) return true;
+            const updated = new Date(p.updatedAt).getTime();
+            return !Number.isNaN(updated) && updated > oneHourAgo;
+          });
           return { products: [...preserved, ...merged] };
         }),
 
@@ -72,7 +77,15 @@ export const useProductCatalogStore = create<CatalogState>()(
         const body = formValuesToProductPatch(values);
         set((s) => ({
           products: [
-            { id, ...body, price: 0, tags: [], createdAt: ts, updatedAt: ts },
+            {
+              id,
+              ...body,
+              price: 0,
+              tags: [],
+              createdAt: ts,
+              updatedAt: ts,
+              isLocalOnly: true,
+            },
             ...s.products,
           ],
         }));
@@ -85,6 +98,14 @@ export const useProductCatalogStore = create<CatalogState>()(
         set((s) => ({
           products: s.products.map((p) =>
             p.id === id ? { ...p, ...body, updatedAt: ts } : p
+          ),
+        }));
+      },
+
+      markProductSynced: (id) => {
+        set((s) => ({
+          products: s.products.map((p) =>
+            p.id === id ? { ...p, isLocalOnly: false } : p
           ),
         }));
       },
@@ -130,6 +151,7 @@ export const useProductCatalogStore = create<CatalogState>()(
           })),
           createdAt: ts,
           updatedAt: ts,
+          isLocalOnly: true,
         };
         set((s) => ({ products: [copy, ...s.products] }));
         return nid;

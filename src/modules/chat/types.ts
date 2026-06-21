@@ -22,6 +22,8 @@ export type ChatAttachment = {
 
 export type ChatParticipant = {
   id: string;
+  userId: string;
+  joinedAt: string;
   name: string;
   surname?: string;
   email?: string;
@@ -33,15 +35,20 @@ export type ChatParticipant = {
 
 export type ChatMessage = {
   id: string;
+  /** Internal thread identifier (alias for conversationId). */
   threadId: string;
-  conversationId?: string;
-  messageType?: ChatMessageType;
+  /** API-aligned conversation identifier. */
+  conversationId: string;
+  messageType: ChatMessageType;
   /** authorRole is "vendor" when the sender is the current vendor; otherwise it keeps the peer's role */
   authorRole: ChatAuthorRole;
   /** The participant-specific sender ID (matches participants[].userId) */
-  senderUserId?: string;
+  senderUserId: string;
   body: string | null;
+  /** Internal alias for createdAt. */
   sentAt: string;
+  /** API-aligned ISO creation time (same value as sentAt). */
+  createdAt: string;
   attachments?: ChatAttachment[];
   /** Delivery hint for optimistic rows */
   pending?: boolean;
@@ -53,6 +60,10 @@ export type ChatMessage = {
 
 export type ChatThread = {
   id: string;
+  createdAt: string;
+  updatedAt: string;
+  /** API-aligned participants array. */
+  participants: ChatParticipant[];
   customerName: string;
   customerEmail: string;
   customerPhone?: string;

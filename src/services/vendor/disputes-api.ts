@@ -9,7 +9,7 @@ import type {
 } from "./types";
 
 /** GET /vendors/me/disputes — list disputes for orders placed with this vendor */
-export async function listVendorDisputes(params?: { page?: number; limit?: number }) {
+export async function listVendorDisputes(params?: { skip?: number; take?: number }) {
   const { data } = await vendorApiClient.get<Paginated<DisputeSummary>>(
     "/api/v1/vendors/me/disputes",
     { params }

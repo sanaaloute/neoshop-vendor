@@ -558,6 +558,7 @@
     "orderUpdatesLocked": "Les mises à jour de commande seront débloquées après l'approbation de votre compte vendeur par Barkosem.",
     "couldNotLoadOrder": "Impossible de charger cette commande. Réessayez.",
     "couldNotUpdateStatus": "Impossible de mettre à jour le statut de la commande. Réessayez.",
+    "invalidStatusTransition": "Ce changement de statut n'est pas autorisé depuis l'état actuel de la commande.",
     "markedRefundedFromDrawer": "Marqué remboursé depuis le panneau",
     "bulkRefundFromList": "Remboursement groupé depuis la liste des commandes",
     "overview": "Aperçu",

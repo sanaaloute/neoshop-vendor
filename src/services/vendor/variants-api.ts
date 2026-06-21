@@ -5,18 +5,25 @@ import type {
   BulkDeleteVariantsDto,
   BulkUpdateVariantsDto,
   CreateVariantDto,
+  PaginatedProductVariants,
+  ProductVariant,
   UpdateVariantDto,
 } from "./types";
 
 /** GET /products/:productId/variants */
 export async function listVariants(productId: string) {
-  const { data } = await vendorApiClient.get(`/api/v1/products/${productId}/variants`);
+  const { data } = await vendorApiClient.get<PaginatedProductVariants>(
+    `/api/v1/products/${productId}/variants`
+  );
   return data;
 }
 
 /** POST /products/:productId/variants */
 export async function createVariant(productId: string, body: CreateVariantDto) {
-  const { data } = await vendorApiClient.post(`/api/v1/products/${productId}/variants`, body);
+  const { data } = await vendorApiClient.post<ProductVariant>(
+    `/api/v1/products/${productId}/variants`,
+    body
+  );
   return data;
 }
 
@@ -26,7 +33,10 @@ export async function updateVariant(
   variantId: string,
   body: UpdateVariantDto
 ) {
-  const { data } = await vendorApiClient.patch(`/api/v1/products/${productId}/variants/${variantId}`, body);
+  const { data } = await vendorApiClient.patch<ProductVariant>(
+    `/api/v1/products/${productId}/variants/${variantId}`,
+    body
+  );
   return data;
 }
 
@@ -40,7 +50,7 @@ export async function createVariantsBulk(
   productId: string,
   body: BulkCreateVariantsDto
 ) {
-  const { data } = await vendorApiClient.post(
+  const { data } = await vendorApiClient.post<ProductVariant[]>(
     `/api/v1/products/${productId}/variants/bulk`,
     body
   );
@@ -52,7 +62,7 @@ export async function updateVariantsBulk(
   productId: string,
   body: BulkUpdateVariantsDto
 ) {
-  const { data } = await vendorApiClient.patch(
+  const { data } = await vendorApiClient.patch<ProductVariant[]>(
     `/api/v1/products/${productId}/variants/bulk`,
     body
   );
@@ -64,7 +74,7 @@ export async function deleteVariantsBulk(
   productId: string,
   body: BulkDeleteVariantsDto
 ) {
-  const { data } = await vendorApiClient.post(
+  const { data } = await vendorApiClient.post<{ deletedCount: number }>(
     `/api/v1/products/${productId}/variants/bulk-delete`,
     body
   );

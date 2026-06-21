@@ -60,7 +60,8 @@ export const useInventoryStore = create<InventoryState>()(
         set((s) => {
           const lines = s.lines.map((l) => {
             if (l.id !== lineId) return l;
-            const onHand = Math.max(0, l.onHand + delta);
+            // Allow negative stock so overselling is visible instead of hidden.
+            const onHand = l.onHand + delta;
             return { ...l, onHand };
           });
           const line = lines.find((l) => l.id === lineId);

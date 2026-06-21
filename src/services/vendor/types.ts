@@ -293,6 +293,40 @@ export type BulkDeleteVariantsDto = {
   variantIds: string[];
 };
 
+export type ProductVariantSelection = {
+  attributeValueId: string;
+  attributeValue?: { value: string } | null;
+};
+
+export type ProductVariantInventory = {
+  quantity: number;
+  reservedQuantity: number;
+};
+
+export type ProductVariant = {
+  id: string;
+  productId: string;
+  sku: string;
+  // Decimal values are returned as strings per API guide global conventions.
+  wholesalePrice: string;
+  currency: Currency;
+  isActive: boolean;
+  imageUrl?: string | null;
+  weightKg: string;
+  volumeCbm: string;
+  selections: ProductVariantSelection[];
+  inventory: ProductVariantInventory;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PaginatedProductVariants = {
+  items: ProductVariant[];
+  total: number;
+  skip: number;
+  take: number;
+};
+
 // --- Orders ---
 
 export type OrderStatsResponse = {
@@ -379,6 +413,8 @@ export type OrderDetailResponse = {
   updatedAt: string;
   items: OrderDetailItem[];
   statusHistory: OrderStatusHistoryItem[];
+  // Structured shapes are not documented in the vendor API guide; keep opaque
+  // until the backend contract is known.
   invoices: unknown[];
   payments: unknown[];
   refunds: unknown[];
@@ -423,35 +459,35 @@ export type VendorCustomerFromApi = {
 export type AnalyticsDashboardResponse = {
   totalRevenue: string;
   totalOrders: number;
-  totalCustomers?: number;
+  totalCustomers: number;
   averageOrderValue: string;
-  pendingOrders?: number;
-  processingOrders?: number;
-  shippedOrders?: number;
-  deliveredOrders?: number;
-  disputedOrders?: number;
+  pendingOrders: number;
+  processingOrders: number;
+  shippedOrders: number;
+  deliveredOrders: number;
+  disputedOrders: number;
   topProducts: Array<{
-    variantId?: string;
-    productTitle?: string;
-    quantitySold?: number;
+    variantId: string;
+    productTitle: string;
+    quantitySold: number;
     revenue: string;
   }>;
   period: string;
-  geographic?: Array<{
+  geographic: Array<{
     countryCode: string;
     name: string;
     revenue: string;
     orderCount: number;
   }>;
-  retentionSeries?: Array<{
+  retentionSeries: Array<{
     period: string;
     label: string;
     returningCustomers: number;
     totalCustomers: number;
     rate: number;
   }>;
-  conversionRate?: number;
-  conversionTrend?: Array<{
+  conversionRate: number;
+  conversionTrend: Array<{
     label: string;
     value: number;
   }>;
@@ -472,11 +508,11 @@ export type AnalyticsProductsItem = {
   title: string;
   slug: string;
   status: ApiProductStatus;
-  imageUrl?: string | null;
-  variantCount?: number;
-  averageRating?: string;
-  reviewsCount?: number;
-  totalSold?: number;
+  imageUrl: string | null;
+  variantCount: number;
+  averageRating: string;
+  reviewsCount: number;
+  totalSold: number;
   totalRevenue: string;
 };
 
@@ -492,7 +528,7 @@ export type AnalyticsInventoryItem = {
 };
 
 export type AnalyticsInventoryResponse = {
-  items?: AnalyticsInventoryItem[];
+  items: AnalyticsInventoryItem[];
 };
 
 // --- Reviews ---
@@ -506,7 +542,10 @@ export type ReviewResponse = {
   customerName: string;
   rating: number;
   title?: string | null;
+  // The review response endpoint returns the vendor reply as `comment` per the
+  // API guide; `body` is kept as an alias for backwards compatibility.
   body: string;
+  comment?: string;
   mediaUrls?: string[];
   helpfulCount?: number;
   isVerifiedPurchase?: boolean;
@@ -693,7 +732,8 @@ export type PromotionActiveItem = {
 export type ReferralMeResponse = {
   code: string;
   referralsCount: number;
-  earnedAmount: number;
+  // Decimal values are returned as strings per API guide global conventions.
+  earnedAmount: string;
   currency: string;
 };
 
@@ -789,7 +829,8 @@ export type CatalogProductSummary = {
   id: string;
   slug: string;
   title: string;
-  wholesalePrice: number;
+  // Decimal values are returned as strings per API guide global conventions.
+  wholesalePrice: string;
   moq: number;
   primaryImageUrl?: string | null;
   categoryNames?: string[];
@@ -800,7 +841,8 @@ export type CatalogProductDetail = CatalogProductSummary & {
   variants: Array<{
     id: string;
     sku: string;
-    wholesalePrice: number;
+    // Decimal values are returned as strings per API guide global conventions.
+    wholesalePrice: string;
     moq: number;
     isActive: boolean;
   }>;

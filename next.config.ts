@@ -3,19 +3,6 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
-function getEnvOrigin(key: string): string | null {
-  try {
-    const url = process.env[key];
-    if (!url) return null;
-    return new URL(url).origin;
-  } catch {
-    return null;
-  }
-}
-
-const apiOrigin = getEnvOrigin("NEXT_PUBLIC_API_BASE_URL");
-const supabaseOrigin = getEnvOrigin("NEXT_PUBLIC_SUPABASE_URL");
-
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   /** Required for the production Docker image (multi-stage `standalone` output). */
@@ -61,20 +48,9 @@ const nextConfig: NextConfig = {
             value:
               "camera=(), microphone=(), geolocation=(), interest-cohort=()",
           },
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Next.js requires unsafe-inline for styled-jsx
-              "style-src 'self' 'unsafe-inline'",
-              `img-src 'self' blob: data:${apiOrigin ? ` ${apiOrigin}` : ""}${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
-              "font-src 'self'",
-              `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ""} ws: wss:`,
-              "frame-ancestors 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-            ].join("; "),
-          },
+          // Content-Security-Policy is generated per-request in middleware with a
+          // cryptographic nonce so we can avoid 'unsafe-inline'/'unsafe-eval' for
+          // scripts while keeping connect-src restricted to known origins.
         ],
       },
     ];

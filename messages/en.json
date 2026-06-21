@@ -448,6 +448,7 @@
     "orderUpdatesLocked": "Order updates unlock after Barkosem approves your vendor account.",
     "couldNotLoadOrder": "Could not load this order. Try again.",
     "couldNotUpdateStatus": "Could not update order status. Try again.",
+    "invalidStatusTransition": "That status change is not allowed from the current order state.",
     "markedRefundedFromDrawer": "Marked refunded from drawer",
     "bulkRefundFromList": "Bulk refund from vendor orders list",
     "overview": "Overview",

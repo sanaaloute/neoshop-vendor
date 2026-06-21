@@ -23,10 +23,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-
-const UI_LIMITS = {
-  ONBOARDING_FILE_MAX_BYTES: 10 * 1024 * 1024, // 10MB
-};
+import {
+  UPLOAD_BUCKETS,
+  validateFileAgainstConfig,
+} from "@/lib/upload-config";
 
 function fileIconFromMime(mime: string) {
   if (mime.startsWith("image/")) return ImageIcon;
@@ -66,10 +66,12 @@ export function DocumentsStepForm() {
       if (!files || files.length === 0) return;
       setGlobalError(null);
 
+      const config = UPLOAD_BUCKETS["vendor-documents"];
       const validFiles: File[] = [];
       for (const file of Array.from(files)) {
-        if (file.size > UI_LIMITS.ONBOARDING_FILE_MAX_BYTES) {
-          setGlobalError(t("steps.documents.exceedsLimit", { fileName: file.name }));
+        const err = validateFileAgainstConfig(file, config);
+        if (err) {
+          setGlobalError(`${file.name}: ${err}`);
           continue;
         }
         validFiles.push(file);

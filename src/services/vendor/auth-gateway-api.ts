@@ -9,6 +9,8 @@ import type {
   PhoneRegisterInitiateRequest,
   PhoneRegisterInitiateResponse,
   PhoneRegisterVerifyRequest,
+  ReactivateRequest,
+  ReactivateResponse,
   RegisterResponse,
   ResendVerificationRequest,
   ResendVerificationResponse,
@@ -151,6 +153,15 @@ export async function postAuthLoginPhoneVerify(body: PhoneLoginVerifyRequest) {
 export async function postAuthChangeEmail(body: ChangeEmailRequest) {
   const { data } = await vendorApiClient.post<ChangeEmailResponse>(
     "/api/v1/auth/change-email",
+    body
+  );
+  return data;
+}
+
+/** POST /auth/reactivate — reactivate a suspended/deactivated account */
+export async function postAuthReactivate(body: ReactivateRequest) {
+  const { data } = await vendorApiClient.post<ReactivateResponse>(
+    "/api/v1/auth/reactivate",
     body
   );
   return data;

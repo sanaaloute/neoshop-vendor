@@ -558,6 +558,7 @@
     "orderUpdatesLocked": "订单更新将在 Barkosem 审核通过您的商家账户后解锁。",
     "couldNotLoadOrder": "无法加载此订单。请重试。",
     "couldNotUpdateStatus": "无法更新订单状态。请重试。",
+    "invalidStatusTransition": "当前订单状态不允许该状态变更。",
     "markedRefundedFromDrawer": "从抽屉标记为已退款",
     "bulkRefundFromList": "从商家订单列表批量退款",
     "overview": "概览",

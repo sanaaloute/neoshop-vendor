@@ -344,7 +344,16 @@ export const useAuthStore = create<AuthState>()(
     },
     {
       name: "neoshop-vendor-auth",
-      partialize: (state) => ({ user: state.user, sessionId: state.sessionId }),
+      // Do NOT persist the user object: it contains PII and permission/role
+      // data that could be read or tampered with by XSS or browser extensions.
+      // Re-fetch the user from /api/auth/me on each bootstrap instead.
+      // The access token is persisted to avoid a rehydration gap where the
+      // Axios interceptor has no token before bootstrap finishes; the token is
+      // also available in the httpOnly cookie as the source of truth.
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        sessionId: state.sessionId,
+      }),
     }
   )
 );

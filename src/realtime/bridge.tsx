@@ -14,6 +14,13 @@ import { useAuthStore } from "@/store/auth-store";
 import { useVendorProfileStore } from "@/store/vendor-profile-store";
 
 import { REALTIME_EVENTS } from "./registry";
+import {
+  chatMessageSchema,
+  inventoryUpdatedSchema,
+  notificationCreatedSchema,
+  orderUpdatedSchema,
+  vendorUpdatedSchema,
+} from "./schemas";
 import type {
   InventoryUpdatedPayload,
   NotificationCreatedPayload,
@@ -34,14 +41,20 @@ export function RealtimeStoreBridge() {
   useEffect(() => {
     if (!socket) return;
 
-    const onNotification = (payload: NotificationCreatedPayload) => {
+    const onNotification = (raw: unknown) => {
+      const parsed = notificationCreatedSchema.safeParse(raw);
+      if (!parsed.success) return;
+      const payload = parsed.data as NotificationCreatedPayload;
       useNotificationsStore.getState().ingestPush({
         ...payload,
         read: payload.read ?? false,
       });
     };
 
-    const onOrder = async (payload: OrderUpdatedPayload) => {
+    const onOrder = async (raw: unknown) => {
+      const parsed = orderUpdatedSchema.safeParse(raw);
+      if (!parsed.success) return;
+      const payload = parsed.data as OrderUpdatedPayload;
       const { orderId } = payload;
       if (!orderId || !getApiBaseUrl()) return;
       try {
@@ -56,7 +69,10 @@ export function RealtimeStoreBridge() {
       }
     };
 
-    const onInventory = (payload: InventoryUpdatedPayload) => {
+    const onInventory = (raw: unknown) => {
+      const parsed = inventoryUpdatedSchema.safeParse(raw);
+      if (!parsed.success) return;
+      const payload = parsed.data as InventoryUpdatedPayload;
       useInventoryStore
         .getState()
         .adjustStock(
@@ -67,7 +83,10 @@ export function RealtimeStoreBridge() {
         );
     };
 
-    const onChatMessage = (payload: ChatMessagePayload) => {
+    const onChatMessage = (raw: unknown) => {
+      const parsed = chatMessageSchema.safeParse(raw);
+      if (!parsed.success) return;
+      const payload = parsed.data as ChatMessagePayload;
       const state = useChatStore.getState();
       const selectedId = state.selectedThreadId;
       const isOpen = selectedId === payload.conversationId;
@@ -94,15 +113,22 @@ export function RealtimeStoreBridge() {
           expiresIn: a.expiresIn,
         }));
 
+      const createdAt =
+        payload.createdAt && !isNaN(Date.parse(payload.createdAt))
+          ? payload.createdAt
+          : new Date().toISOString();
+      const messageType = payload.messageType ?? "text";
+
       state.mergeIncomingMessage({
         id: payload.id,
         threadId: payload.conversationId,
         conversationId: payload.conversationId,
-        messageType: payload.messageType,
+        messageType,
         authorRole: isFromVendor ? "vendor" : "customer",
         senderUserId: payload.senderUserId,
         body: payload.body ?? null,
-        sentAt: payload.createdAt,
+        sentAt: createdAt,
+        createdAt,
         attachments,
         translatedBody: payload.translatedBody,
         originalLanguage: payload.originalLanguage,
@@ -115,7 +141,10 @@ export function RealtimeStoreBridge() {
       }
     };
 
-    const onVendorUpdated = async (payload: VendorUpdatedPayload) => {
+    const onVendorUpdated = async (raw: unknown) => {
+      const parsed = vendorUpdatedSchema.safeParse(raw);
+      if (!parsed.success) return;
+      const payload = parsed.data as VendorUpdatedPayload;
       const profile = useVendorProfileStore.getState().profile;
       if (!profile || payload.vendorId !== profile.id) return;
       if (!getApiBaseUrl()) return;

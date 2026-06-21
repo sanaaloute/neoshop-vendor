@@ -2,11 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { AUTH_COOKIES } from "@/config/auth";
-import {
-  claimsToVendorUser,
-  decodeAccessToken,
-  isVendorTokenClaims,
-} from "@/lib/jwt-claims";
+import { claimsToVendorUser, isVendorTokenClaims } from "@/lib/jwt-claims";
 import { verifyAccessToken } from "@/lib/jwks";
 
 export async function GET() {
@@ -19,22 +15,15 @@ export async function GET() {
   let claims: Parameters<typeof isVendorTokenClaims>[0];
 
   try {
-    // Primary: full JWT verification with gateway JWKS.
+    // Full JWT verification with gateway JWKS. Fail closed on any error.
     const payload = await verifyAccessToken(access);
     claims = payload as unknown as Parameters<typeof isVendorTokenClaims>[0];
-  } catch {
-    // Fallback: if JWKS is unreachable or verification fails,
-    // decode the token without signature verification.
-    // The token is in an httpOnly cookie and was already verified
-    // when issued. We still check expiry and role claims.
-    try {
-      claims = decodeAccessToken(access);
-      if (typeof claims.exp === "number" && claims.exp * 1000 < Date.now()) {
-        return NextResponse.json({ error: "token_expired" }, { status: 401 });
-      }
-    } catch {
-      return NextResponse.json({ error: "invalid_token" }, { status: 401 });
-    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "verification_failed";
+    return NextResponse.json(
+      { error: "invalid_token", message },
+      { status: 401 }
+    );
   }
 
   if (!isVendorTokenClaims(claims)) {

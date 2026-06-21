@@ -1,7 +1,10 @@
 /**
- * Minimal vendor chat WebSocket relay for local development.
+ * Minimal vendor chat WebSocket relay for local development ONLY.
  * Usage: npm run chat:ws
  * Point NEXT_PUBLIC_VENDOR_CHAT_WS_URL=ws://localhost:3456 in .env.local
+ *
+ * ⚠️ This relay has no signature verification and is intended purely for local
+ * development. Never expose it to a network or production environment.
  *
  * Protocol (JSON):
  * - Client → server: { type: "join", threadId }
@@ -45,9 +48,65 @@ function broadcastAll(threadId, obj) {
   }
 }
 
+/**
+ * Decode a JWT payload without verifying the signature.
+ * This is intentionally weak (dev-only) and only checks shape/expiry/role.
+ */
+function decodeJwtPayload(token) {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function isLocalAddress(addr) {
+  return (
+    addr === "127.0.0.1" ||
+    addr === "::1" ||
+    addr === "::ffff:127.0.0.1"
+  );
+}
+
 const wss = new WebSocketServer({ port: PORT });
 
-wss.on("connection", (ws) => {
+wss.on("connection", (ws, req) => {
+  // Localhost-only development guard.
+  const remoteAddress = req.socket.remoteAddress ?? "";
+  if (!isLocalAddress(remoteAddress)) {
+    console.warn(`Rejected non-local chat WS connection from ${remoteAddress}`);
+    ws.close(1008, "localhost_only");
+    return;
+  }
+
+  // Best-effort token presence check. We cannot verify the signature here
+  // without the Supabase JWT secret, but we can reject missing/badly-shaped
+  // tokens and enforce a vendor role claim.
+  const url = new URL(req.url ?? "/", "http://localhost");
+  const token = url.searchParams.get("token");
+  const payload = token ? decodeJwtPayload(token) : null;
+  if (!payload) {
+    console.warn("Rejected chat WS connection without a decodable token");
+    ws.close(1008, "auth_required");
+    return;
+  }
+  const exp = typeof payload.exp === "number" ? payload.exp * 1000 : 0;
+  if (exp && Date.now() >= exp) {
+    console.warn("Rejected chat WS connection with expired token");
+    ws.close(1008, "token_expired");
+    return;
+  }
+  const role = payload.role ?? "";
+  const userRole = payload.user_role ?? "";
+  if (role !== "vendor" && userRole !== "vendor") {
+    console.warn("Rejected chat WS connection: role is not vendor");
+    ws.close(1008, "role_forbidden");
+    return;
+  }
+
   let threadId = null;
 
   ws.on("message", (raw) => {
@@ -117,3 +176,5 @@ wss.on("connection", (ws) => {
 });
 
 console.log(`Vendor chat WebSocket listening on ws://localhost:${PORT}`);
+console.log("WARNING: This is a local-development relay with no signature verification.");
+console.log("Never expose this server to a network or use it in production.");

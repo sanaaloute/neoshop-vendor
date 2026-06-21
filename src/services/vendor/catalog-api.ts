@@ -9,6 +9,7 @@ export async function listCatalogProducts(params?: {
   categoryId?: string;
   shopSlug?: string;
   search?: string;
+  currency?: "XOF" | "CNY";
 }) {
   const { data } = await vendorApiClient.get<Paginated<CatalogProductSummary>>(
     "/api/v1/catalog/products",
