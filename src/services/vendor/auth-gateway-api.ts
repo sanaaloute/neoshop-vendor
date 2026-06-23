@@ -3,12 +3,8 @@ import type {
   ChangeEmailRequest,
   ChangeEmailResponse,
   LoginResponse,
-  PhoneLoginInitiateRequest,
-  PhoneLoginInitiateResponse,
-  PhoneLoginVerifyRequest,
-  PhoneRegisterInitiateRequest,
-  PhoneRegisterInitiateResponse,
-  PhoneRegisterVerifyRequest,
+  PhoneLoginRequest,
+  PhoneRegisterRequest,
   ReactivateRequest,
   ReactivateResponse,
   RegisterResponse,
@@ -16,11 +12,19 @@ import type {
   ResendVerificationResponse,
 } from "@/types/auth";
 
-import type { AuthMeResponse, AuthRefreshRequest, AuthRefreshResponse, AuthSessionResponse } from "./types";
+import type {
+  AuthMeResponse,
+  AuthRefreshRequest,
+  AuthRefreshResponse,
+  AuthSessionResponse,
+} from "./types";
 
 /** POST /auth/refresh — exchange refresh token for a new access token */
 export async function postAuthRefresh(body: AuthRefreshRequest) {
-  const { data } = await vendorApiClient.post<AuthRefreshResponse>("/api/v1/auth/refresh", body);
+  const { data } = await vendorApiClient.post<AuthRefreshResponse>(
+    "/api/v1/auth/refresh",
+    body
+  );
   return data;
 }
 
@@ -36,7 +40,10 @@ export async function postAuthLogin(body: {
   password: string;
   deviceId: string;
 }) {
-  const { data } = await vendorApiClient.post<LoginResponse>("/api/v1/auth/login", body);
+  const { data } = await vendorApiClient.post<LoginResponse>(
+    "/api/v1/auth/login",
+    body
+  );
   return data;
 }
 
@@ -49,7 +56,32 @@ export async function postAuthRegister(body: {
   phone?: string;
   role?: string;
 }) {
-  const { data } = await vendorApiClient.post<RegisterResponse>("/api/v1/auth/register", body);
+  const { data } = await vendorApiClient.post<RegisterResponse>(
+    "/api/v1/auth/register",
+    body
+  );
+  return data;
+}
+
+/** POST /auth/login/phone — phone/password via gateway */
+export async function postAuthLoginPhone(
+  body: PhoneLoginRequest & { deviceId: string }
+) {
+  const { data } = await vendorApiClient.post<LoginResponse>(
+    "/api/v1/auth/login/phone",
+    body
+  );
+  return data;
+}
+
+/** POST /auth/register/phone — phone/password registration via gateway */
+export async function postAuthRegisterPhone(
+  body: PhoneRegisterRequest & { role?: string }
+) {
+  const { data } = await vendorApiClient.post<LoginResponse>(
+    "/api/v1/auth/register/phone",
+    body
+  );
   return data;
 }
 
@@ -59,7 +91,10 @@ export async function postAuthSessions(body: {
   deviceId: string;
   userAgent?: string;
 }) {
-  const { data } = await vendorApiClient.post<AuthSessionResponse>("/api/v1/auth/sessions", body);
+  const { data } = await vendorApiClient.post<AuthSessionResponse>(
+    "/api/v1/auth/sessions",
+    body
+  );
   return data;
 }
 
@@ -105,45 +140,11 @@ export async function postAuthResetPassword(body: {
 }
 
 /** POST /auth/resend-verification */
-export async function postAuthResendVerification(body: ResendVerificationRequest) {
+export async function postAuthResendVerification(
+  body: ResendVerificationRequest
+) {
   const { data } = await vendorApiClient.post<ResendVerificationResponse>(
     "/api/v1/auth/resend-verification",
-    body
-  );
-  return data;
-}
-
-/** POST /auth/register/phone/initiate */
-export async function postAuthRegisterPhoneInitiate(body: PhoneRegisterInitiateRequest) {
-  const { data } = await vendorApiClient.post<PhoneRegisterInitiateResponse>(
-    "/api/v1/auth/register/phone/initiate",
-    body
-  );
-  return data;
-}
-
-/** POST /auth/register/phone/verify */
-export async function postAuthRegisterPhoneVerify(body: PhoneRegisterVerifyRequest) {
-  const { data } = await vendorApiClient.post<LoginResponse>(
-    "/api/v1/auth/register/phone/verify",
-    body
-  );
-  return data;
-}
-
-/** POST /auth/login/phone/initiate */
-export async function postAuthLoginPhoneInitiate(body: PhoneLoginInitiateRequest) {
-  const { data } = await vendorApiClient.post<PhoneLoginInitiateResponse>(
-    "/api/v1/auth/login/phone/initiate",
-    body
-  );
-  return data;
-}
-
-/** POST /auth/login/phone/verify */
-export async function postAuthLoginPhoneVerify(body: PhoneLoginVerifyRequest) {
-  const { data } = await vendorApiClient.post<LoginResponse>(
-    "/api/v1/auth/login/phone/verify",
     body
   );
   return data;

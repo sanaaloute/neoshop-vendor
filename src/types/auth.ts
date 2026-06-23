@@ -22,12 +22,24 @@ export type LoginRequest = {
   password: string;
 };
 
+export type PhoneLoginRequest = {
+  phone: string;
+  password: string;
+};
+
 export type RegisterRequest = {
   email: string;
   password: string;
   name?: string;
   surname?: string;
   phone?: string;
+};
+
+export type PhoneRegisterRequest = {
+  phone: string;
+  password: string;
+  name?: string;
+  surname?: string;
 };
 
 export type RegisterResponse = {
@@ -89,45 +101,6 @@ export type ResendVerificationRequest = {
 
 export type ResendVerificationResponse = {
   sent: boolean;
-};
-
-// ── Phone registration ──
-
-export type PhoneRegisterInitiateRequest = {
-  phone: string;
-};
-
-export type PhoneRegisterInitiateResponse = {
-  success: boolean;
-  message: string;
-  expiresInSeconds: number;
-};
-
-export type PhoneRegisterVerifyRequest = {
-  phone: string;
-  code?: string;
-  password?: string;
-  name?: string;
-  surname?: string;
-  role?: string;
-};
-
-// ── Phone login ──
-
-export type PhoneLoginInitiateRequest = {
-  phone: string;
-};
-
-export type PhoneLoginInitiateResponse = {
-  success: boolean;
-  message: string;
-  expiresInSeconds: number;
-};
-
-export type PhoneLoginVerifyRequest = {
-  phone: string;
-  code: string;
-  deviceId: string;
 };
 
 // ── Change email ──
