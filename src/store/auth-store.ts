@@ -78,22 +78,22 @@ export const useAuthStore = create<AuthState>()(
 
         let sessionId: string | undefined = sessionIdFromLogin;
 
+        // The gateway requires an active session id for SessionActiveGuard on
+        // authenticated endpoints and for token refresh. If the login/refresh
+        // response did not include one, create it before considering the user
+        // logged in.
         if (!sessionId && getApiBaseUrl()) {
-          try {
-            const { postAuthSessions } =
-              await import("@/services/vendor/auth-gateway-api");
-            const { sessionId: sid } = await postAuthSessions({
-              refreshToken,
-              deviceId: getOrCreateDeviceId(),
-              userAgent:
-                typeof navigator !== "undefined"
-                  ? navigator.userAgent
-                  : undefined,
-            });
-            sessionId = sid;
-          } catch {
-            // Device session is optional; cookies still allow refresh when gateway supports it.
-          }
+          const { postAuthSessions } =
+            await import("@/services/vendor/auth-gateway-api");
+          const { sessionId: sid } = await postAuthSessions({
+            refreshToken,
+            deviceId: getOrCreateDeviceId(),
+            userAgent:
+              typeof navigator !== "undefined"
+                ? navigator.userAgent
+                : undefined,
+          });
+          sessionId = sid;
         }
 
         await syncHttpOnlySession({

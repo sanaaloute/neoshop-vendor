@@ -1,11 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import {
-  AUTH_COOKIES,
-  getAuthPaths,
-  getGatewayUrl,
-} from "@/config/auth";
+import { AUTH_COOKIES, getAuthPaths, getGatewayUrl } from "@/config/auth";
 import { maxAgeFromJwtOrFallback } from "@/lib/jwt-claims";
 import {
   clearVendorCsrfCookie,
@@ -22,7 +18,10 @@ export async function POST(request: Request) {
   if (!gateway) {
     // If no gateway URL is configured, we can't refresh against an external
     // service. Return 503 but DO NOT delete cookies — the client may retry.
-    return NextResponse.json({ error: "gateway_not_configured" }, { status: 503 });
+    return NextResponse.json(
+      { error: "gateway_not_configured" },
+      { status: 503 }
+    );
   }
 
   const jar = await cookies();
@@ -38,10 +37,18 @@ export async function POST(request: Request) {
 
   const { refreshUrl } = getAuthPaths();
   const sessionId = jar.get(AUTH_COOKIES.sessionId)?.value;
-  const refreshBody: Record<string, string> = { refreshToken: refresh };
-  if (sessionId) {
-    refreshBody.sessionId = sessionId;
+
+  // The gateway requires both sessionId and refreshToken. If the session id
+  // cookie is missing we cannot refresh; preserve cookies so a fresh login can
+  // re-establish the session instead of wiping the refresh token.
+  if (!sessionId) {
+    return NextResponse.json({ error: "missing_session_id" }, { status: 401 });
   }
+
+  const refreshBody: Record<string, string> = {
+    refreshToken: refresh,
+    sessionId,
+  };
 
   let upstream: Response;
   try {
@@ -67,7 +74,10 @@ export async function POST(request: Request) {
       jar.delete(AUTH_COOKIES.sessionId);
       clearVendorCsrfCookie(jar);
     }
-    return NextResponse.json({ error: "refresh_failed" }, { status: isAuthError ? 401 : 502 });
+    return NextResponse.json(
+      { error: "refresh_failed" },
+      { status: isAuthError ? 401 : 502 }
+    );
   }
 
   const payload = (await upstream.json()) as {
