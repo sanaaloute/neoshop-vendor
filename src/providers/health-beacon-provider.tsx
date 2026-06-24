@@ -20,8 +20,13 @@ export function HealthBeaconProvider({
   useEffect(() => {
     if (!authenticated) return;
 
+    // The current gateway health beacon DTO only accepts "ios" / "android".
+    // Skip the heartbeat on web until the backend supports a "web" platform.
+    const PLATFORM = "web";
+    if (PLATFORM === "web") return;
+
     const send = () => {
-      void beacon("web", APP_VERSION, getOrCreateDeviceId());
+      void beacon(PLATFORM, APP_VERSION, getOrCreateDeviceId());
     };
 
     send();

@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { AUTH_COOKIES, getGatewayUrl } from "@/config/auth";
+import { isSameOrigin } from "@/lib/is-same-origin";
 import {
   isValidVendorCsrfRequest,
   VENDOR_CSRF_HEADER,
@@ -9,18 +10,6 @@ import {
 import { validateMultipartUpload } from "@/lib/upload-proxy-validation";
 
 type AllowedMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-
-function isSameOrigin(request: Request): boolean {
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("host");
-  if (!origin || !host) return false;
-  try {
-    const originUrl = new URL(origin);
-    return originUrl.host === host;
-  } catch {
-    return false;
-  }
-}
 
 async function proxyToGateway(
   request: NextRequest,

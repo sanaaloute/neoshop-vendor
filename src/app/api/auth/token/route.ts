@@ -2,22 +2,11 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { AUTH_COOKIES } from "@/config/auth";
+import { isSameOrigin } from "@/lib/is-same-origin";
 import {
   isValidVendorCsrfRequest,
   VENDOR_CSRF_HEADER,
 } from "@/lib/vendor-auth-csrf";
-
-function isSameOrigin(request: Request): boolean {
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("host");
-  if (!origin || !host) return false;
-  try {
-    const originUrl = new URL(origin);
-    return originUrl.host === host;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Hydrates client-side axios with the current httpOnly access token.
