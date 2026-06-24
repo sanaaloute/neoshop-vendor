@@ -17,7 +17,13 @@ import { patchUserSettings } from "@/services/vendor/users-api";
 
 const localeCodes = ["en", "fr", "zh"] as const;
 
-export function LanguageSwitcher({ className }: { className?: string }) {
+export function LanguageSwitcher({
+  className,
+  syncToBackend = true,
+}: {
+  className?: string;
+  syncToBackend?: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
@@ -25,13 +31,15 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   const t = useTranslations("language");
 
   const switchLocale = async (newLocale: string) => {
-    // Sync the UI locale with the backend preferredLanguage so chat
-    // translation and other language-aware features use the same value.
-    try {
-      await patchUserSettings({ preferredLanguage: newLocale });
-    } catch {
-      // Non-blocking: the UI locale still switches even if the backend
-      // settings call fails (e.g. endpoint unavailable).
+    if (syncToBackend) {
+      // Sync the UI locale with the backend preferredLanguage so chat
+      // translation and other language-aware features use the same value.
+      try {
+        await patchUserSettings({ preferredLanguage: newLocale });
+      } catch {
+        // Non-blocking: the UI locale still switches even if the backend
+        // settings call fails (e.g. endpoint unavailable).
+      }
     }
     router.replace(pathname, { locale: newLocale });
   };

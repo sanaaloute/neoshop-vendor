@@ -15,7 +15,7 @@ export default function LoginRoutePage() {
           <LoadingState
             label={t("openingSignIn")}
             rows={2}
-            className="max-w-md"
+            className="max-w-[520px]"
           />
         }
       >

@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { VendorForm } from "@/components/forms/vendor-form";
 import { VendorTextField } from "@/components/forms/vendor-text-field";
 import { VendorPasswordField } from "@/components/forms/vendor-password-field";
+import { LanguageSwitcher } from "@/components/navigation/language-switcher";
 import { useAuth } from "@/hooks/use-auth";
 import { getAuthErrorMessage } from "@/lib/get-auth-error-message";
 import { useRateLimit } from "@/lib/rate-limit";
@@ -297,11 +298,14 @@ export function LoginForm() {
   }
 
   const inputClassName =
-    "h-12 rounded-xl border-white/10 bg-white/[0.04] px-4 text-sm text-white placeholder:text-slate-500 focus-visible:border-teal-400/50 focus-visible:ring-teal-400/20 dark:bg-white/[0.04]";
+    "h-10 rounded-xl border-white/10 bg-white/[0.04] px-4 text-sm text-white placeholder:text-slate-500 focus-visible:border-teal-400/50 focus-visible:ring-teal-400/20 dark:bg-white/[0.04]";
 
   return (
-    <div className="w-full max-w-[420px] rounded-2xl border border-white/[0.06] bg-[#0f0f16]/90 p-8 shadow-2xl backdrop-blur-xl sm:p-10">
-      <div className="space-y-1">
+    <div className="relative w-full max-w-[520px] rounded-2xl border border-white/[0.06] bg-[#0f0f16]/90 p-8 shadow-2xl backdrop-blur-xl sm:p-10">
+      <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+        <LanguageSwitcher syncToBackend={false} className="text-slate-400 hover:bg-white/[0.06] hover:text-slate-200" />
+      </div>
+      <div className="space-y-1 pr-10">
         <h1 className="text-3xl font-bold tracking-tight text-white">
           {isSignup ? t("createAccount") : t("signIn")}
         </h1>
@@ -425,7 +429,7 @@ export function LoginForm() {
                       form.formState.isSubmitting ||
                       !phoneRegisterRateLimit.canRequest
                     }
-                    className="h-12 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
+                    className="h-10 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
                   >
                     {form.formState.isSubmitting
                       ? t("creatingAccount")
@@ -527,7 +531,7 @@ export function LoginForm() {
                       form.formState.isSubmitting ||
                       !registerRateLimit.canRequest
                     }
-                    className="h-12 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
+                    className="h-10 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
                   >
                     {form.formState.isSubmitting
                       ? t("creatingAccount")
@@ -577,7 +581,7 @@ export function LoginForm() {
                     form.formState.isSubmitting ||
                     !phoneLoginRateLimit.canRequest
                   }
-                  className="h-12 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
+                  className="h-10 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
                 >
                   {form.formState.isSubmitting
                     ? t("signingIn")
@@ -657,7 +661,7 @@ export function LoginForm() {
                   disabled={
                     form.formState.isSubmitting || !loginRateLimit.canRequest
                   }
-                  className="h-12 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
+                  className="h-10 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
                 >
                   {form.formState.isSubmitting
                     ? t("signingIn")
