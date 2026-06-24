@@ -27,7 +27,8 @@ function isEmailNotVerifiedError(e: unknown): boolean {
   return getAuthErrorMessage(e).includes("Email not verified");
 }
 
-const phoneRegex = /^\+[1-9]\d{1,14}$/;
+/** E.164 with 8–15 digits after the plus (matches backend validation). */
+const phoneRegex = /^\+[1-9]\d{7,14}$/;
 
 export function LoginForm() {
   const router = useRouter();
@@ -75,7 +76,7 @@ export function LoginForm() {
   const phoneLoginSchema = useMemo(
     () =>
       z.object({
-        phone: z.string().regex(phoneRegex, t("phone")),
+        phone: z.string().regex(phoneRegex, t("phoneInvalid")),
         password: z.string().min(1, t("password")),
       }),
     [t]
@@ -91,7 +92,7 @@ export function LoginForm() {
           phone: z
             .string()
             .refine((val) => val === "" || phoneRegex.test(val), {
-              message: t("phone"),
+              message: t("phoneInvalid"),
             }),
           password: passwordSchema,
           confirmPassword: z.string().min(1, t("confirmPassword")),
@@ -109,7 +110,7 @@ export function LoginForm() {
         .object({
           name: z.string().min(1, t("firstName")),
           surname: z.string().min(1, t("lastName")),
-          phone: z.string().regex(phoneRegex, t("phone")),
+          phone: z.string().regex(phoneRegex, t("phoneInvalid")),
           password: passwordSchema,
           confirmPassword: z.string().min(1, t("confirmPassword")),
         })
