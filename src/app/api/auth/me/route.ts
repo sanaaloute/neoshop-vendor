@@ -20,6 +20,8 @@ export async function GET() {
     claims = payload as unknown as Parameters<typeof isVendorTokenClaims>[0];
   } catch (err) {
     const message = err instanceof Error ? err.message : "verification_failed";
+    // eslint-disable-next-line no-console
+    console.error("[auth/me] token verification failed:", message);
     return NextResponse.json(
       { error: "invalid_token", message },
       { status: 401 }

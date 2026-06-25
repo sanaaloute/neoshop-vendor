@@ -73,6 +73,12 @@ export function clearKeySetCache() {
   cachedAt = 0;
 }
 
+function matchesAudience(actual: unknown, expected: string): boolean {
+  if (actual === expected) return true;
+  if (Array.isArray(actual)) return actual.includes(expected);
+  return false;
+}
+
 function assertRequiredClaims(payload: Record<string, unknown>) {
   if (typeof payload.exp !== "number") {
     throw new Error("missing_exp");
@@ -80,14 +86,14 @@ function assertRequiredClaims(payload: Record<string, unknown>) {
   if (payload.exp * 1000 < Date.now()) {
     throw new Error("token_expired");
   }
-  const issuer = AUTH_ISSUER ?? payload.iss;
   if (AUTH_ISSUER && payload.iss !== AUTH_ISSUER) {
     throw new Error("issuer_mismatch");
   }
+  const issuer = AUTH_ISSUER ?? payload.iss;
   if (typeof issuer !== "string" || issuer.length === 0) {
     throw new Error("missing_issuer");
   }
-  if (payload.aud !== AUTH_AUDIENCE) {
+  if (!matchesAudience(payload.aud, AUTH_AUDIENCE)) {
     throw new Error("audience_mismatch");
   }
 }

@@ -27,11 +27,15 @@ function stripLocalePrefix(path: string): string {
   return result;
 }
 
-/** Reject absolute and protocol-relative URLs from `?next=` (open-redirect hardening). */
+/** Reject absolute, protocol-relative, and login-loop URLs from `?next=`. */
 function safePostLoginPath(next: string | null): string {
   if (!next) return "/dashboard";
   if (!next.startsWith("/") || next.startsWith("//")) return "/dashboard";
-  return stripLocalePrefix(next);
+  const stripped = stripLocalePrefix(next);
+  if (stripped === "/login" || stripped.startsWith("/login/")) {
+    return "/dashboard";
+  }
+  return stripped;
 }
 
 function isEmailNotVerifiedError(e: unknown): boolean {
