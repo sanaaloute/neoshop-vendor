@@ -292,7 +292,12 @@ export function ReviewsHome() {
             <SheetDescription>
               {activeReview ? (
                 <>
-                  {t("replyingTo", { customer: activeReview.customerName, product: activeReview.productTitle })}
+                  {t.rich("replyingTo", {
+                    customer: activeReview.customerName,
+                    product: activeReview.productTitle,
+                    strong: (chunks) => <strong>{chunks}</strong>,
+                    em: (chunks) => <em>{chunks}</em>,
+                  })}
                 </>
               ) : null}
             </SheetDescription>

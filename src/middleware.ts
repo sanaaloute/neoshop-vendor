@@ -102,10 +102,12 @@ async function readAccessSession(request: NextRequest) {
     // tokens from passing middleware routing/permission checks.
     const payload = await verifyAccessToken(token);
     claims = payload as unknown as Parameters<typeof isVendorTokenClaims>[0];
-  } catch {
+  } catch (err) {
     // Verification failed (bad signature, issuer, audience, or JWKS error).
     // Decode only to check expiry so we can give the client a chance to refresh
     // when the token is simply expired.
+    // eslint-disable-next-line no-console
+    console.log("[middleware/verify] verifyAccessToken failed:", err instanceof Error ? err.message : err);
     try {
       claims = decodeAccessToken(token);
       if (typeof claims.exp === "number" && claims.exp * 1000 < Date.now()) {
@@ -177,6 +179,8 @@ export async function middleware(request: NextRequest) {
     if (session.ok) {
       const onboardingDone =
         isOnboardingCompleteClaims(session.claims) || wizardComplete;
+      // eslint-disable-next-line no-console
+      console.log("[middleware] login page, session ok, onboardingDone:", onboardingDone);
       if (!onboardingDone) {
         return NextResponse.redirect(
           new URL(`${prefix}/onboarding`, request.url)
@@ -184,6 +188,8 @@ export async function middleware(request: NextRequest) {
       }
       return NextResponse.redirect(new URL(`${prefix}/dashboard`, request.url));
     }
+    // eslint-disable-next-line no-console
+    console.log("[middleware] login page, session not ok:", session.reason, "hasRefresh:", session.hasRefresh);
     return response;
   }
 
@@ -195,8 +201,13 @@ export async function middleware(request: NextRequest) {
       session.hasRefresh &&
       (session.reason === "expired" || session.reason === "no_access")
     ) {
+      // eslint-disable-next-line no-console
+      console.log("[middleware] letting through for client refresh, reason:", session.reason);
       return response;
     }
+
+    // eslint-disable-next-line no-console
+    console.log("[middleware] redirecting to login, reason:", session.reason, "pathname:", pathname);
 
     const login = new URL(`${prefix}/login`, request.url);
 

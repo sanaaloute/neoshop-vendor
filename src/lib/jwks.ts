@@ -3,11 +3,11 @@ import type { JSONWebKeySet } from "jose";
 
 import { getGatewayUrl } from "@/config/auth";
 
-const AUTH_ISSUER = process.env.AUTH_ISSUER;
-const AUTH_AUDIENCE = process.env.AUTH_AUDIENCE ?? "authenticated";
+const AUTH_ISSUER = process.env.AUTH_ISSUER || undefined;
+const AUTH_AUDIENCE = process.env.AUTH_AUDIENCE || "authenticated";
 const VERIFY_SIGNATURE = process.env.JWT_VERIFY_SIGNATURE !== "false";
-const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET;
-const JWKS_URL = process.env.JWKS_URL;
+const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET || undefined;
+const JWKS_URL = process.env.JWKS_URL || undefined;
 const JWT_ALGORITHMS =
   process.env.JWT_ALGORITHMS?.split(",").map((a) => a.trim()) ??
   (SUPABASE_JWT_SECRET ? ["HS256"] : ["ES256", "HS256"]);
@@ -80,6 +80,8 @@ function matchesAudience(actual: unknown, expected: string): boolean {
 }
 
 function assertRequiredClaims(payload: Record<string, unknown>) {
+  // eslint-disable-next-line no-console
+  console.log("[jwks/assert] verifying claims, exp:", payload.exp, "iss:", payload.iss, "aud:", payload.aud, "AUTH_ISSUER:", AUTH_ISSUER, "AUTH_AUDIENCE:", AUTH_AUDIENCE);
   if (typeof payload.exp !== "number") {
     throw new Error("missing_exp");
   }
@@ -104,8 +106,12 @@ export async function verifyAccessToken(token: string) {
   // HS256) and does not expose a JWKS endpoint, signature verification can be
   // disabled via JWT_VERIFY_SIGNATURE=false. The token is still decoded and
   // checked for expiry, issuer, and audience.
+  // eslint-disable-next-line no-console
+  console.log("[jwks/verify] VERIFY_SIGNATURE:", VERIFY_SIGNATURE, "JWT_VERIFY_SIGNATURE env:", process.env.JWT_VERIFY_SIGNATURE);
   if (!VERIFY_SIGNATURE) {
     const payload = decodeJwt(token);
+    // eslint-disable-next-line no-console
+    console.log("[jwks/verify] signature skipped, decoded sub:", payload.sub, "iss:", payload.iss, "aud:", payload.aud);
     assertRequiredClaims(payload as Record<string, unknown>);
     return payload;
   }

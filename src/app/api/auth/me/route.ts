@@ -37,5 +37,8 @@ export async function GET() {
     return NextResponse.json({ error: "invalid_subject" }, { status: 401 });
   }
 
+  // eslint-disable-next-line no-console
+  console.log("[auth/me] success, sub:", user.id, "role:", user.role, "onboarding:", user.onboardingComplete);
+
   return NextResponse.json({ user });
 }

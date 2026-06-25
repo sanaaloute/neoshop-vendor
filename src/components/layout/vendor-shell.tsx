@@ -34,6 +34,8 @@ export function VendorShell({ children }: { children: ReactNode }) {
     if (status === "loading" || status === "idle") return;
     const isAuthPage = pathname === "/login" || pathname.startsWith("/login/");
     if ((status === "unauthenticated" || !user || !isVendor) && !isAuthPage) {
+      // eslint-disable-next-line no-console
+      console.log("[VendorShell] redirecting to login, status:", status, "user:", !!user, "isVendor:", isVendor, "pathname:", pathname);
       const id = window.setTimeout(() => {
         router.replace("/login");
       }, 800);

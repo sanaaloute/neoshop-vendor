@@ -243,7 +243,12 @@ export function LoginForm() {
     }
     try {
       await login(values);
-      router.replace(safePostLoginPath(searchParams.get("next")));
+      const nextPath = safePostLoginPath(searchParams.get("next"));
+      // eslint-disable-next-line no-console
+      console.log("[login-form] email login success, redirecting to:", nextPath);
+      router.replace(nextPath);
+      // eslint-disable-next-line no-console
+      console.log("[login-form] router.replace called");
     } catch (e) {
       if (isEmailNotVerifiedError(e)) {
         setUnverifiedEmail(values.email);
@@ -260,7 +265,12 @@ export function LoginForm() {
     }
     try {
       await useAuthStore.getState().loginPhone(values);
-      router.replace(safePostLoginPath(searchParams.get("next")));
+      const nextPath = safePostLoginPath(searchParams.get("next"));
+      // eslint-disable-next-line no-console
+      console.log("[login-form] phone login success, redirecting to:", nextPath);
+      router.replace(nextPath);
+      // eslint-disable-next-line no-console
+      console.log("[login-form] router.replace called");
     } catch (e) {
       setError(mapAuthError(e, "login"));
     }

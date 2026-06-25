@@ -30,6 +30,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "missing_tokens" }, { status: 400 });
   }
 
+  // eslint-disable-next-line no-console
+  console.log("[auth/session] setting access cookie, sessionId:", body.sessionId ? "yes" : "no", "token prefix:", body.accessToken.slice(0, 20) + "...");
+
   jar.set(AUTH_COOKIES.access, body.accessToken, {
     ...cookieBase(),
     // Derive max-age from the JWT expiry so stolen/forged tokens have a short
