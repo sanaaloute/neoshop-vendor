@@ -42,7 +42,8 @@ export type AuthMeResponse = {
 };
 
 export type AuthSessionResponse = {
-  sessionId: string;
+  sessionId?: string;
+  session_id?: string;
   expiresAt: string;
 };
 
@@ -640,7 +641,15 @@ export type WalletBalanceResponse = {
 
 export type WalletTransaction = {
   id: string;
-  type: "credit" | "debit" | "deposit" | "withdrawal" | "reserve" | "release" | "refund" | "adjustment";
+  type:
+    | "credit"
+    | "debit"
+    | "deposit"
+    | "withdrawal"
+    | "reserve"
+    | "release"
+    | "refund"
+    | "adjustment";
   direction: "credit" | "debit";
   status: "pending" | "completed" | "failed" | "cancelled";
   amount: string;

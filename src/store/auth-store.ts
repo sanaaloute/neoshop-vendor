@@ -87,17 +87,23 @@ export const useAuthStore = create<AuthState>()(
         }
 
         if (!sessionId && getApiBaseUrl()) {
-          const { postAuthSessions } =
-            await import("@/services/vendor/auth-gateway-api");
-          const { sessionId: sid } = await postAuthSessions({
-            refreshToken,
-            deviceId: getOrCreateDeviceId(),
-            userAgent:
-              typeof navigator !== "undefined"
-                ? navigator.userAgent
-                : undefined,
-          });
-          sessionId = sid;
+          try {
+            const { postAuthSessions } =
+              await import("@/services/vendor/auth-gateway-api");
+            const sessionRes = await postAuthSessions({
+              refreshToken,
+              deviceId: getOrCreateDeviceId(),
+              userAgent:
+                typeof navigator !== "undefined"
+                  ? navigator.userAgent
+                  : undefined,
+            });
+            sessionId = sessionRes.sessionId ?? sessionRes.session_id;
+          } catch {
+            // If the JWT already exposes a session_id, use it as fallback.
+            // Otherwise the gateway will reject protected calls and the user
+            // can retry login once the backend is healthy.
+          }
         }
 
         await syncHttpOnlySession({
