@@ -821,6 +821,8 @@ export type AuthRefreshResponse = {
   accessToken: string;
   refreshToken: string;
   expiresAt: string;
+  sessionId?: string;
+  session_id?: string;
 };
 
 // --- Catalog ---

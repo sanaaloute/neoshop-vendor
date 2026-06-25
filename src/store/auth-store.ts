@@ -79,9 +79,13 @@ export const useAuthStore = create<AuthState>()(
         let sessionId: string | undefined = sessionIdFromLogin;
 
         // The gateway requires an active session id for SessionActiveGuard on
-        // authenticated endpoints and for token refresh. If the login/refresh
-        // response did not include one, create it before considering the user
-        // logged in.
+        // authenticated endpoints and for token refresh. Prefer the id returned
+        // by the login/refresh response, fall back to the JWT session_id claim,
+        // and finally create a device session if neither is present.
+        if (!sessionId) {
+          sessionId = claims.session_id;
+        }
+
         if (!sessionId && getApiBaseUrl()) {
           const { postAuthSessions } =
             await import("@/services/vendor/auth-gateway-api");

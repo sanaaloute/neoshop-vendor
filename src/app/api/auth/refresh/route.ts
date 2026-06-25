@@ -84,7 +84,10 @@ export async function POST(request: Request) {
     accessToken?: string;
     refreshToken?: string;
     sessionId?: string;
+    session_id?: string;
   };
+
+  const refreshedSessionId = payload.sessionId ?? payload.session_id;
 
   if (!payload.accessToken) {
     // Upstream returned OK but no access token — this is a broken response.
@@ -92,8 +95,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_upstream" }, { status: 502 });
   }
 
-  if (payload.sessionId) {
-    jar.set(AUTH_COOKIES.sessionId, payload.sessionId, {
+  if (refreshedSessionId) {
+    jar.set(AUTH_COOKIES.sessionId, refreshedSessionId, {
       ...cookieBase(),
       maxAge: 60 * 60 * 24 * 365,
     });
@@ -116,6 +119,6 @@ export async function POST(request: Request) {
   return NextResponse.json({
     accessToken: payload.accessToken,
     refreshToken: payload.refreshToken ?? refresh,
-    sessionId: payload.sessionId ?? sessionId,
+    sessionId: refreshedSessionId ?? sessionId,
   });
 }

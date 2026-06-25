@@ -14,6 +14,7 @@ export type VendorJwtPayload = JWTPayload & {
   email?: string;
   role?: string | string[];
   roles?: string[];
+  session_id?: string;
   user_metadata?: { role?: string; [key: string]: unknown };
   app_metadata?: { role?: string; [key: string]: unknown };
   onboardingComplete?: boolean;
@@ -115,9 +116,9 @@ export function claimsToVendorUser(
     appRole ??
     (typeof claims.role === "string" && claims.role !== "authenticated"
       ? claims.role
-      : claims.roles?.[0] ??
+      : (claims.roles?.[0] ??
         (Array.isArray(claims.role) ? claims.role[0] : undefined) ??
-        "customer");
+        "customer"));
 
   const teamRole = normalizeVendorTeamRole(
     claims.vendor_team_role ?? claims.vendorTeamRole ?? claims.team_role

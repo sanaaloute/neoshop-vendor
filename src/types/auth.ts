@@ -73,6 +73,7 @@ export type LoginResponse = {
   // snake_case (Supabase native)
   access_token?: string;
   refresh_token?: string;
+  session_id?: string;
   expires_in?: number;
   expires_at?: number;
   token_type?: string;
@@ -84,7 +85,7 @@ export function normalizeAuthResponse<T extends LoginResponse>(res: T) {
   return {
     accessToken: res.accessToken ?? res.access_token ?? "",
     refreshToken: res.refreshToken ?? res.refresh_token ?? "",
-    sessionId: res.sessionId ?? "",
+    sessionId: res.sessionId ?? res.session_id ?? "",
     expiresIn: res.expiresIn ?? res.expires_in ?? 0,
     expiresAt: res.expiresAt ?? res.expires_at ?? 0,
     user: res.user,
