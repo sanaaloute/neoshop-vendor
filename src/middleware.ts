@@ -199,8 +199,17 @@ export async function middleware(request: NextRequest) {
     }
 
     const login = new URL(`${prefix}/login`, request.url);
+
+    // Build a locale-agnostic next path so next-intl can prepend the correct
+    // locale after login. Avoid echoing an existing `next` param to prevent
+    // loops like /fr/login?next=/fr/fr/fr/dashboard.
+    const nextSearch = new URLSearchParams(request.nextUrl.searchParams);
+    nextSearch.delete("next");
+    const nextSearchString = nextSearch.toString();
     const nextPath =
-      logicalPath === "/" ? `${prefix}/dashboard` : `${pathname}${request.nextUrl.search}`;
+      logicalPath === "/"
+        ? "/dashboard"
+        : `${logicalPath}${nextSearchString ? `?${nextSearchString}` : ""}`;
     login.searchParams.set("next", nextPath);
     return NextResponse.redirect(login);
   }

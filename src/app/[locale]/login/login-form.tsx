@@ -17,11 +17,21 @@ import { refreshTokensClient } from "@/services/auth-refresh-client";
 import { useAuthStore } from "@/store/auth-store";
 import { cn } from "@/lib/utils";
 
+function stripLocalePrefix(path: string): string {
+  let result = path;
+  while (true) {
+    const match = result.match(/^\/(en|fr|zh)(\/|$)/);
+    if (!match) break;
+    result = result.replace(/^\/(en|fr|zh)(\/|$)/, "/");
+  }
+  return result;
+}
+
 /** Reject absolute and protocol-relative URLs from `?next=` (open-redirect hardening). */
 function safePostLoginPath(next: string | null): string {
   if (!next) return "/dashboard";
   if (!next.startsWith("/") || next.startsWith("//")) return "/dashboard";
-  return next;
+  return stripLocalePrefix(next);
 }
 
 function isEmailNotVerifiedError(e: unknown): boolean {
@@ -302,8 +312,11 @@ export function LoginForm() {
 
   return (
     <div className="relative w-full max-w-[520px] rounded-2xl border border-white/[0.06] bg-[#0f0f16]/90 p-8 shadow-2xl backdrop-blur-xl sm:p-10">
-      <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
-        <LanguageSwitcher syncToBackend={false} className="text-slate-400 hover:bg-white/[0.06] hover:text-slate-200" />
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+        <LanguageSwitcher
+          syncToBackend={false}
+          className="text-slate-400 hover:bg-white/[0.06] hover:text-slate-200"
+        />
       </div>
       <div className="space-y-1 pr-10">
         <h1 className="text-3xl font-bold tracking-tight text-white">
