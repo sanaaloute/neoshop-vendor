@@ -98,22 +98,20 @@ export async function postAuthSessions(body: {
   return data;
 }
 
-/** POST /auth/logout — requires x-session-id */
-export async function postAuthLogout(sessionId: string) {
+/** POST /auth/logout — X-Session-Id is added by the request interceptor. */
+export async function postAuthLogout() {
   const { data } = await vendorApiClient.post<{ revoked: boolean }>(
     "/api/v1/auth/logout",
-    {},
-    { headers: { "x-session-id": sessionId } }
+    {}
   );
   return data;
 }
 
-/** POST /auth/logout/all */
-export async function postAuthLogoutAll(sessionId: string) {
+/** POST /auth/logout/all — X-Session-Id is added by the request interceptor. */
+export async function postAuthLogoutAll() {
   const { data } = await vendorApiClient.post<{ revoked: number }>(
     "/api/v1/auth/logout/all",
-    {},
-    { headers: { "x-session-id": sessionId } }
+    {}
   );
   return data;
 }

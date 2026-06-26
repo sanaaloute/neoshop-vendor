@@ -829,7 +829,9 @@ export type AuthRefreshRequest = {
 export type AuthRefreshResponse = {
   accessToken: string;
   refreshToken: string;
-  expiresAt: string;
+  expiresIn: number;
+  expiresAt: number;
+  expires_at?: number;
   sessionId?: string;
   session_id?: string;
 };

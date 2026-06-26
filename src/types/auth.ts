@@ -92,7 +92,15 @@ export function normalizeAuthResponse<T extends LoginResponse>(res: T) {
   };
 }
 
-export type RefreshResponse = LoginResponse;
+/** Token bundle returned by /auth/refresh. */
+export type RefreshResponse = {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  expiresAt: number;
+  sessionId?: string;
+  session_id?: string;
+};
 
 // ── Resend verification ──
 

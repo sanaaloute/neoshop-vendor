@@ -47,7 +47,7 @@
     "createAccount": "创建商家账户",
     "signInDescription": "使用您的商家账户登录。",
     "registerDescription": "注册以访问商家后台。",
-    "email": "工作邮箱",
+    "email": "邮箱",
     "emailPlaceholder": "you@company.com",
     "password": "密码",
     "confirmPassword": "确认密码",

@@ -1,20 +1,8 @@
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
 
-export const AUTH_COOKIES = {
-  access: "nv_access",
-  refresh: "nv_refresh",
-  /** Server session id from POST /api/v1/auth/sessions or refresh response */
-  sessionId: "nv_session_id",
-  /** HttpOnly double-submit token; pair with `X-CSRF-Token` on mutating same-origin routes */
-  csrf: "nv_csrf",
-} as const;
+export const VENDOR_ROLE = "vendor" as const;
 
-/** Set when the vendor completes the local wizard; replace with JWT claim after API sync. */
-export const ONBOARDING_COOKIE = {
-  wizardComplete: "nv_onboarding_wizard",
-} as const;
-
-/** Client-side API root (no trailing slash). Leave empty to use same-origin proxy routes. */
+/** Client-side API root (no trailing slash). Must match the gateway origin. */
 export function getApiBaseUrl() {
   return trimTrailingSlash(process.env.NEXT_PUBLIC_API_BASE_URL ?? "");
 }
@@ -43,5 +31,3 @@ export function getAuthPaths() {
     refreshUrl: `${base}${fullPath}`,
   };
 }
-
-export const VENDOR_ROLE = "vendor" as const;

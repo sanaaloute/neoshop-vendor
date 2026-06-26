@@ -47,7 +47,7 @@
     "createAccount": "Create vendor account",
     "signInDescription": "Sign in with your vendor account.",
     "registerDescription": "Register to access the vendor dashboard.",
-    "email": "Work email",
+    "email": "Email",
     "emailPlaceholder": "you@company.com",
     "password": "Password",
     "confirmPassword": "Confirm password",

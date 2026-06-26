@@ -10,7 +10,10 @@ import {
   postAuthLogout,
   postAuthReactivate,
 } from "@/services/vendor/auth-gateway-api";
-import type { AuthMeResponse, AuthRefreshRequest } from "@/services/vendor/types";
+import type {
+  AuthMeResponse,
+  AuthRefreshRequest,
+} from "@/services/vendor/types";
 import type { ReactivateRequest } from "@/types/auth";
 
 /** Direct gateway auth operations (bypasses the Next.js proxy when needed). */
@@ -48,12 +51,12 @@ export function useAuthGateway() {
     }
   }, []);
 
-  const logout = useCallback(async (sessionId: string) => {
+  const logout = useCallback(async () => {
     if (!getApiBaseUrl()) return;
     setLoading(true);
     setError(null);
     try {
-      await postAuthLogout(sessionId);
+      await postAuthLogout();
     } catch (e) {
       setError(httpErrorMessageForUser(e, "Logout failed."));
     } finally {

@@ -5,13 +5,16 @@ import type {
 } from "axios";
 
 import { getApiBaseUrl } from "@/config/auth";
+import {
+  getAccessToken,
+  getSessionId,
+} from "@/lib/auth-storage";
 import { refreshTokensClient } from "@/services/auth-refresh-client";
-import { useAuthStore } from "@/store/auth-store";
 
 type RetryableRequest = InternalAxiosRequestConfig & { _retry?: boolean };
 
 function authRequestInterceptor(config: InternalAxiosRequestConfig) {
-  const token = useAuthStore.getState().accessToken;
+  const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -19,9 +22,11 @@ function authRequestInterceptor(config: InternalAxiosRequestConfig) {
 }
 
 function sessionRequestInterceptor(config: InternalAxiosRequestConfig) {
-  const sessionId = useAuthStore.getState().sessionId;
+  // The gateway's SessionActiveGuard requires X-Session-Id on authenticated
+  // endpoints (not only logout). Send it whenever we have a session id.
+  const sessionId = getSessionId();
   if (sessionId) {
-    config.headers["x-session-id"] = sessionId;
+    config.headers["X-Session-Id"] = sessionId;
   }
   return config;
 }
@@ -56,17 +61,12 @@ function refreshOnUnauthorized(instance: AxiosInstance) {
     const next = await refreshTokensClient();
     if (!next) {
       // Refresh failed — mark unauthenticated so the auth gate can redirect.
-      // Do not wipe cookies here; leave the refresh token intact for retry.
-      useAuthStore.setState({
-        accessToken: null,
-        user: null,
-        status: "unauthenticated",
-      });
+      // The refresh client clears the localStorage token bundle.
       return Promise.reject(error);
     }
 
-    // Re-sync user state after a successful refresh.
-    void useAuthStore.getState().bootstrap();
+    // The refresh client already updated localStorage and the auth store.
+    // Retry the original request with the new access token.
     original.headers.Authorization = `Bearer ${next}`;
     return instance(original);
   };

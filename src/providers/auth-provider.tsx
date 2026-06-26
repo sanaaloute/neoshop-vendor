@@ -3,36 +3,31 @@
 import { useEffect } from "react";
 
 import { getTokenExpSecondsSafe } from "@/lib/jwt-claims";
+import { getExpiresAt } from "@/lib/auth-storage";
 import { refreshTokensClient } from "@/services/auth-refresh-client";
 import { useAuthStore } from "@/store/auth-store";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  // Bootstrap auth state from the localStorage token bundle on mount.
   useEffect(() => {
-    const finishHydration = useAuthStore.persist.onFinishHydration(() => {
-      void useAuthStore.getState().bootstrap();
-    });
-
-    const persistApi = useAuthStore.persist as {
-      hasHydrated?: () => boolean;
-    };
-    if (persistApi.hasHydrated?.()) {
-      void useAuthStore.getState().bootstrap();
-    }
-
-    return finishHydration;
+    void useAuthStore.getState().bootstrap();
   }, []);
 
   const accessToken = useAuthStore((s) => s.accessToken);
 
+  // Proactive refresh shortly before the access token expires.
   useEffect(() => {
     if (!accessToken) return;
 
     const exp = getTokenExpSecondsSafe(accessToken);
     if (!exp) return;
 
+    const storedExpiresAt = getExpiresAt();
+    const expMs = storedExpiresAt ? storedExpiresAt * 1000 : exp * 1000;
+
     const now = Date.now();
     const refreshLeadMs = 60_000;
-    const fireAt = exp * 1000 - refreshLeadMs;
+    const fireAt = expMs - refreshLeadMs;
     const ms = fireAt <= now ? 0 : Math.max(fireAt - now, 15_000);
     const id = window.setTimeout(() => {
       void refreshTokensClient().then((token) => {

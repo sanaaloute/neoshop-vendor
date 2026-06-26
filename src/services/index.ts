@@ -1,10 +1,3 @@
-export {
-  clearHttpOnlySession,
-  fetchAccessTokenFromCookie,
-  fetchSessionUser,
-  refreshSessionRequest,
-  syncHttpOnlySession,
-} from "@/services/auth-session-client";
 export { refreshTokensClient } from "@/services/auth-refresh-client";
 export {
   vendorApiClient,

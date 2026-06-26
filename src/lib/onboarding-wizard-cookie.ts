@@ -1,9 +1,9 @@
-import { fetchCsrfToken } from "@/services/auth-session-client";
 import type { VendorLifecycleStatus } from "@/services/vendor/types";
 
 /**
- * Middleware treats the vendor as past the local wizard when this cookie is set
- * (`/api/onboarding/complete`). Align it with API truth so navigation is not stuck on `/onboarding`.
+ * Previously synced an onboarding-wizard cookie used by middleware. Auth and
+ * onboarding routing are now handled client-side, so this helper is kept as a
+ * no-op to avoid changing callers.
  */
 export function vendorStatusShouldSetWizardCompleteCookie(
   status: VendorLifecycleStatus
@@ -23,25 +23,9 @@ export function vendorStatusShouldClearWizardCompleteCookie(
 }
 
 export async function syncOnboardingWizardCookie(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   status: VendorLifecycleStatus
 ): Promise<void> {
-  try {
-    if (vendorStatusShouldSetWizardCompleteCookie(status)) {
-      const csrf = await fetchCsrfToken();
-      await fetch("/api/onboarding/complete", {
-        method: "POST",
-        credentials: "include",
-        headers: { "X-CSRF-Token": csrf },
-      });
-    } else if (vendorStatusShouldClearWizardCompleteCookie(status)) {
-      const csrf = await fetchCsrfToken();
-      await fetch("/api/onboarding/complete", {
-        method: "DELETE",
-        credentials: "include",
-        headers: { "X-CSRF-Token": csrf },
-      });
-    }
-  } catch {
-    // non-fatal — gates still use GET /vendors/me
-  }
+  // No-op: onboarding state is resolved from /vendors/me and enforced by
+  // client-side guards. Keeping this function avoids churn in profile-store.
 }

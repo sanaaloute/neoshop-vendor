@@ -7,6 +7,7 @@ import {
   type SocketOptions,
 } from "socket.io-client";
 
+import { getSessionId } from "@/lib/auth-storage";
 import { getSocketIoUrl, getSocketIoPath } from "@/config/realtime";
 
 const defaultOptions: Partial<ManagerOptions & SocketOptions> = {
@@ -31,16 +32,13 @@ export function createVendorSocket(
   const url = getSocketIoUrl();
   if (!url) return null;
 
-  const token = accessToken
-    ? accessToken.startsWith("Bearer ")
-      ? accessToken
-      : `Bearer ${accessToken}`
-    : undefined;
+  const sessionId = getSessionId() ?? undefined;
+  const token = accessToken ?? undefined;
 
   const socket = io(url, {
     ...defaultOptions,
     path: getSocketIoPath(),
-    auth: { token },
+    auth: { token, sessionId },
   });
 
   return socket;
