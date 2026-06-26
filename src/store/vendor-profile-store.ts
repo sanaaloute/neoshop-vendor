@@ -1,7 +1,6 @@
 import { create } from "zustand";
 
 import { getApiBaseUrl } from "@/config/auth";
-import { syncOnboardingWizardCookie } from "@/lib/onboarding-wizard-cookie";
 import { getVendorMe } from "@/services/vendor/vendors-api";
 import type { VendorMeResponse } from "@/services/vendor/types";
 
@@ -36,7 +35,6 @@ export const useVendorProfileStore = create<VendorProfileState>((set, get) => ({
       set({ loading: true });
       try {
         const profile = await getVendorMe();
-        await syncOnboardingWizardCookie(profile.status);
         set({ profile, loading: false, fetched: true });
       } catch {
         set({ profile: null, loading: false, fetched: true });

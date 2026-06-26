@@ -1,4 +1,7 @@
-import type { VendorLifecycleStatus } from "@/services/vendor/types";
+import type {
+  VendorLifecycleStatus,
+  VendorMeResponse,
+} from "@/services/vendor/types";
 
 /** Vendor can edit the onboarding wizard (initial setup or after rejection). */
 export function vendorShouldUseOnboardingWizard(
@@ -6,6 +9,13 @@ export function vendorShouldUseOnboardingWizard(
 ): boolean {
   if (status == null) return false;
   return status === "PENDING_ONBOARDING" || status === "REJECTED";
+}
+
+/** True when the authenticated user must complete the vendor onboarding wizard. */
+export function vendorNeedsOnboarding(
+  profile: VendorMeResponse | null
+): boolean {
+  return !profile || vendorShouldUseOnboardingWizard(profile.status);
 }
 
 /** Catalog + messaging — backend also enforces on writes. */

@@ -13,8 +13,10 @@ import { LanguageSwitcher } from "@/components/navigation/language-switcher";
 import { useAuth } from "@/hooks/use-auth";
 import { getAuthErrorMessage } from "@/lib/get-auth-error-message";
 import { useRateLimit } from "@/lib/rate-limit";
+import { vendorNeedsOnboarding } from "@/lib/vendor-lifecycle";
 import { refreshTokensClient } from "@/services/auth-refresh-client";
 import { useAuthStore } from "@/store/auth-store";
+import { useVendorProfileStore } from "@/store/vendor-profile-store";
 import { cn } from "@/lib/utils";
 
 function stripLocalePrefix(path: string): string {
@@ -36,6 +38,16 @@ function safePostLoginPath(next: string | null): string {
     return "/dashboard";
   }
   return stripped;
+}
+
+async function resolvePostLoginPath(next: string | null): Promise<string> {
+  // Ensure the vendor profile is loaded; login already loads it, but this is
+  // idempotent because the profile store coalesces parallel loads.
+  await useVendorProfileStore.getState().load({ force: true });
+  const profile = useVendorProfileStore.getState().profile;
+  return vendorNeedsOnboarding(profile)
+    ? "/onboarding"
+    : safePostLoginPath(next);
 }
 
 function isEmailNotVerifiedError(e: unknown): boolean {
@@ -143,7 +155,8 @@ export function LoginForm() {
     void refreshTokensClient().then(async (token) => {
       if (!token) return;
       await useAuthStore.getState().bootstrap();
-      router.replace(safePostLoginPath(searchParams.get("next")));
+      const nextPath = await resolvePostLoginPath(searchParams.get("next"));
+      router.replace(nextPath);
     });
   }, [router, searchParams]);
 
@@ -243,7 +256,7 @@ export function LoginForm() {
     }
     try {
       await login(values);
-      const nextPath = safePostLoginPath(searchParams.get("next"));
+      const nextPath = await resolvePostLoginPath(searchParams.get("next"));
       // eslint-disable-next-line no-console
       console.log("[login-form] email login success, redirecting to:", nextPath);
       router.replace(nextPath);
@@ -265,7 +278,7 @@ export function LoginForm() {
     }
     try {
       await useAuthStore.getState().loginPhone(values);
-      const nextPath = safePostLoginPath(searchParams.get("next"));
+      const nextPath = await resolvePostLoginPath(searchParams.get("next"));
       // eslint-disable-next-line no-console
       console.log("[login-form] phone login success, redirecting to:", nextPath);
       router.replace(nextPath);
@@ -315,7 +328,8 @@ export function LoginForm() {
         name: values.name,
         surname: values.surname,
       });
-      router.replace(safePostLoginPath(searchParams.get("next")));
+      const nextPath = await resolvePostLoginPath(searchParams.get("next"));
+      router.replace(nextPath);
     } catch (e) {
       setError(mapAuthError(e, "signup"));
     }

@@ -13,6 +13,7 @@ import { VendorTopNav } from "@/components/navigation/vendor-top-nav";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/use-auth";
 import { useVendorKeyboardShortcuts } from "@/hooks/use-vendor-keyboard";
+import { vendorNeedsOnboarding } from "@/lib/vendor-lifecycle";
 import { useUiShellStore } from "@/store/sidebar-store";
 import { useVendorProfileStore } from "@/store/vendor-profile-store";
 
@@ -21,6 +22,8 @@ export function VendorShell({ children }: { children: ReactNode }) {
   const searchRef = useRef<HTMLInputElement>(null);
   const t = useTranslations("metadata");
   const loadVendorProfile = useVendorProfileStore((s) => s.load);
+  const profile = useVendorProfileStore((s) => s.profile);
+  const profileFetched = useVendorProfileStore((s) => s.fetched);
   const { status, user, isVendor } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -35,13 +38,43 @@ export function VendorShell({ children }: { children: ReactNode }) {
     const isAuthPage = pathname === "/login" || pathname.startsWith("/login/");
     if ((status === "unauthenticated" || !user || !isVendor) && !isAuthPage) {
       // eslint-disable-next-line no-console
-      console.log("[VendorShell] redirecting to login, status:", status, "user:", !!user, "isVendor:", isVendor, "pathname:", pathname);
+      console.log(
+        "[VendorShell] redirecting to login, status:",
+        status,
+        "user:",
+        !!user,
+        "isVendor:",
+        isVendor,
+        "pathname:",
+        pathname
+      );
       const id = window.setTimeout(() => {
         router.replace("/login");
       }, 800);
       return () => window.clearTimeout(id);
     }
   }, [status, user, isVendor, pathname, router]);
+
+  // Redirect authenticated vendors to onboarding when they do not have a
+  // completed profile. Onboarding is mandatory before accessing the dashboard.
+  useEffect(() => {
+    if (status === "loading" || status === "idle") return;
+    if (!user || !isVendor) return;
+    if (!profileFetched) return;
+
+    const isOnboardingPage =
+      pathname === "/onboarding" || pathname.startsWith("/onboarding/");
+    if (isOnboardingPage) return;
+
+    if (vendorNeedsOnboarding(profile)) {
+      // eslint-disable-next-line no-console
+      console.log(
+        "[VendorShell] redirecting to onboarding, profile status:",
+        profile?.status ?? "no_profile"
+      );
+      router.replace("/onboarding");
+    }
+  }, [status, user, isVendor, profile, profileFetched, pathname, router]);
 
   const onToggleSidebar = useCallback(() => {
     useUiShellStore.getState().toggleSidebarCollapsed();
@@ -90,9 +123,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="flex flex-1 flex-col">
-            {children}
-          </div>
+          <div className="flex flex-1 flex-col">{children}</div>
         </motion.div>
       </div>
     </div>

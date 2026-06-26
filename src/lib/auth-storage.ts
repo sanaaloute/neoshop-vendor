@@ -46,7 +46,8 @@ export function getRefreshToken(): string | null {
 }
 
 export function getSessionId(): string | null {
-  return safeGet(STORAGE_KEYS.sessionId);
+  const value = safeGet(STORAGE_KEYS.sessionId);
+  return value && value.length > 0 ? value : null;
 }
 
 export function getExpiresAt(): number | null {
@@ -71,7 +72,7 @@ export function setAuthBundle(bundle: Partial<AuthBundle>): void {
   if (bundle.refreshToken !== undefined) {
     safeSet(STORAGE_KEYS.refreshToken, bundle.refreshToken);
   }
-  if (bundle.sessionId !== undefined) {
+  if (bundle.sessionId !== undefined && bundle.sessionId.length > 0) {
     safeSet(STORAGE_KEYS.sessionId, bundle.sessionId);
   }
   if (bundle.expiresAt !== undefined) {

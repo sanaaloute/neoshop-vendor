@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 import { getTokenExpSecondsSafe } from "@/lib/jwt-claims";
-import { getExpiresAt } from "@/lib/auth-storage";
+import { getExpiresAt, getSessionId } from "@/lib/auth-storage";
 import { refreshTokensClient } from "@/services/auth-refresh-client";
 import { useAuthStore } from "@/store/auth-store";
 
@@ -32,7 +32,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const id = window.setTimeout(() => {
       void refreshTokensClient().then((token) => {
         if (token) {
-          void useAuthStore.getState().bootstrap();
+          // The refresh client already updated localStorage. Just sync the
+          // Zustand state so UI timers and the socket stay consistent.
+          useAuthStore
+            .getState()
+            .applyRefreshedAccess(token, getSessionId() ?? undefined);
         }
       });
     }, ms);
@@ -52,7 +56,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (exp * 1000 <= Date.now() + 60_000) {
         void refreshTokensClient().then((t) => {
           if (t) {
-            void useAuthStore.getState().bootstrap();
+            useAuthStore
+              .getState()
+              .applyRefreshedAccess(t, getSessionId() ?? undefined);
           }
           // If refresh fails, do NOT wipe auth here.
           // The next API call will hit the 401 interceptor and retry

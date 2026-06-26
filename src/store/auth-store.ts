@@ -102,7 +102,7 @@ async function finalizeGatewayAuth(
   setAuthBundle({
     accessToken,
     refreshToken,
-    sessionId: sessionId ?? "",
+    sessionId,
     expiresAt,
   });
 
@@ -120,16 +120,16 @@ async function finalizeGatewayAuth(
     status: "authenticated",
   });
 
-  void (async () => {
-    try {
-      const { useVendorProfileStore } = await import(
-        "@/store/vendor-profile-store"
-      );
-      await useVendorProfileStore.getState().load({ force: true });
-    } catch {
-      // optional — gates fetch again if needed
-    }
-  })();
+  // Load the vendor profile so downstream guards (VendorShell, login redirect)
+  // can decide whether the user needs onboarding.
+  try {
+    const { useVendorProfileStore } = await import(
+      "@/store/vendor-profile-store"
+    );
+    await useVendorProfileStore.getState().load({ force: true });
+  } catch {
+    // optional — gates fetch again if needed
+  }
 
   return { accessToken, sessionId, user };
 }
@@ -149,7 +149,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
     setAuthBundle({
       accessToken,
-      sessionId: nextSessionId ?? "",
+      sessionId: nextSessionId ?? undefined,
     });
   },
 

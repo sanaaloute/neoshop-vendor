@@ -4,7 +4,9 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "@/i18n/routing";
 
 import { VENDOR_ROLE } from "@/config/auth";
+import { vendorNeedsOnboarding } from "@/lib/vendor-lifecycle";
 import { useAuthStore } from "@/store/auth-store";
+import { useVendorProfileStore } from "@/store/vendor-profile-store";
 
 export function useAuth() {
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -14,6 +16,14 @@ export function useAuth() {
   const register = useAuthStore((s) => s.register);
   const logout = useAuthStore((s) => s.logout);
   const bootstrap = useAuthStore((s) => s.bootstrap);
+
+  const profile = useVendorProfileStore((s) => s.profile);
+  const profileFetched = useVendorProfileStore((s) => s.fetched);
+
+  const needsOnboarding =
+    status === "authenticated" &&
+    profileFetched &&
+    vendorNeedsOnboarding(profile);
 
   return {
     accessToken,
@@ -26,7 +36,7 @@ export function useAuth() {
     isLoading: status === "loading" || status === "idle",
     isAuthenticated: status === "authenticated" && Boolean(user),
     isVendor: user?.role === VENDOR_ROLE,
-    needsOnboarding: Boolean(user && !user.onboardingComplete),
+    needsOnboarding,
   };
 }
 
