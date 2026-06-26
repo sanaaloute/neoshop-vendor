@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from "react";
 import {
   FileText,
-  Loader2,
   ShieldCheck,
   Trash2,
   Upload,
@@ -24,14 +23,11 @@ import {
 } from "@/components/cards/dashboard-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
 import { vendorIsApprovedForOperations } from "@/lib/vendor-lifecycle";
 import {
@@ -92,8 +88,14 @@ export function SettingsHome() {
     { label: string; variant: React.ComponentProps<typeof Badge>["variant"] }
   > = useMemo(
     () => ({
-      PENDING_ONBOARDING: { label: ts("pendingOnboarding"), variant: "secondary" },
-      PENDING_VERIFICATION: { label: ts("pendingVerification"), variant: "outline" },
+      PENDING_ONBOARDING: {
+        label: ts("pendingOnboarding"),
+        variant: "secondary",
+      },
+      PENDING_VERIFICATION: {
+        label: ts("pendingVerification"),
+        variant: "outline",
+      },
       UNDER_REVIEW: { label: ts("underReview"), variant: "default" },
       APPROVED: { label: ts("approved"), variant: "default" },
       REJECTED: { label: ts("rejected"), variant: "destructive" },
@@ -114,7 +116,8 @@ export function SettingsHome() {
 
   // ── User settings ──
   const [settings, setSettings] = useState<UserSettingsResponse | null>(null);
-  const [originalSettings, setOriginalSettings] = useState<UserSettingsResponse | null>(null);
+  const [originalSettings, setOriginalSettings] =
+    useState<UserSettingsResponse | null>(null);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
@@ -148,7 +151,8 @@ export function SettingsHome() {
         const p = await getUserMe();
         if (!cancelled) setProfile(p);
       } catch (e) {
-        if (!cancelled) setProfileError(httpErrorMessageForUser(e, t("couldNotLoadProfile")));
+        if (!cancelled)
+          setProfileError(httpErrorMessageForUser(e, t("couldNotLoadProfile")));
       }
 
       // Load user settings independently
@@ -160,7 +164,10 @@ export function SettingsHome() {
           setOriginalSettings(normalized);
         }
       } catch (e) {
-        if (!cancelled) setSettingsError(httpErrorMessageForUser(e, t("couldNotLoadPreferences")));
+        if (!cancelled)
+          setSettingsError(
+            httpErrorMessageForUser(e, t("couldNotLoadPreferences"))
+          );
       }
 
       // Load vendor profile independently (may 403 if not registered yet)
@@ -169,9 +176,14 @@ export function SettingsHome() {
         if (!cancelled) setVendor(v);
       } catch (e) {
         if (!cancelled) {
-          const msg = httpErrorMessageForUser(e, t("couldNotLoadBusinessProfile"));
+          const msg = httpErrorMessageForUser(
+            e,
+            t("couldNotLoadBusinessProfile")
+          );
           // Don't block the page — vendor profile is optional until onboarding
-          if ((e as { response?: { status?: number } })?.response?.status === 403) {
+          if (
+            (e as { response?: { status?: number } })?.response?.status === 403
+          ) {
             setVendorError(t("businessProfileNotAvailable"));
           } else {
             setVendorError(msg);
@@ -220,7 +232,8 @@ export function SettingsHome() {
     setSettingsSuccess(false);
     try {
       // Send only fields that actually changed (partial update per API guide).
-      const body: import("@/services/vendor/users-api").UpdateUserSettingsDto = {};
+      const body: import("@/services/vendor/users-api").UpdateUserSettingsDto =
+        {};
       if (settings.orderUpdates !== originalSettings.orderUpdates) {
         body.orderUpdates = settings.orderUpdates;
       }
@@ -348,8 +361,8 @@ export function SettingsHome() {
 
   if (loading) {
     return (
-      <div className="text-muted-foreground flex items-center gap-2 py-10 text-sm">
-        <Loader2 className="size-4 animate-spin" />
+      <div className="text-muted-foreground flex items-center justify-center gap-2 py-12 text-sm">
+        <Spinner size="sm" />
         {t("loadingSettings")}
       </div>
     );
@@ -496,23 +509,17 @@ export function SettingsHome() {
               <p className="text-destructive text-sm">{profileError}</p>
             ) : null}
             {profileSuccess ? (
-              <p className="text-green-600 text-sm">{t("profileSaved")}</p>
+              <p className="text-sm text-green-600">{t("profileSaved")}</p>
             ) : null}
             <div className="flex justify-end">
-              <Button
+              <LoadingButton
                 type="button"
                 onClick={saveProfile}
-                disabled={profileSaving}
+                loading={profileSaving}
+                loadingText={t("saving")}
               >
-                {profileSaving ? (
-                  <>
-                    <Loader2 className="mr-1 size-3.5 animate-spin" />
-                    {t("saving")}
-                  </>
-                ) : (
-                  t("saveProfile")
-                )}
-              </Button>
+                {t("saveProfile")}
+              </LoadingButton>
             </div>
           </DashboardCardContent>
         </DashboardCard>
@@ -647,25 +654,19 @@ export function SettingsHome() {
                   <p className="text-destructive text-sm">{vendorError}</p>
                 ) : null}
                 {vendorSuccess ? (
-                  <p className="text-green-600 text-sm">
+                  <p className="text-sm text-green-600">
                     {t("businessProfileSaved")}
                   </p>
                 ) : null}
                 <div className="flex justify-end">
-                  <Button
+                  <LoadingButton
                     type="button"
                     onClick={saveVendor}
-                    disabled={vendorSaving}
+                    loading={vendorSaving}
+                    loadingText={t("saving")}
                   >
-                    {vendorSaving ? (
-                      <>
-                        <Loader2 className="mr-1 size-3.5 animate-spin" />
-                        {t("saving")}
-                      </>
-                    ) : (
-                      t("saveBusinessProfile")
-                    )}
-                  </Button>
+                    {t("saveBusinessProfile")}
+                  </LoadingButton>
                 </div>
               </DashboardCardContent>
             </DashboardCard>
@@ -688,16 +689,19 @@ export function SettingsHome() {
               <DashboardCardContent className="space-y-4 px-4 py-4">
                 {vendor.statusHistory.length > 0 ? (
                   <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">
+                    <p className="text-muted-foreground text-xs font-medium">
                       {t("statusHistory")}
                     </p>
                     <ul className="space-y-2">
                       {vendor.statusHistory.map((entry, i) => (
                         <li
                           key={i}
-                          className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2 text-sm"
+                          className="border-border/60 flex items-center justify-between rounded-md border px-3 py-2 text-sm"
                         >
-                          <span className="font-medium">{STATUS_VARIANTS[entry.status]?.label ?? entry.status}</span>
+                          <span className="font-medium">
+                            {STATUS_VARIANTS[entry.status]?.label ??
+                              entry.status}
+                          </span>
                           <span className="text-muted-foreground text-xs">
                             {new Date(entry.createdAt).toLocaleDateString()}
                             {entry.note ? ` — ${entry.note}` : ""}
@@ -714,34 +718,26 @@ export function SettingsHome() {
 
                 {canSubmitVerification ? (
                   <div className="flex flex-col items-start gap-2">
-                    <Button
+                    <LoadingButton
                       type="button"
                       onClick={handleSubmitVerification}
-                      disabled={submitting}
+                      loading={submitting}
+                      loadingText={t("submitting")}
                     >
-                      {submitting ? (
-                        <>
-                          <Loader2 className="mr-1 size-3.5 animate-spin" />
-                          {t("submitting")}
-                        </>
-                      ) : (
-                        <>
-                          <ShieldCheck className="mr-1 size-4" />
-                          {t("submitForVerification")}
-                        </>
-                      )}
-                    </Button>
+                      <ShieldCheck className="size-4" />
+                      {t("submitForVerification")}
+                    </LoadingButton>
                     {submitError ? (
                       <p className="text-destructive text-sm">{submitError}</p>
                     ) : null}
                     {submitSuccess ? (
-                      <p className="text-green-600 text-sm">
+                      <p className="text-sm text-green-600">
                         {t("submittedSuccessfully")}
                       </p>
                     ) : null}
                   </div>
                 ) : vendorIsApprovedForOperations(vendor.status) ? (
-                  <p className="text-green-600 text-sm">
+                  <p className="text-sm text-green-600">
                     {t("approvedAndActive")}
                   </p>
                 ) : null}
@@ -753,9 +749,7 @@ export function SettingsHome() {
             {vendorError ? (
               <p className="text-destructive">{vendorError}</p>
             ) : (
-              <p className="text-muted-foreground">
-                {t("noVendorProfile")}
-              </p>
+              <p className="text-muted-foreground">{t("noVendorProfile")}</p>
             )}
           </div>
         )}
@@ -776,7 +770,7 @@ export function SettingsHome() {
               </DashboardCardHeader>
               <DashboardCardContent className="space-y-4 px-4 py-4">
                 {/* Add document form */}
-                <div className="grid gap-3 rounded-lg border border-border/60 p-3">
+                <div className="border-border/60 grid gap-3 rounded-lg border p-3">
                   <p className="text-xs font-medium">{t("addNewDocument")}</p>
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="space-y-1.5">
@@ -820,52 +814,42 @@ export function SettingsHome() {
                     <p className="text-destructive text-sm">{docError}</p>
                   ) : null}
                   <div className="flex justify-end">
-                    <Button
+                    <LoadingButton
                       type="button"
                       size="sm"
                       onClick={addDocument}
-                      disabled={docSaving}
+                      loading={docSaving}
+                      loadingText={t("adding")}
                     >
-                      {docSaving ? (
-                        <>
-                          <Loader2 className="mr-1 size-3.5 animate-spin" />
-                          {t("adding")}
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="mr-1 size-3.5" />
-                          {t("addDocument")}
-                        </>
-                      )}
-                    </Button>
+                      <Upload className="size-3.5" />
+                      {t("addDocument")}
+                    </LoadingButton>
                   </div>
                 </div>
 
                 {/* Document list */}
                 {vendor.documents.length > 0 ? (
                   <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">
+                    <p className="text-muted-foreground text-xs font-medium">
                       {t("uploadedDocuments")}
                     </p>
                     <ul className="space-y-2">
                       {vendor.documents.map((doc) => (
                         <li
                           key={doc.id}
-                          className="flex items-center justify-between gap-3 rounded-md border border-border/60 px-3 py-2.5"
+                          className="border-border/60 flex items-center justify-between gap-3 rounded-md border px-3 py-2.5"
                         >
-                          <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="flex min-w-0 items-center gap-2.5">
                             <FileText className="text-muted-foreground size-4 shrink-0" />
                             <div className="min-w-0">
-                              <p className="text-sm font-medium truncate">
+                              <p className="truncate text-sm font-medium">
                                 {doc.fileName ||
                                   doc.fileUrl.split("/").pop() ||
                                   t("documentFallback")}
                               </p>
                               <p className="text-muted-foreground text-[10px]">
                                 {DOCUMENT_TYPE_LABELS[doc.type]} ·{" "}
-                                {new Date(
-                                  doc.createdAt
-                                ).toLocaleDateString()}
+                                {new Date(doc.createdAt).toLocaleDateString()}
                                 {doc.verifiedAt
                                   ? ` · ${t("verified")} ${new Date(
                                       doc.verifiedAt
@@ -874,7 +858,7 @@ export function SettingsHome() {
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex shrink-0 items-center gap-2">
                             <Button
                               type="button"
                               variant="ghost"
@@ -903,9 +887,7 @@ export function SettingsHome() {
             {vendorError ? (
               <p className="text-destructive">{vendorError}</p>
             ) : (
-              <p className="text-muted-foreground">
-                {t("noVendorProfile")}
-              </p>
+              <p className="text-muted-foreground">{t("noVendorProfile")}</p>
             )}
           </div>
         )}
@@ -933,7 +915,7 @@ export function SettingsHome() {
             ).map(({ key, label }) => (
               <label
                 key={key}
-                className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2.5"
+                className="border-border/60 flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-2.5"
               >
                 <span className="text-sm">{label}</span>
                 <input
@@ -950,7 +932,7 @@ export function SettingsHome() {
             ))}
 
             {/* Language preference */}
-            <div className="space-y-2 rounded-lg border border-border/60 px-3 py-3">
+            <div className="border-border/60 space-y-2 rounded-lg border px-3 py-3">
               <div className="flex items-center gap-2">
                 <Globe className="text-muted-foreground size-4" />
                 <span className="text-sm font-medium">
@@ -965,9 +947,7 @@ export function SettingsHome() {
                 value={settings?.preferredLanguage ?? "en"}
                 onChange={(e) =>
                   setSettings((prev) =>
-                    prev
-                      ? { ...prev, preferredLanguage: e.target.value }
-                      : prev
+                    prev ? { ...prev, preferredLanguage: e.target.value } : prev
                   )
                 }
               >
@@ -983,23 +963,17 @@ export function SettingsHome() {
               <p className="text-destructive text-sm">{settingsError}</p>
             ) : null}
             {settingsSuccess ? (
-              <p className="text-green-600 text-sm">{t("preferencesSaved")}</p>
+              <p className="text-sm text-green-600">{t("preferencesSaved")}</p>
             ) : null}
             <div className="flex justify-end">
-              <Button
+              <LoadingButton
                 type="button"
                 onClick={saveSettings}
-                disabled={settingsSaving}
+                loading={settingsSaving}
+                loadingText={t("saving")}
               >
-                {settingsSaving ? (
-                  <>
-                    <Loader2 className="mr-1 size-3.5 animate-spin" />
-                    {t("saving")}
-                  </>
-                ) : (
-                  t("savePreferences")
-                )}
-              </Button>
+                {t("savePreferences")}
+              </LoadingButton>
             </div>
           </DashboardCardContent>
         </DashboardCard>

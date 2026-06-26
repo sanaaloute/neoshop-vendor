@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 export function OnboardingActions() {
   const router = useRouter();
   const { logout } = useAuth();
-  const t = useTranslations("auth");
+  const t = useTranslations("navigation");
 
   return (
     <div className="flex flex-wrap gap-2">

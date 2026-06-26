@@ -10,6 +10,7 @@ import { VendorForm } from "@/components/forms/vendor-form";
 import { VendorPasswordField } from "@/components/forms/vendor-password-field";
 import { VendorMuted } from "@/components/layout/typography";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import {
   Card,
   CardContent,
@@ -57,13 +58,11 @@ export default function ResetPasswordPage() {
   type Values = z.infer<typeof schema>;
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-background p-4">
+    <main className="bg-background flex min-h-dvh items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle>{t("createNewPasswordTitle")}</CardTitle>
-          <CardDescription>
-            {t("createNewPasswordDescription")}
-          </CardDescription>
+          <CardDescription>{t("createNewPasswordDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {!token ? (
@@ -112,7 +111,8 @@ export default function ResetPasswordPage() {
                   });
                   setSuccess(t("passwordResetSuccess"));
                 } catch (e) {
-                  const msg = getAuthErrorMessage(e) || t("couldNotResetPassword");
+                  const msg =
+                    getAuthErrorMessage(e) || t("couldNotResetPassword");
                   if (msg.includes("Too many requests")) {
                     setError(te("tooManyRequests"));
                   } else {
@@ -142,19 +142,21 @@ export default function ResetPasswordPage() {
                     autoComplete="new-password"
                   />
                   {error ? (
-                    <VendorMuted className="text-destructive">{error}</VendorMuted>
+                    <VendorMuted className="text-destructive">
+                      {error}
+                    </VendorMuted>
                   ) : null}
-                  <Button
+                  <LoadingButton
                     type="submit"
                     className="w-full"
-                    disabled={form.formState.isSubmitting || !rateLimit.canRequest}
+                    loading={form.formState.isSubmitting}
+                    loadingText={t("saving")}
+                    disabled={!rateLimit.canRequest}
                   >
-                    {form.formState.isSubmitting
-                      ? t("saving")
-                      : !rateLimit.canRequest
-                        ? t("retryIn", { seconds: rateLimit.remainingSeconds })
-                        : t("resetPasswordButton")}
-                  </Button>
+                    {!rateLimit.canRequest
+                      ? t("retryIn", { seconds: rateLimit.remainingSeconds })
+                      : t("resetPasswordButton")}
+                  </LoadingButton>
                   <Button
                     type="button"
                     variant="ghost"

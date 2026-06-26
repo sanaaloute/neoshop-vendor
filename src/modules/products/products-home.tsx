@@ -36,7 +36,11 @@ import type { ProductStatus } from "./types";
 
 const easeOutExpo = [0.22, 1, 0.36, 1] as const;
 
-const PRODUCT_STATUSES: { key: ProductStatus; labelKey: string; status: Parameters<typeof StatusBadge>[0]["status"] }[] = [
+const PRODUCT_STATUSES: {
+  key: ProductStatus;
+  labelKey: string;
+  status: Parameters<typeof StatusBadge>[0]["status"];
+}[] = [
   { key: "draft", labelKey: "stats.draft", status: "neutral" },
   { key: "pending_review", labelKey: "stats.pending", status: "pending" },
   { key: "published", labelKey: "stats.published", status: "success" },
@@ -48,7 +52,8 @@ const PRODUCT_STATUSES: { key: ProductStatus; labelKey: string; status: Paramete
 export function ProductsHome() {
   const t = useTranslations("products");
   const { stats, loading: statsLoading } = useProductStats();
-  const { loading: gatewayLoading, error: gatewayError } = useGatewayCatalogBootstrap();
+  const { loading: gatewayLoading, error: gatewayError } =
+    useGatewayCatalogBootstrap();
   const { canWriteCatalog } = useVendorWritesAllowed();
   const categories = useCategoriesStore((s) => s.categories);
 
@@ -65,12 +70,9 @@ export function ProductsHome() {
     setFilterSearch("");
   }, []);
 
-  const handleStatClick = useCallback(
-    (status: ProductStatus) => {
-      setFilterStatus((prev) => (prev === status ? "" : status));
-    },
-    []
-  );
+  const handleStatClick = useCallback((status: ProductStatus) => {
+    setFilterStatus((prev) => (prev === status ? "" : status));
+  }, []);
 
   return (
     <div className="flex flex-col gap-5">
@@ -106,7 +108,11 @@ export function ProductsHome() {
                 key={key}
                 variants={{
                   hidden: { opacity: 0, y: 12 },
-                  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: easeOutExpo } },
+                  show: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { duration: 0.35, ease: easeOutExpo },
+                  },
                 }}
                 whileHover={{ y: -3, transition: { duration: 0.25 } }}
                 whileTap={{ scale: 0.97 }}
@@ -116,7 +122,7 @@ export function ProductsHome() {
                   "bg-card/80 shadow-vendor-card ring-1 ring-white/5 backdrop-blur-md",
                   "dark:bg-card/60 dark:ring-white/10",
                   active
-                    ? "border-primary/50 bg-primary/5 shadow-lg shadow-primary/10 ring-primary/20"
+                    ? "border-primary/50 bg-primary/5 shadow-primary/10 ring-primary/20 shadow-lg"
                     : "border-border/60 hover:border-primary/30 hover:shadow-lg"
                 )}
               >
@@ -132,7 +138,7 @@ export function ProductsHome() {
                     />
                   )}
                 </div>
-                <div className="mt-2 text-2xl font-semibold tabular-nums tracking-tight">
+                <div className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">
                   {count}
                 </div>
                 <div
@@ -170,7 +176,7 @@ export function ProductsHome() {
           aria-disabled={!canWriteCatalog}
           className={cn(
             buttonVariants({ variant: "default", size: "sm" }),
-            "gap-1.5 rounded-xl",
+            "hover:shadow-primary/25 gap-1.5 rounded-xl transition-all hover:scale-[1.02] hover:shadow-lg",
             !canWriteCatalog && "pointer-events-none opacity-50"
           )}
           onClick={(e) => {
@@ -189,10 +195,10 @@ export function ProductsHome() {
         transition={{ duration: 0.35, delay: 0.25, ease: easeOutExpo }}
       >
         <Card className="border-border/60 shadow-vendor-card overflow-hidden">
-          <div className="bg-gradient-to-r from-primary/5 via-transparent to-chart-2/5 border-border/50 border-b px-4 py-2.5">
+          <div className="from-primary/5 to-chart-2/5 border-border/50 border-b bg-gradient-to-r via-transparent px-4 py-2.5">
             <div className="flex items-center gap-2 text-xs font-medium">
               <SlidersHorizontal className="text-muted-foreground size-3.5" />
-              <span className="text-muted-foreground uppercase tracking-wider">
+              <span className="text-muted-foreground tracking-wider uppercase">
                 {t("list.filters")}
               </span>
               {activeFiltersCount > 0 && (

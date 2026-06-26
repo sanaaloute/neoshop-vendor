@@ -8,7 +8,6 @@ import {
   Clock,
   CreditCard,
   ExternalLink,
-  Loader2,
   RotateCcw,
   Save,
   Shield,
@@ -20,6 +19,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -80,7 +81,7 @@ function verificationBadge(
     case "pending":
       return (
         <Badge variant="secondary" className="gap-1.5 px-2.5 py-1 font-medium">
-          <Loader2 className="size-3.5 animate-spin" aria-hidden />
+          <Spinner size="xs" aria-hidden />
           {t("shop.verification.pendingReview")}
         </Badge>
       );
@@ -116,16 +117,17 @@ function VerticalTabsNav({
       {links.map((l) => {
         const active = activeId === l.id;
         return (
-          <button
+          <Button
             key={l.id}
             type="button"
-            onClick={() => onSelect(l.id)}
+            variant="ghost"
             className={cn(
-              "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200",
+              "group flex w-full items-center justify-start gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200",
               active
                 ? "bg-primary/10 text-primary shadow-sm"
                 : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             )}
+            onClick={() => onSelect(l.id)}
           >
             <span
               className={cn(
@@ -143,7 +145,7 @@ function VerticalTabsNav({
                 transition={{ duration: 0.25, ease: easeOutExpo }}
               />
             ) : null}
-          </button>
+          </Button>
         );
       })}
     </nav>
@@ -200,20 +202,17 @@ function FloatingSaveBar({
               <RotateCcw className="size-3.5" />
               {labels.reset}
             </Button>
-            <Button
+            <LoadingButton
               type="button"
               size="sm"
               className="gap-1.5 rounded-xl"
+              loading={saving}
+              loadingText={labels.saving}
               onClick={() => void onSave()}
-              disabled={saving}
             >
-              {saving ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Save className="size-3.5" />
-              )}
-              {saving ? labels.saving : labels.saveChanges}
-            </Button>
+              <Save className="size-3.5" />
+              {labels.saveChanges}
+            </LoadingButton>
           </div>
           {hint ? (
             <motion.span
@@ -288,7 +287,7 @@ export function ShopSettingsHome() {
       if (!shopId) {
         const created = await createShopHook({
           name: state.profile.shopName || t("shop.profile.defaultShopName"),
-          slug: state.profile.slug || t("defaultShopSlug"),
+          slug: state.profile.slug || t("shop.profile.defaultShopSlug"),
           description: state.profile.description || undefined,
         });
         shopId = created?.id;
@@ -437,7 +436,7 @@ export function ShopSettingsHome() {
           <div className="flex items-center gap-2">
             {!hydrated ? (
               <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                <Loader2 className="size-3.5 animate-spin" />
+                <Spinner size="xs" />
                 {t("shop.loadingSavedSettings")}
               </span>
             ) : saveHint ? (
@@ -454,21 +453,18 @@ export function ShopSettingsHome() {
                 {saveHint}
               </motion.span>
             ) : null}
-            <Button
+            <LoadingButton
               type="button"
               size="sm"
               variant="outline"
               className="gap-1.5 rounded-lg"
-              disabled={!state.profile.slug || previewLoading}
+              loading={previewLoading}
+              disabled={!state.profile.slug}
               onClick={() => void runPreview()}
             >
-              {previewLoading ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <ExternalLink className="size-3.5" />
-              )}
+              <ExternalLink className="size-3.5" />
               {t("shop.profile.previewPublicPage")}
-            </Button>
+            </LoadingButton>
           </div>
         </motion.div>
 

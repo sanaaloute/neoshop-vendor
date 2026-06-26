@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
@@ -14,6 +14,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import {
@@ -90,6 +91,7 @@ export function NotificationsPanel({
   const markAllRead = useNotificationsStore((s) => s.markAllRead);
   const unreadCount = useNotificationsStore((s) => s.unreadCount);
   const filterTabs = useFilterTabs();
+  const [markAllReadBusy, setMarkAllReadBusy] = useState(false);
 
   const filtered = useMemo(
     () =>
@@ -102,10 +104,13 @@ export function NotificationsPanel({
   const dense = variant === "compact";
 
   const handleMarkAllRead = async () => {
+    setMarkAllReadBusy(true);
     try {
       await markAllNotificationsRead();
     } catch {
       // ignore API errors; still update local state
+    } finally {
+      setMarkAllReadBusy(false);
     }
     markAllRead();
   };
@@ -133,18 +138,21 @@ export function NotificationsPanel({
               {unreadCount > 99 ? "99+" : unreadCount} {t("new")}
             </Badge>
           ) : (
-            <span className="text-muted-foreground text-xs">{t("caughtUp")}</span>
+            <span className="text-muted-foreground text-xs">
+              {t("caughtUp")}
+            </span>
           )}
         </div>
-        <Button
+        <LoadingButton
           type="button"
           variant="outline"
           size="xs"
+          loading={markAllReadBusy}
           disabled={unreadCount === 0}
           onClick={handleMarkAllRead}
         >
           {t("markAllRead")}
-        </Button>
+        </LoadingButton>
       </div>
 
       <div
@@ -228,13 +236,14 @@ export function NotificationsPanel({
                       {body}
                     </Link>
                   ) : (
-                    <button
+                    <Button
                       type="button"
-                      className={rowClass}
+                      variant="ghost"
+                      className={cn("h-auto w-full", rowClass)}
                       onClick={() => handleItemClick(row.id)}
                     >
                       {body}
-                    </button>
+                    </Button>
                   )}
                 </li>
               );

@@ -27,6 +27,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import { GatewaySyncBanner } from "@/components/feedback/gateway-sync-banner";
 import { getApiBaseUrl } from "@/config/auth";
 import {
@@ -131,11 +132,17 @@ export function MessagingHome() {
   const [peerTyping, setPeerTyping] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
-  const [previewSignedUrls, setPreviewSignedUrls] = useState<Record<string, string>>({});
+  const [previewSignedUrls, setPreviewSignedUrls] = useState<
+    Record<string, string>
+  >({});
   const desktop = useIsDesktop();
-  const { sendMessage, deleteMessage: deleteChatMessage, uploadAttachment } =
-    useChatMessages();
+  const {
+    sendMessage,
+    deleteMessage: deleteChatMessage,
+    uploadAttachment,
+  } = useChatMessages();
   const endRef = useRef<HTMLDivElement>(null);
   const typingIdleRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined
@@ -177,10 +184,7 @@ export function MessagingHome() {
     if (peerTypingClearRef.current) clearTimeout(peerTypingClearRef.current);
     setPeerTyping(payload.isTyping);
     if (payload.isTyping) {
-      peerTypingClearRef.current = setTimeout(
-        () => setPeerTyping(false),
-        4500
-      );
+      peerTypingClearRef.current = setTimeout(() => setPeerTyping(false), 4500);
     }
   });
 
@@ -367,6 +371,7 @@ export function MessagingHome() {
 
     if (getApiBaseUrl()) {
       void (async () => {
+        setSending(true);
         try {
           const sent = (await sendMessage(
             selectedId,
@@ -383,10 +388,11 @@ export function MessagingHome() {
         } catch {
           setSendError(t("sendFailed"));
           /* message stays optimistic in thread */
+        } finally {
+          setSending(false);
         }
       })();
     }
-
   };
 
   const pickFiles = (list: FileList | null) => {
@@ -440,13 +446,10 @@ export function MessagingHome() {
   }
 
   return (
-    <div className="flex min-h-[420px] max-h-[calc(100vh-120px)] flex-col gap-4 sm:min-h-[520px] lg:min-h-[calc(100vh-220px)] lg:max-h-[calc(100vh-160px)]">
+    <div className="flex max-h-[calc(100vh-120px)] min-h-[420px] flex-col gap-4 sm:min-h-[520px] lg:max-h-[calc(100vh-160px)] lg:min-h-[calc(100vh-220px)]">
       <GatewaySyncBanner loading={chatSyncLoading} error={chatSyncError} />
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <Badge
-          variant="secondary"
-          className="gap-1.5 font-normal tabular-nums"
-        >
+        <Badge variant="secondary" className="gap-1.5 font-normal tabular-nums">
           <Radio
             className={cn(
               "size-3.5",
@@ -477,19 +480,21 @@ export function MessagingHome() {
               {threads.map((threadItem) => {
                 const active = threadItem.id === selectedId;
                 const unread = unreadCount(threadItem);
-                const preview = threadItem.messages[threadItem.messages.length - 1];
+                const preview =
+                  threadItem.messages[threadItem.messages.length - 1];
                 const peer = Object.values(threadItem.participantMap).find(
                   (p) => p.role !== "vendor"
                 );
                 return (
                   <li key={threadItem.id}>
-                    <button
+                    <Button
                       type="button"
-                      onClick={() => selectThread(threadItem.id)}
+                      variant="ghost"
                       className={cn(
-                        "flex w-full gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
+                        "h-auto w-full justify-start gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
                         active ? "bg-muted/70" : "hover:bg-muted/40"
                       )}
+                      onClick={() => selectThread(threadItem.id)}
                     >
                       <div className="shrink-0">
                         {peer?.avatarUrl ? (
@@ -519,7 +524,9 @@ export function MessagingHome() {
                               preview.attachments?.[0]?.fileUrl && (
                                 <img
                                   src={
-                                    previewSignedUrls[preview.attachments[0].fileUrl] ??
+                                    previewSignedUrls[
+                                      preview.attachments[0].fileUrl
+                                    ] ??
                                     preview.attachments[0].signedUrl ??
                                     preview.attachments[0].fileUrl
                                   }
@@ -544,7 +551,7 @@ export function MessagingHome() {
                           </span>
                         ) : null}
                       </div>
-                    </button>
+                    </Button>
                   </li>
                 );
               })}
@@ -568,6 +575,7 @@ export function MessagingHome() {
               onDeleteMessage={handleDeleteMessage}
               currentUserIds={currentUserIds}
               signedUrls={signedUrls}
+              sending={sending}
             />
           ) : (
             <EmptyConversation />
@@ -648,6 +656,7 @@ export function MessagingHome() {
                   onDeleteMessage={handleDeleteMessage}
                   currentUserIds={currentUserIds}
                   signedUrls={signedUrls}
+                  sending={sending}
                 />
               </div>
             </>
@@ -671,9 +680,7 @@ function EmptyConversation() {
       <p className="text-foreground text-sm font-medium">
         {t("selectConversationTitle")}
       </p>
-      <p className="max-w-xs text-xs">
-        {t("selectConversationDescription")}
-      </p>
+      <p className="max-w-xs text-xs">{t("selectConversationDescription")}</p>
     </div>
   );
 }
@@ -687,7 +694,7 @@ function TranslationBadge({
 }) {
   if (!originalLanguage || !targetLanguage) return null;
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+    <span className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium">
       <Languages className="size-2.5" aria-hidden />
       {originalLanguage.toUpperCase()} → {targetLanguage.toUpperCase()}
     </span>
@@ -722,7 +729,7 @@ function AttachmentThumbnail({
             loading="lazy"
           />
         ) : (
-          <div className="flex h-[120px] w-[160px] items-center justify-center bg-muted">
+          <div className="bg-muted flex h-[120px] w-[160px] items-center justify-center">
             <ImageIcon className="text-muted-foreground size-8" />
           </div>
         )}
@@ -735,7 +742,7 @@ function AttachmentThumbnail({
       href={url}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex items-center gap-2 rounded-md border bg-background/80 px-2.5 py-1.5 text-xs font-medium ring-1 ring-border/60 backdrop-blur-sm transition-colors hover:bg-background"
+      className="bg-background/80 ring-border/60 hover:bg-background inline-flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs font-medium ring-1 backdrop-blur-sm transition-colors"
     >
       {mime === "application/pdf" ? (
         <FileIcon className="size-4 text-red-500" aria-hidden />
@@ -820,14 +827,16 @@ function MessageBubble({
           {m.senderUserId &&
             currentUserIds.includes(m.senderUserId) &&
             hoveredMessageId === m.id && (
-              <button
+              <Button
                 type="button"
+                variant="destructive"
+                size="icon-xs"
                 onClick={() => onDeleteMessage(m.id)}
-                className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-100"
+                className="bg-destructive text-destructive-foreground absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full opacity-0 transition-opacity group-hover:opacity-100 hover:opacity-100"
                 title={t("deleteMessage")}
               >
                 <Trash2 className="size-3" />
-              </button>
+              </Button>
             )}
           {/* Message text: show translated by default for received messages when available */}
           {m.body ? (
@@ -840,14 +849,16 @@ function MessageBubble({
           {/* Translation toggle (receiver only, when translation exists) */}
           {!isMine && hasTranslation && (
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="xs"
                 onClick={() => setShowOriginal((v) => !v)}
-                className="inline-flex items-center gap-1 rounded-md bg-background/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground ring-1 ring-border/60 backdrop-blur-sm transition-colors hover:text-foreground"
+                className="bg-background/80 text-muted-foreground ring-border/60 hover:text-foreground inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium ring-1 backdrop-blur-sm transition-colors"
               >
                 <Languages className="size-2.5" aria-hidden />
                 {showOriginal ? t("showTranslation") : t("showOriginal")}
-              </button>
+              </Button>
               <TranslationBadge
                 originalLanguage={m.originalLanguage}
                 targetLanguage={m.targetLanguage}
@@ -856,10 +867,7 @@ function MessageBubble({
           )}
           {m.attachments?.length ? (
             <div
-              className={cn(
-                "grid gap-2",
-                m.body ? "mt-2 border-t pt-2" : ""
-              )}
+              className={cn("grid gap-2", m.body ? "mt-2 border-t pt-2" : "")}
             >
               {m.attachments.map((a) => (
                 <AttachmentThumbnail
@@ -893,6 +901,7 @@ function ConversationBody({
   onDeleteMessage,
   currentUserIds,
   signedUrls,
+  sending,
 }: {
   thread: ChatThread;
   draft: string;
@@ -907,6 +916,7 @@ function ConversationBody({
   onDeleteMessage: (messageId: string) => void;
   currentUserIds: string[];
   signedUrls: Record<string, string>;
+  sending: boolean;
 }) {
   const t = useTranslations("chat");
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
@@ -1000,7 +1010,7 @@ function ConversationBody({
             onChange={(e) => onDraftChange(e.target.value)}
             className="min-h-[88px] flex-1 resize-y"
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
+              if (e.key === "Enter" && !e.shiftKey && !sending) {
                 e.preventDefault();
                 onSend();
               }
@@ -1030,14 +1040,15 @@ function ConversationBody({
             >
               <Paperclip className="size-4" />
             </Button>
-            <Button
+            <LoadingButton
               type="button"
               className="gap-1.5 sm:w-full"
+              loading={sending}
               onClick={onSend}
             >
               <Send className="size-4" aria-hidden />
               {t("send")}
-            </Button>
+            </LoadingButton>
           </div>
         </div>
         <p className="text-muted-foreground mt-2 text-[11px]">

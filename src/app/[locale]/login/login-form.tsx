@@ -10,6 +10,8 @@ import { VendorForm } from "@/components/forms/vendor-form";
 import { VendorTextField } from "@/components/forms/vendor-text-field";
 import { VendorPasswordField } from "@/components/forms/vendor-password-field";
 import { LanguageSwitcher } from "@/components/navigation/language-switcher";
+import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import { useAuth } from "@/hooks/use-auth";
 import { getAuthErrorMessage } from "@/lib/get-auth-error-message";
 import { useRateLimit } from "@/lib/rate-limit";
@@ -258,7 +260,10 @@ export function LoginForm() {
       await login(values);
       const nextPath = await resolvePostLoginPath(searchParams.get("next"));
       // eslint-disable-next-line no-console
-      console.log("[login-form] email login success, redirecting to:", nextPath);
+      console.log(
+        "[login-form] email login success, redirecting to:",
+        nextPath
+      );
       router.replace(nextPath);
       // eslint-disable-next-line no-console
       console.log("[login-form] router.replace called");
@@ -280,7 +285,10 @@ export function LoginForm() {
       await useAuthStore.getState().loginPhone(values);
       const nextPath = await resolvePostLoginPath(searchParams.get("next"));
       // eslint-disable-next-line no-console
-      console.log("[login-form] phone login success, redirecting to:", nextPath);
+      console.log(
+        "[login-form] phone login success, redirecting to:",
+        nextPath
+      );
       router.replace(nextPath);
       // eslint-disable-next-line no-console
       console.log("[login-form] router.replace called");
@@ -336,7 +344,7 @@ export function LoginForm() {
   }
 
   const inputClassName =
-    "h-10 rounded-xl border-white/10 bg-white/[0.04] px-4 text-sm text-white placeholder:text-slate-500 focus-visible:border-teal-400/50 focus-visible:ring-teal-400/20 dark:bg-white/[0.04]";
+    "h-10 rounded-xl border-white/10 bg-white/[0.04] px-4 text-sm text-white placeholder:text-slate-500 transition-all duration-200 hover:border-white/15 hover:bg-white/[0.06] focus-visible:border-teal-400/50 focus-visible:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-teal-400/20 dark:bg-white/[0.04]";
 
   return (
     <div className="relative w-full max-w-[520px] rounded-2xl border border-white/[0.06] bg-[#0f0f16]/90 p-8 shadow-2xl backdrop-blur-xl sm:p-10">
@@ -361,30 +369,32 @@ export function LoginForm() {
       <div className="mt-6">
         {/* Auth method tabs */}
         <div className="mb-6 flex gap-2 rounded-xl bg-white/[0.03] p-1">
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => setAuthMethod("phone")}
             className={cn(
-              "flex-1 rounded-lg py-2 text-sm font-medium transition-all",
+              "flex-1 rounded-lg py-2 text-sm font-medium transition-all hover:bg-transparent hover:text-white",
               authMethod === "phone"
-                ? "bg-teal-400 text-slate-900"
+                ? "bg-teal-400 text-slate-900 hover:bg-teal-300 hover:text-slate-900"
                 : "text-slate-400 hover:text-slate-200"
             )}
           >
             {t("phone")}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => setAuthMethod("email")}
             className={cn(
-              "flex-1 rounded-lg py-2 text-sm font-medium transition-all",
+              "flex-1 rounded-lg py-2 text-sm font-medium transition-all hover:bg-transparent hover:text-white",
               authMethod === "email"
-                ? "bg-teal-400 text-slate-900"
+                ? "bg-teal-400 text-slate-900 hover:bg-teal-300 hover:text-slate-900"
                 : "text-slate-400 hover:text-slate-200"
             )}
           >
             {t("email")}
-          </button>
+          </Button>
         </div>
 
         {signupSuccess ? (
@@ -464,22 +474,19 @@ export function LoginForm() {
                   {error ? (
                     <p className="text-sm text-red-400">{error}</p>
                   ) : null}
-                  <button
+                  <LoadingButton
                     type="submit"
-                    disabled={
-                      form.formState.isSubmitting ||
-                      !phoneRegisterRateLimit.canRequest
-                    }
-                    className="h-10 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
+                    className="h-10 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-all hover:scale-[1.01] hover:bg-teal-300 hover:shadow-lg hover:shadow-teal-400/20 disabled:opacity-50"
+                    loading={form.formState.isSubmitting}
+                    loadingText={t("creatingAccount")}
+                    disabled={!phoneRegisterRateLimit.canRequest}
                   >
-                    {form.formState.isSubmitting
-                      ? t("creatingAccount")
-                      : !phoneRegisterRateLimit.canRequest
-                        ? t("retryIn", {
-                            seconds: phoneRegisterRateLimit.remainingSeconds,
-                          })
-                        : t("createVendorAccount")}
-                  </button>
+                    {!phoneRegisterRateLimit.canRequest
+                      ? t("retryIn", {
+                          seconds: phoneRegisterRateLimit.remainingSeconds,
+                        })
+                      : t("createVendorAccount")}
+                  </LoadingButton>
                 </>
               )}
             </VendorForm>
@@ -566,22 +573,19 @@ export function LoginForm() {
                   {error ? (
                     <p className="text-sm text-red-400">{error}</p>
                   ) : null}
-                  <button
+                  <LoadingButton
                     type="submit"
-                    disabled={
-                      form.formState.isSubmitting ||
-                      !registerRateLimit.canRequest
-                    }
-                    className="h-10 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
+                    className="h-10 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-all hover:scale-[1.01] hover:bg-teal-300 hover:shadow-lg hover:shadow-teal-400/20 disabled:opacity-50"
+                    loading={form.formState.isSubmitting}
+                    loadingText={t("creatingAccount")}
+                    disabled={!registerRateLimit.canRequest}
                   >
-                    {form.formState.isSubmitting
-                      ? t("creatingAccount")
-                      : !registerRateLimit.canRequest
-                        ? t("retryIn", {
-                            seconds: registerRateLimit.remainingSeconds,
-                          })
-                        : t("createVendorAccount")}
-                  </button>
+                    {!registerRateLimit.canRequest
+                      ? t("retryIn", {
+                          seconds: registerRateLimit.remainingSeconds,
+                        })
+                      : t("createVendorAccount")}
+                  </LoadingButton>
                 </>
               )}
             </VendorForm>
@@ -616,22 +620,19 @@ export function LoginForm() {
                   labelClassName="text-slate-400"
                 />
                 {error ? <p className="text-sm text-red-400">{error}</p> : null}
-                <button
+                <LoadingButton
                   type="submit"
-                  disabled={
-                    form.formState.isSubmitting ||
-                    !phoneLoginRateLimit.canRequest
-                  }
-                  className="h-10 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
+                  className="h-10 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-all hover:scale-[1.01] hover:bg-teal-300 hover:shadow-lg hover:shadow-teal-400/20 disabled:opacity-50"
+                  loading={form.formState.isSubmitting}
+                  loadingText={t("signingIn")}
+                  disabled={!phoneLoginRateLimit.canRequest}
                 >
-                  {form.formState.isSubmitting
-                    ? t("signingIn")
-                    : !phoneLoginRateLimit.canRequest
-                      ? t("retryIn", {
-                          seconds: phoneLoginRateLimit.remainingSeconds,
-                        })
-                      : t("continue")}
-                </button>
+                  {!phoneLoginRateLimit.canRequest
+                    ? t("retryIn", {
+                        seconds: phoneLoginRateLimit.remainingSeconds,
+                      })
+                    : t("continue")}
+                </LoadingButton>
               </>
             )}
           </VendorForm>
@@ -665,13 +666,14 @@ export function LoginForm() {
                   labelClassName="text-slate-400"
                 />
                 <div className="flex justify-end">
-                  <button
+                  <Button
                     type="button"
-                    className="text-sm text-teal-400 hover:text-teal-300"
+                    variant="link"
+                    className="h-auto p-0 text-sm text-teal-400 hover:text-teal-300"
                     onClick={() => router.push("/login/forgot-password")}
                   >
                     {t("forgotPassword")}
-                  </button>
+                  </Button>
                 </div>
                 {error ? <p className="text-sm text-red-400">{error}</p> : null}
                 {unverifiedEmail && (
@@ -680,9 +682,11 @@ export function LoginForm() {
                     {resendSuccess ? (
                       <p className="mt-1 text-green-300">{resendSuccess}</p>
                     ) : (
-                      <button
+                      <Button
                         type="button"
-                        className="mt-1 text-xs font-medium text-teal-400 hover:text-teal-300 disabled:opacity-50"
+                        variant="link"
+                        size="sm"
+                        className="mt-1 h-auto p-0 text-xs font-medium text-teal-400 hover:text-teal-300 disabled:opacity-50"
                         disabled={!resendRateLimit.canRequest}
                         onClick={() =>
                           handleResendVerification(unverifiedEmail)
@@ -693,25 +697,23 @@ export function LoginForm() {
                               seconds: resendRateLimit.remainingSeconds,
                             })
                           : t("resendVerification")}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 )}
-                <button
+                <LoadingButton
                   type="submit"
-                  disabled={
-                    form.formState.isSubmitting || !loginRateLimit.canRequest
-                  }
-                  className="h-10 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-colors hover:bg-teal-300 disabled:opacity-50"
+                  className="h-10 w-full rounded-xl bg-teal-400 text-sm font-semibold text-slate-900 transition-all hover:scale-[1.01] hover:bg-teal-300 hover:shadow-lg hover:shadow-teal-400/20 disabled:opacity-50"
+                  loading={form.formState.isSubmitting}
+                  loadingText={t("signingIn")}
+                  disabled={!loginRateLimit.canRequest}
                 >
-                  {form.formState.isSubmitting
-                    ? t("signingIn")
-                    : !loginRateLimit.canRequest
-                      ? t("retryIn", {
-                          seconds: loginRateLimit.remainingSeconds,
-                        })
-                      : t("continue")}
-                </button>
+                  {!loginRateLimit.canRequest
+                    ? t("retryIn", {
+                        seconds: loginRateLimit.remainingSeconds,
+                      })
+                    : t("continue")}
+                </LoadingButton>
               </>
             )}
           </VendorForm>
@@ -722,24 +724,26 @@ export function LoginForm() {
             {isSignup ? (
               <p className="text-slate-500">
                 {t("alreadyHaveAccount")}{" "}
-                <button
+                <Button
                   type="button"
-                  className="font-medium text-teal-400 hover:text-teal-300"
+                  variant="link"
+                  className="h-auto p-0 font-medium text-teal-400 hover:text-teal-300"
                   onClick={() => setMode("login")}
                 >
                   {t("signInLink")}
-                </button>
+                </Button>
               </p>
             ) : (
               <p className="text-slate-500">
                 {t("newVendor")}{" "}
-                <button
+                <Button
                   type="button"
-                  className="font-medium text-teal-400 hover:text-teal-300"
+                  variant="link"
+                  className="h-auto p-0 font-medium text-teal-400 hover:text-teal-300"
                   onClick={() => setMode("signup")}
                 >
                   {t("createAccountLink")}
-                </button>
+                </Button>
               </p>
             )}
           </div>

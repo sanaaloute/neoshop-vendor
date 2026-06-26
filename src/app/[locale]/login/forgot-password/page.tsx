@@ -9,6 +9,7 @@ import { VendorForm } from "@/components/forms/vendor-form";
 import { VendorTextField } from "@/components/forms/vendor-text-field";
 import { VendorMuted } from "@/components/layout/typography";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import {
   Card,
   CardContent,
@@ -36,13 +37,11 @@ export default function ForgotPasswordPage() {
   const rateLimit = useRateLimit("auth:forgot-password", 3, 60_000);
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-background p-4">
+    <main className="bg-background flex min-h-dvh items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle>{t("resetPasswordTitle")}</CardTitle>
-          <CardDescription>
-            {t("resetPasswordDescription")}
-          </CardDescription>
+          <CardDescription>{t("resetPasswordDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {success ? (
@@ -95,19 +94,21 @@ export default function ForgotPasswordPage() {
                     autoComplete="email"
                   />
                   {error ? (
-                    <VendorMuted className="text-destructive">{error}</VendorMuted>
+                    <VendorMuted className="text-destructive">
+                      {error}
+                    </VendorMuted>
                   ) : null}
-                  <Button
+                  <LoadingButton
                     type="submit"
                     className="w-full"
-                    disabled={form.formState.isSubmitting || !rateLimit.canRequest}
+                    loading={form.formState.isSubmitting}
+                    loadingText={t("saving")}
+                    disabled={!rateLimit.canRequest}
                   >
-                    {form.formState.isSubmitting
-                      ? t("saving")
-                      : !rateLimit.canRequest
-                        ? t("retryIn", { seconds: rateLimit.remainingSeconds })
-                        : t("sendResetLink")}
-                  </Button>
+                    {!rateLimit.canRequest
+                      ? t("retryIn", { seconds: rateLimit.remainingSeconds })
+                      : t("sendResetLink")}
+                  </LoadingButton>
                   <Button
                     type="button"
                     variant="ghost"

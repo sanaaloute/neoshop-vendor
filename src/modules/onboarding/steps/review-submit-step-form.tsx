@@ -14,7 +14,6 @@ import {
   Phone,
   Globe,
   Send,
-  Loader2,
 } from "lucide-react";
 
 import { useOnboardingWizardStore } from "@/store/onboarding-wizard-store";
@@ -26,9 +25,10 @@ import { createReviewSchema } from "@/modules/onboarding/schemas";
 import type { ReviewSchema } from "@/modules/onboarding/schemas";
 import { VendorForm } from "@/components/forms";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-
+import { LoadingButton } from "@/components/feedback/loading-button";
 
 import { COUNTRIES } from "@/modules/onboarding/countries";
 
@@ -65,7 +65,8 @@ export function ReviewSubmitStepForm() {
       resetWizard();
       router.replace("/dashboard");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("steps.review.submissionFailed");
+      const msg =
+        err instanceof Error ? err.message : t("steps.review.submissionFailed");
       setSubmitError(msg);
     } finally {
       setApiBusy(false);
@@ -90,13 +91,13 @@ export function ReviewSubmitStepForm() {
             >
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
               <div className="flex flex-col gap-1">
-                <span className="font-semibold text-amber-200 text-sm">
+                <span className="text-sm font-semibold text-amber-200">
                   {t("steps.review.previousSubmissionRejected")}
                 </span>
-                <span className="text-amber-100/80 text-xs leading-relaxed">
+                <span className="text-xs leading-relaxed text-amber-100/80">
                   {rejectionReason}
                 </span>
-                <span className="text-amber-100/60 text-[10px]">
+                <span className="text-[10px] text-amber-100/60">
                   {t("steps.review.updateAndSubmitAgain")}
                 </span>
               </div>
@@ -105,8 +106,10 @@ export function ReviewSubmitStepForm() {
 
           {/* Summary card */}
           <div className="glass-card shadow-glass overflow-hidden rounded-xl">
-            <div className="border-b border-border/50 bg-card/60 px-5 py-3">
-              <h3 className="font-semibold text-sm">{t("steps.review.applicationSummary")}</h3>
+            <div className="border-border/50 bg-card/60 border-b px-5 py-3">
+              <h3 className="text-sm font-semibold">
+                {t("steps.review.applicationSummary")}
+              </h3>
             </div>
             <div className="flex flex-col gap-4 p-5">
               {/* Vendor type */}
@@ -118,37 +121,76 @@ export function ReviewSubmitStepForm() {
 
               {/* Basic info */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <SummaryRow icon={Building2} label={t("steps.review.legalName")} value={draft.basicInfo.legalBusinessName} />
+                <SummaryRow
+                  icon={Building2}
+                  label={t("steps.review.legalName")}
+                  value={draft.basicInfo.legalBusinessName}
+                />
                 {draft.basicInfo.tradeName && (
-                  <SummaryRow icon={Building2} label={t("steps.review.tradeName")} value={draft.basicInfo.tradeName} />
+                  <SummaryRow
+                    icon={Building2}
+                    label={t("steps.review.tradeName")}
+                    value={draft.basicInfo.tradeName}
+                  />
                 )}
-                <SummaryRow icon={Mail} label={t("steps.review.email")} value={draft.basicInfo.businessEmail} />
-                <SummaryRow icon={Phone} label={t("steps.review.phone")} value={draft.basicInfo.businessPhone} />
-                <SummaryRow icon={Globe} label={t("steps.review.country")} value={countryName(draft.basicInfo.countryCode)} />
+                <SummaryRow
+                  icon={Mail}
+                  label={t("steps.review.email")}
+                  value={draft.basicInfo.businessEmail}
+                />
+                <SummaryRow
+                  icon={Phone}
+                  label={t("steps.review.phone")}
+                  value={draft.basicInfo.businessPhone}
+                />
+                <SummaryRow
+                  icon={Globe}
+                  label={t("steps.review.country")}
+                  value={countryName(draft.basicInfo.countryCode)}
+                />
               </div>
 
-              <div className="h-px bg-border/40" />
+              <div className="bg-border/40 h-px" />
 
               {/* Address */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <SummaryRow icon={MapPin} label={t("steps.review.address")} value={draft.addressInfo.addressLine1} />
+                <SummaryRow
+                  icon={MapPin}
+                  label={t("steps.review.address")}
+                  value={draft.addressInfo.addressLine1}
+                />
                 {draft.addressInfo.city && (
-                  <SummaryRow icon={MapPin} label={t("steps.review.city")} value={draft.addressInfo.city} />
+                  <SummaryRow
+                    icon={MapPin}
+                    label={t("steps.review.city")}
+                    value={draft.addressInfo.city}
+                  />
                 )}
                 {draft.addressInfo.region && (
-                  <SummaryRow icon={MapPin} label={t("steps.review.region")} value={draft.addressInfo.region} />
+                  <SummaryRow
+                    icon={MapPin}
+                    label={t("steps.review.region")}
+                    value={draft.addressInfo.region}
+                  />
                 )}
                 {draft.addressInfo.postalCode && (
-                  <SummaryRow icon={MapPin} label={t("steps.review.postalCode")} value={draft.addressInfo.postalCode} />
+                  <SummaryRow
+                    icon={MapPin}
+                    label={t("steps.review.postalCode")}
+                    value={draft.addressInfo.postalCode}
+                  />
                 )}
               </div>
 
-              <div className="h-px bg-border/40" />
+              <div className="bg-border/40 h-px" />
 
               {/* Documents */}
               <div className="flex flex-col gap-2">
-                <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
-                  {t("steps.review.documents", { count: draft.documents.filter((d) => d.status === "done").length })}
+                <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                  {t("steps.review.documents", {
+                    count: draft.documents.filter((d) => d.status === "done")
+                      .length,
+                  })}
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {draft.documents
@@ -157,7 +199,7 @@ export function ReviewSubmitStepForm() {
                       <Badge
                         key={doc.id}
                         variant="secondary"
-                        className="flex items-center gap-1.5 py-1 pl-2 pr-2.5 text-xs"
+                        className="flex items-center gap-1.5 py-1 pr-2.5 pl-2 text-xs"
                       >
                         <FileText className="h-3 w-3" />
                         {doc.fileName}
@@ -170,10 +212,12 @@ export function ReviewSubmitStepForm() {
 
           {/* Missing fields alert */}
           {incomplete && (
-            <div className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive text-xs">
+            <div className="border-destructive/20 bg-destructive/10 text-destructive flex items-start gap-2 rounded-lg border px-3 py-2 text-xs">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div className="flex flex-col gap-0.5">
-                <span className="font-medium">{t("steps.review.missingInfo")}</span>
+                <span className="font-medium">
+                  {t("steps.review.missingInfo")}
+                </span>
                 <ul className="list-disc pl-4">
                   {missing.map((m) => (
                     <li key={m}>{t(`steps.missingFields.${m}` as const)}</li>
@@ -184,22 +228,29 @@ export function ReviewSubmitStepForm() {
           )}
 
           {/* Terms checkbox */}
-          <div className="flex items-start gap-3 rounded-lg border border-border/40 bg-card/40 p-4">
+          <div className="border-border/40 bg-card/40 flex items-start gap-3 rounded-lg border p-4">
             <Checkbox
               id="acceptedTerms"
               checked={form.watch("acceptedTerms")}
-              onCheckedChange={(v: boolean) => form.setValue("acceptedTerms", v, { shouldValidate: true })}
+              onCheckedChange={(v: boolean) =>
+                form.setValue("acceptedTerms", v, { shouldValidate: true })
+              }
               className="mt-0.5"
             />
             <div className="flex flex-col gap-1">
-              <Label htmlFor="acceptedTerms" className="cursor-pointer text-sm font-medium">
+              <Label
+                htmlFor="acceptedTerms"
+                className="cursor-pointer text-sm font-medium"
+              >
                 {t("steps.review.confirmAccurate")}
               </Label>
               <p className="text-muted-foreground text-xs">
                 {t("steps.review.termsDescription")}
               </p>
               {form.formState.errors.acceptedTerms && (
-                <p className="text-destructive text-xs">{form.formState.errors.acceptedTerms.message}</p>
+                <p className="text-destructive text-xs">
+                  {form.formState.errors.acceptedTerms.message}
+                </p>
               )}
             </div>
           </div>
@@ -209,7 +260,7 @@ export function ReviewSubmitStepForm() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive text-xs"
+              className="border-destructive/20 bg-destructive/10 text-destructive flex items-center gap-2 rounded-lg border px-3 py-2 text-xs"
             >
               <AlertTriangle className="h-4 w-4 shrink-0" />
               {submitError}
@@ -217,31 +268,25 @@ export function ReviewSubmitStepForm() {
           )}
 
           {/* Submit button */}
-          <div className="flex items-center justify-between gap-3 border-t border-border/40 pt-5">
-            <button
+          <div className="border-border/40 flex items-center justify-between gap-3 border-t pt-5">
+            <Button
               type="button"
+              variant="link"
               onClick={() => useOnboardingWizardStore.getState().setStep(2)}
-              className="text-muted-foreground text-sm hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground"
             >
               {t("wizard.back")}
-            </button>
-            <button
+            </Button>
+            <LoadingButton
               type="submit"
-              disabled={incomplete || apiBusy}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              loading={apiBusy}
+              loadingText={t("steps.review.submitting")}
+              disabled={incomplete}
+              className="gap-2 px-5 py-2.5"
             >
-              {apiBusy ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("steps.review.submitting")}
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4" />
-                  {t("steps.review.submitForVerification")}
-                </>
-              )}
-            </button>
+              <Send className="h-4 w-4" />
+              {t("steps.review.submitForVerification")}
+            </LoadingButton>
           </div>
         </div>
       )}
@@ -261,9 +306,11 @@ function SummaryRow({
   if (!value) return null;
   return (
     <div className="flex items-center gap-2.5">
-      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <Icon className="text-muted-foreground h-4 w-4 shrink-0" />
       <div className="flex flex-col">
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+        <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+          {label}
+        </span>
         <span className="text-sm font-medium">{value}</span>
       </div>
     </div>

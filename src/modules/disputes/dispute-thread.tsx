@@ -4,14 +4,17 @@ import { useMemo, useState } from "react";
 import { Send } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 import type { DisputeMessage } from "./types";
 
-function bubbleStyles(role: DisputeMessage["author"]["role"], internal: boolean) {
+function bubbleStyles(
+  role: DisputeMessage["author"]["role"],
+  internal: boolean
+) {
   if (internal) {
     return "mr-auto max-w-[92%] border-amber-500/25 bg-amber-500/10 text-foreground dark:bg-amber-500/5";
   }
@@ -114,16 +117,18 @@ export function DisputeThread({
             <span className="text-muted-foreground text-[11px]">
               {t("sendHint")}
             </span>
-            <Button
+            <LoadingButton
               type="button"
               size="sm"
               className="gap-1.5"
               onClick={submit}
-              disabled={!draft.trim() || busy}
+              disabled={!draft.trim()}
+              loading={busy}
+              loadingText={t("send")}
             >
               <Send className="size-3.5" aria-hidden />
               {t("send")}
-            </Button>
+            </LoadingButton>
           </div>
         </div>
       ) : null}

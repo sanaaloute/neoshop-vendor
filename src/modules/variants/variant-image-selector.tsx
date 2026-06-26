@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useVariantWorkbenchStore } from "@/store/variant-workbench-store";
+import { cn } from "@/lib/utils";
 
 import type { VariantRow } from "./types";
 
@@ -39,10 +40,12 @@ export function VariantImageSelector({ row }: VariantImageSelectorProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-sm"
         onClick={() => setOpen(true)}
-        className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border/60 bg-muted/30 hover:bg-muted/50"
+        className="border-border/60 bg-muted/30 hover:bg-muted/50 relative h-10 w-10 overflow-hidden rounded-md border"
         title={row.imageUrl ? t("changeImage") : t("selectImage")}
       >
         {row.imageUrl ? (
@@ -53,16 +56,14 @@ export function VariantImageSelector({ row }: VariantImageSelectorProps) {
             className="h-full w-full object-cover"
           />
         ) : (
-          <ImageIcon className="size-4 text-muted-foreground" />
+          <ImageIcon className="text-muted-foreground size-4" />
         )}
-      </button>
+      </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{t("selectVariantImage")}</DialogTitle>
-            <DialogDescription>
-              {t("chooseProductImage")}
-            </DialogDescription>
+            <DialogDescription>{t("chooseProductImage")}</DialogDescription>
           </DialogHeader>
 
           {productImages.length === 0 ? (
@@ -74,15 +75,17 @@ export function VariantImageSelector({ row }: VariantImageSelectorProps) {
               {productImages.map((img) => {
                 const selected = row.imageUrl === img.url;
                 return (
-                  <button
+                  <Button
                     key={img.id}
                     type="button"
+                    variant="outline"
                     onClick={() => img.url && handleSelect(img.url)}
-                    className={`group relative aspect-square overflow-hidden rounded-lg border transition-all ${
+                    className={cn(
+                      "group relative aspect-square overflow-hidden rounded-lg border p-0 transition-all hover:scale-[1.02]",
                       selected
-                        ? "border-primary ring-2 ring-primary"
+                        ? "border-primary ring-primary ring-2"
                         : "border-border hover:border-primary/60"
-                    }`}
+                    )}
                     title={img.fileName || ""}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -92,11 +95,11 @@ export function VariantImageSelector({ row }: VariantImageSelectorProps) {
                       className="h-full w-full object-cover"
                     />
                     {selected && (
-                      <span className="absolute top-1 right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-medium">
+                      <span className="bg-primary text-primary-foreground absolute top-1 right-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-medium">
                         ✓
                       </span>
                     )}
-                  </button>
+                  </Button>
                 );
               })}
             </div>

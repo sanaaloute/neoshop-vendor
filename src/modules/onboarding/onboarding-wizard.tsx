@@ -4,12 +4,12 @@ import type { ReactNode } from "react";
 
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import { Card } from "@/components/ui/card";
 import { useOnboardingWizardStore } from "@/store/onboarding-wizard-store";
 
 import { ActiveOnboardingStep } from "./onboarding-step-forms";
 import { OnboardingProgress } from "./onboarding-progress";
-
 
 type OnboardingWizardProps = {
   actionsSlot?: ReactNode;
@@ -30,7 +30,7 @@ export function OnboardingWizard({ actionsSlot }: OnboardingWizardProps) {
   ];
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-6 animate-page-enter">
+    <div className="animate-page-enter flex w-full max-w-3xl flex-col gap-6">
       {actionsSlot ? (
         <div className="flex justify-end">{actionsSlot}</div>
       ) : null}
@@ -62,20 +62,14 @@ export function OnboardingWizard({ actionsSlot }: OnboardingWizardProps) {
             >
               {t("wizard.back")}
             </Button>
-            <Button
+            <LoadingButton
               type="submit"
               form="vendor-onboarding-step-form"
-              disabled={apiBusy}
+              loading={apiBusy}
+              loadingText={t("wizard.saving")}
             >
-              {apiBusy ? (
-                <span className="flex items-center gap-2">
-                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  {t("wizard.saving")}
-                </span>
-              ) : (
-                t("wizard.continue")
-              )}
-            </Button>
+              {t("wizard.continue")}
+            </LoadingButton>
           </div>
         )}
       </Card>

@@ -8,7 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Shimmer } from "@/components/ui/skeleton";
 import { VendorMuted } from "@/components/layout/typography";
 import { cn } from "@/lib/utils";
-import { fadeUp } from "@/lib/motion";
+import { fadeUp, staggerContainerFast } from "@/lib/motion";
 
 type DataTableShellProps = {
   title?: string;
@@ -61,18 +61,34 @@ export function DataTableShell({
       <ScrollArea className="border-border/50 max-h-[min(70vh,720px)] rounded-lg border">
         <div className="min-w-0 overflow-x-auto">
           {loading ? (
-            <div className="space-y-2 p-4">
-              <div className="flex items-center gap-2 pb-2">
-                <Spinner size="sm" />
+            <motion.div
+              className="space-y-2 p-4"
+              variants={staggerContainerFast}
+              initial="hidden"
+              animate="show"
+            >
+              <motion.div
+                className="bg-card/60 border-border/60 mb-2 flex items-center gap-2 rounded-lg border p-3 backdrop-blur-sm"
+                variants={fadeUp}
+              >
+                <Spinner size="sm" variant="premium" />
                 <VendorMuted className="text-xs">Loading data…</VendorMuted>
-              </div>
+              </motion.div>
               {Array.from({ length: loadingRows }).map((_, i) => (
-                <Shimmer
+                <motion.div
                   key={i}
-                  className={cn("h-10 w-full rounded-md", i % 2 === 1 && "w-[92%]")}
-                />
+                  variants={fadeUp}
+                  transition={{ delay: i * 0.05 }}
+                >
+                  <Shimmer
+                    className={cn(
+                      "h-10 w-full rounded-md",
+                      i % 2 === 1 && "w-[92%]"
+                    )}
+                  />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           ) : (
             children
           )}

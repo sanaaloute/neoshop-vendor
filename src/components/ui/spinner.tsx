@@ -23,7 +23,7 @@ const strokeMap = {
 type SpinnerProps = {
   size?: keyof typeof sizeMap;
   className?: string;
-  variant?: "default" | "primary" | "secondary" | "white";
+  variant?: "default" | "primary" | "secondary" | "white" | "premium";
   label?: string;
 };
 
@@ -34,7 +34,7 @@ export function Spinner({
   label,
 }: SpinnerProps) {
   const colorClass =
-    variant === "primary"
+    variant === "primary" || variant === "premium"
       ? "text-primary"
       : variant === "secondary"
         ? "text-muted-foreground"
@@ -56,7 +56,7 @@ export function Spinner({
         aria-hidden="true"
       >
         <circle
-          className="opacity-20"
+          className={cn("opacity-20", variant === "premium" && "opacity-30")}
           cx="12"
           cy="12"
           r="10"
@@ -131,7 +131,12 @@ export function CircularProgress({
   const offset = circumference - (Math.min(value, 100) / 100) * circumference;
 
   return (
-    <div className={cn("relative inline-flex items-center justify-center", className)}>
+    <div
+      className={cn(
+        "relative inline-flex items-center justify-center",
+        className
+      )}
+    >
       <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2}

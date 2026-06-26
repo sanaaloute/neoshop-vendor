@@ -18,7 +18,9 @@ import { CATEGORY_ATTRIBUTE_PRESETS } from "./category-attribute-presets";
 import type { VariantAttributeKind } from "./types";
 import { emptyGenerationDefaults } from "./types";
 
-function useKindOptions(t: ReturnType<typeof useTranslations>): { value: VariantAttributeKind; label: string }[] {
+function useKindOptions(
+  t: ReturnType<typeof useTranslations>
+): { value: VariantAttributeKind; label: string }[] {
   return [
     { value: "color", label: t("kindColor") },
     { value: "size", label: t("kindSize") },
@@ -114,7 +116,9 @@ export function VariantMatrixPanel() {
           </h2>
           {productCategoryNames.length > 0 && (
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <span className="text-muted-foreground text-xs">{t("categories")}:</span>
+              <span className="text-muted-foreground text-xs">
+                {t("categories")}:
+              </span>
               {productCategoryNames.map((name) => (
                 <Badge
                   key={name}
@@ -196,7 +200,7 @@ export function VariantMatrixPanel() {
                 {t("barcode")}
               </Label>
               <Input
-                className="h-8 w-28 text-xs font-mono"
+                className="h-8 w-28 font-mono text-xs"
                 value={defaults.barcode}
                 onChange={(e) =>
                   setDefaults((d) => ({ ...d, barcode: e.target.value }))
@@ -238,9 +242,11 @@ export function VariantMatrixPanel() {
           </p>
           <div className="flex flex-wrap gap-2">
             {suggestedAttributes.map((preset) => (
-              <button
+              <Button
                 key={preset.name}
                 type="button"
+                variant="outline"
+                size="xs"
                 onClick={() =>
                   handleAddSuggestedAttribute(
                     preset.name,
@@ -250,12 +256,12 @@ export function VariantMatrixPanel() {
                 }
                 className="border-border bg-card hover:bg-muted/60 inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-left text-xs transition-colors"
               >
-                <Plus className="size-3.5 text-primary" />
+                <Plus className="text-primary size-3.5" />
                 <span className="font-medium">{preset.name}</span>
                 <span className="text-muted-foreground">
                   {t("values", { count: preset.values.length })}
                 </span>
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -305,16 +311,18 @@ export function VariantMatrixPanel() {
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {attr.values.map((v) => (
-                <button
+                <Button
                   key={v}
                   type="button"
-                  className="border-border bg-muted/60 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
+                  variant="secondary"
+                  size="xs"
+                  className="rounded-full"
                   onClick={() => removeValueFromAttribute(attr.id, v)}
                   title={t("clickToRemove")}
                 >
                   {v}
                   <span className="text-muted-foreground">×</span>
-                </button>
+                </Button>
               ))}
             </div>
             <div className="mt-2 flex gap-2">
@@ -421,7 +429,7 @@ function DefaultNum({
       </Label>
       <Input
         type="number"
-        className="h-8 w-full text-xs tabular-nums font-mono"
+        className="h-8 w-full font-mono text-xs tabular-nums"
         min={min}
         step={step}
         value={Number.isFinite(value) ? String(value) : ""}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -25,10 +26,12 @@ export function VendorNotificationsMenu({ className }: { className?: string }) {
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-sm"
         className={cn(
-          "text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 relative inline-flex size-9 items-center justify-center rounded-lg border border-transparent transition-colors outline-none focus-visible:ring-[3px]",
+          "text-muted-foreground hover:text-foreground relative focus-visible:ring-[3px]",
           className
         )}
         aria-label={
@@ -42,7 +45,7 @@ export function VendorNotificationsMenu({ className }: { className?: string }) {
             {unread > 99 ? "99+" : unread}
           </span>
         ) : null}
-      </button>
+      </Button>
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent

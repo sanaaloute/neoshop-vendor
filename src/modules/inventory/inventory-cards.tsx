@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getApiBaseUrl } from "@/config/auth";
@@ -55,17 +55,9 @@ export function InventoryCards({
     try {
       await adjustVariantQuantity(line.id, { delta });
     } catch (e) {
-      adjustStock(
-        line.id,
-        -delta,
-        "adjustment",
-        t("revertedFailed")
-      );
+      adjustStock(line.id, -delta, "adjustment", t("revertedFailed"));
       setError(
-        httpErrorMessageForUser(
-          e,
-          t("couldNotUpdate", { sku: line.sku })
-        )
+        httpErrorMessageForUser(e, t("couldNotUpdate", { sku: line.sku }))
       );
     }
   };
@@ -87,7 +79,7 @@ export function InventoryCards({
             key={line.id}
             line={line}
             warehouseLabel={whLabel(warehouses, line.warehouseId)}
-            onAdjust={(delta, note) => void runAdjustment(line, delta, note)}
+            onAdjust={(delta, note) => runAdjustment(line, delta, note)}
           />
         ))}
       </div>
@@ -102,10 +94,20 @@ function InventoryLineCard({
 }: {
   line: InventoryLine;
   warehouseLabel: string;
-  onAdjust: (delta: number, note?: string) => void;
+  onAdjust: (delta: number, note?: string) => Promise<void>;
 }) {
   const t = useTranslations("inventory");
   const [deltaInput, setDeltaInput] = useState("");
+  const [adjusting, setAdjusting] = useState(false);
+
+  const runAdjust = async (delta: number, note?: string) => {
+    setAdjusting(true);
+    try {
+      await onAdjust(delta, note);
+    } finally {
+      setAdjusting(false);
+    }
+  };
   const atp = availableToPromise(line);
   const low = isLowStock(line);
   const critical = line.onHand <= Math.max(0, line.reorderPoint - 10);
@@ -139,7 +141,10 @@ function InventoryLineCard({
           <div className="mt-2 flex items-center gap-1.5 rounded-md bg-red-500/10 px-2 py-1 text-xs text-red-700 dark:text-red-400">
             <AlertTriangle className="size-3.5 shrink-0" aria-hidden />
             <span>
-              {t("atOrBelowReorder", { onHand: line.onHand, reorderPoint: line.reorderPoint })}
+              {t("atOrBelowReorder", {
+                onHand: line.onHand,
+                reorderPoint: line.reorderPoint,
+              })}
             </span>
           </div>
         ) : null}
@@ -154,11 +159,7 @@ function InventoryLineCard({
             <div
               className={cn(
                 "h-full rounded-full transition-all duration-500",
-                critical
-                  ? "bg-destructive"
-                  : low
-                    ? "bg-red-500"
-                    : "bg-primary"
+                critical ? "bg-destructive" : low ? "bg-red-500" : "bg-primary"
               )}
               style={{ width: `${fillPct}%` }}
             />
@@ -181,22 +182,24 @@ function InventoryLineCard({
       </CardContent>
       <CardFooter className="border-border bg-muted/30 flex flex-col gap-2 border-t">
         <div className="flex w-full gap-2">
-          <Button
+          <LoadingButton
             type="button"
             size="sm"
             variant="secondary"
-            onClick={() => onAdjust(5, t("quickPlus5"))}
+            loading={adjusting}
+            onClick={() => void runAdjust(5, t("quickPlus5"))}
           >
             +5
-          </Button>
-          <Button
+          </LoadingButton>
+          <LoadingButton
             type="button"
             size="sm"
             variant="secondary"
-            onClick={() => onAdjust(-5, t("quickMinus5"))}
+            loading={adjusting}
+            onClick={() => void runAdjust(-5, t("quickMinus5"))}
           >
             −5
-          </Button>
+          </LoadingButton>
         </div>
         <div className="flex w-full flex-wrap items-end gap-2">
           <div className="grid min-w-0 flex-1 gap-1">
@@ -211,20 +214,22 @@ function InventoryLineCard({
               onChange={(e) => setDeltaInput(e.target.value)}
             />
           </div>
-          <Button
+          <LoadingButton
             type="button"
             size="sm"
             className="h-8 shrink-0"
+            loading={adjusting}
+            disabled={adjusting}
             onClick={() => {
               const n = Number.parseInt(deltaInput, 10);
               if (!Number.isFinite(n) || n === 0) return;
-              onAdjust(n, `Manual ${n >= 0 ? "+" : ""}${n}`);
+              void runAdjust(n, `Manual ${n >= 0 ? "+" : ""}${n}`);
               setDeltaInput("");
             }}
           >
             <Package className="size-3.5" aria-hidden />
             {t("apply")}
-          </Button>
+          </LoadingButton>
         </div>
       </CardFooter>
     </Card>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Loader2, MessageSquare } from "lucide-react";
+import { ArrowLeft, MessageSquare } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import {
@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 import { useDisputes } from "@/hooks/use-disputes";
 
 import { DisputeThread } from "./dispute-thread";
@@ -40,7 +41,10 @@ import { toDisputeCase } from "./types";
 
 import { useIsDesktop } from "@/hooks/use-is-desktop";
 
-function statusBadge(status: DisputeStatus, t: ReturnType<typeof useTranslations>) {
+function statusBadge(
+  status: DisputeStatus,
+  t: ReturnType<typeof useTranslations>
+) {
   switch (status) {
     case "open":
       return (
@@ -117,7 +121,9 @@ function DisputeCasePanel({
         <div className="flex flex-wrap items-center gap-2">
           {statusBadge(dispute.status, t)}
           <span className="text-muted-foreground text-xs tabular-nums">
-            {t("disputes.home.due", { date: new Date(dispute.dueAt).toLocaleDateString() })}
+            {t("disputes.home.due", {
+              date: new Date(dispute.dueAt).toLocaleDateString(),
+            })}
           </span>
         </div>
         <DisputeWorkflow status={dispute.status} />
@@ -193,7 +199,9 @@ export function DisputesHome() {
       } catch (err) {
         if (cancelled) return;
         setDetailError(
-          err instanceof Error ? err.message : t("disputes.home.loadDetailsError")
+          err instanceof Error
+            ? err.message
+            : t("disputes.home.loadDetailsError")
         );
       } finally {
         if (!cancelled) setDetailLoading(false);
@@ -253,7 +261,9 @@ export function DisputesHome() {
         }
       } catch (err) {
         setSendError(
-          err instanceof Error ? err.message : t("disputes.home.loadDetailsError")
+          err instanceof Error
+            ? err.message
+            : t("disputes.home.loadDetailsError")
         );
       } finally {
         setSendLoading(false);
@@ -275,7 +285,7 @@ export function DisputesHome() {
   if (listLoading) {
     return (
       <div className="flex min-h-[420px] flex-col items-center justify-center gap-3">
-        <Loader2 className="text-muted-foreground size-8 animate-spin" />
+        <Spinner size="xl" />
         <p className="text-muted-foreground text-sm">
           {t("disputes.home.loading")}
         </p>
@@ -308,7 +318,9 @@ export function DisputesHome() {
       <div className="flex min-h-[420px] flex-col gap-5">
         <DashboardCard className="max-w-xl">
           <DashboardCardHeader>
-            <DashboardCardTitle>{t("disputes.home.emptyTitle")}</DashboardCardTitle>
+            <DashboardCardTitle>
+              {t("disputes.home.emptyTitle")}
+            </DashboardCardTitle>
             <DashboardCardDescription>
               {t("disputes.home.emptyDescription")}
             </DashboardCardDescription>
@@ -334,9 +346,15 @@ export function DisputesHome() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="pl-3">{t("disputes.home.table.case")}</TableHead>
-                  <TableHead className="text-right">{t("disputes.home.table.amount")}</TableHead>
-                  <TableHead className="pr-3">{t("disputes.home.table.status")}</TableHead>
+                  <TableHead className="pl-3">
+                    {t("disputes.home.table.case")}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {t("disputes.home.table.amount")}
+                  </TableHead>
+                  <TableHead className="pr-3">
+                    {t("disputes.home.table.status")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -378,8 +396,8 @@ export function DisputesHome() {
                 </h2>
                 <p className="text-muted-foreground text-sm">
                   {t("disputes.home.orderLabel")}{" "}
-                  <span className="font-mono">{selected.orderId}</span>{" "}
-                  · {t("disputes.home.reasonLabel")}{" "}
+                  <span className="font-mono">{selected.orderId}</span> ·{" "}
+                  {t("disputes.home.reasonLabel")}{" "}
                   <Badge
                     variant="outline"
                     className="align-middle font-mono text-xs"
@@ -390,7 +408,7 @@ export function DisputesHome() {
               </div>
               {detailLoading ? (
                 <div className="flex flex-1 flex-col items-center justify-center gap-2">
-                  <Loader2 className="text-muted-foreground size-8 animate-spin" />
+                  <Spinner size="lg" />
                   <p className="text-muted-foreground text-sm">
                     {t("disputes.home.loadingDetails")}
                   </p>
@@ -414,7 +432,9 @@ export function DisputesHome() {
                 className="text-muted-foreground size-10"
                 aria-hidden
               />
-              <p className="text-sm font-medium">{t("disputes.home.selectDisputeTitle")}</p>
+              <p className="text-sm font-medium">
+                {t("disputes.home.selectDisputeTitle")}
+              </p>
               <p className="text-muted-foreground max-w-sm text-xs">
                 {t("disputes.home.selectDisputeDescription")}
               </p>
@@ -461,7 +481,7 @@ export function DisputesHome() {
                 </Button>
                 {detailLoading ? (
                   <div className="flex flex-1 flex-col items-center justify-center gap-2">
-                    <Loader2 className="text-muted-foreground size-8 animate-spin" />
+                    <Spinner size="lg" />
                     <p className="text-muted-foreground text-sm">
                       {t("disputes.home.loadingDetails")}
                     </p>
@@ -483,7 +503,9 @@ export function DisputesHome() {
           ) : (
             <SheetHeader>
               <SheetTitle>{t("disputes.home.sheet.disputeTitle")}</SheetTitle>
-              <SheetDescription>{t("disputes.home.sheet.selectCase")}</SheetDescription>
+              <SheetDescription>
+                {t("disputes.home.sheet.selectCase")}
+              </SheetDescription>
             </SheetHeader>
           )}
         </SheetContent>

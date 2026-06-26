@@ -12,6 +12,7 @@ import {
   DashboardCardTitle,
 } from "@/components/cards/dashboard-card";
 import { Badge } from "@/components/ui/badge";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import {
   Table,
   TableBody,
@@ -26,7 +27,10 @@ import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { WalletTransaction } from "@/services/vendor/types";
 
-function txnTypeLabel(type: WalletTransaction["type"], t: (key: string) => string): string {
+function txnTypeLabel(
+  type: WalletTransaction["type"],
+  t: (key: string) => string
+): string {
   switch (type) {
     case "credit":
       return t("payouts.txnType.credit");
@@ -49,7 +53,10 @@ function txnTypeLabel(type: WalletTransaction["type"], t: (key: string) => strin
   }
 }
 
-function statusBadge(status: WalletTransaction["status"], t: (key: string) => string) {
+function statusBadge(
+  status: WalletTransaction["status"],
+  t: (key: string) => string
+) {
   switch (status) {
     case "completed":
       return (
@@ -98,6 +105,15 @@ export function PayoutsHome() {
   const { currentRate, fetchRate } = useExchangeRates();
   const { balance, transactions, loading, changeCurrency } = useWallet();
   const [currencyBusy, setCurrencyBusy] = useState(false);
+  const [rateBusy, setRateBusy] = useState(false);
+
+  const handleFetchRate = (to: string) => {
+    if (rateBusy) return;
+    setRateBusy(true);
+    fetchRate(balance?.currency ?? "CNY", to).finally(() => {
+      setRateBusy(false);
+    });
+  };
 
   const handleToggleCurrency = () => {
     if (!balance || currencyBusy) return;
@@ -115,7 +131,10 @@ export function PayoutsHome() {
           label={t("payouts.home.availableBalance")}
           value={
             balance
-              ? formatCurrency(parseMoney(balance.availableBalance), balance.currency)
+              ? formatCurrency(
+                  parseMoney(balance.availableBalance),
+                  balance.currency
+                )
               : "—"
           }
         />
@@ -124,7 +143,10 @@ export function PayoutsHome() {
           label={t("payouts.home.heldBalance")}
           value={
             balance
-              ? formatCurrency(parseMoney(balance.reservedBalance), balance.currency)
+              ? formatCurrency(
+                  parseMoney(balance.reservedBalance),
+                  balance.currency
+                )
               : "—"
           }
         />
@@ -133,7 +155,10 @@ export function PayoutsHome() {
           label={t("payouts.home.totalBalance")}
           value={
             balance
-              ? formatCurrency(parseMoney(balance.totalBalance), balance.currency)
+              ? formatCurrency(
+                  parseMoney(balance.totalBalance),
+                  balance.currency
+                )
               : "—"
           }
         />
@@ -150,27 +175,30 @@ export function PayoutsHome() {
 
       <div className="flex flex-wrap items-center gap-2">
         {["USD", "EUR", "GBP", "JPY"].map((to) => (
-          <button
+          <LoadingButton
             key={to}
             type="button"
-            onClick={() => fetchRate(balance?.currency ?? "CNY", to)}
-            className="bg-muted/40 border-border/60 hover:bg-muted/60 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
+            variant="outline"
+            size="sm"
+            loading={rateBusy}
+            onClick={() => handleFetchRate(to)}
           >
             {balance?.currency ?? "CNY"} → {to}
-          </button>
+          </LoadingButton>
         ))}
-        <button
+        <LoadingButton
           type="button"
-          disabled={currencyBusy || !balance}
+          variant="outline"
+          size="sm"
+          disabled={!balance}
+          loading={currencyBusy}
+          loadingText={t("payouts.home.changingCurrency")}
           onClick={handleToggleCurrency}
-          className="bg-muted/40 border-border/60 hover:bg-muted/60 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
         >
-          {currencyBusy
-            ? t("payouts.home.changingCurrency")
-            : t("payouts.home.toggleCurrency", {
-                currency: balance?.currency === "XOF" ? "CNY" : "XOF",
-              })}
-        </button>
+          {t("payouts.home.toggleCurrency", {
+            currency: balance?.currency === "XOF" ? "CNY" : "XOF",
+          })}
+        </LoadingButton>
       </div>
 
       <DashboardCard className="gap-0 py-0">
@@ -187,11 +215,15 @@ export function PayoutsHome() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="pl-4">{t("payouts.home.table.date")}</TableHead>
+                  <TableHead className="pl-4">
+                    {t("payouts.home.table.date")}
+                  </TableHead>
                   <TableHead>{t("payouts.home.table.type")}</TableHead>
                   <TableHead>{t("payouts.home.table.description")}</TableHead>
                   <TableHead>{t("payouts.home.table.status")}</TableHead>
-                  <TableHead className="pr-4 text-right">{t("payouts.home.table.amount")}</TableHead>
+                  <TableHead className="pr-4 text-right">
+                    {t("payouts.home.table.amount")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

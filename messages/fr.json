@@ -91,7 +91,8 @@
     "requestNewLink": "Demander un nouveau lien",
     "passwordResetSuccess": "Votre mot de passe a été réinitialisé. Veuillez vous connecter avec votre nouveau mot de passe.",
     "couldNotResetPassword": "Impossible de réinitialiser le mot de passe. Réessayez.",
-    "resetPasswordButton": "Réinitialiser le mot de passe"
+    "resetPasswordButton": "Réinitialiser le mot de passe",
+    "saving": "Enregistrement…"
   },
   "dashboard": {
     "overview": "Vue d'ensemble",
@@ -557,6 +558,7 @@
     "couldNotUpdateStatus": "Impossible de mettre à jour le statut de la commande. Réessayez.",
     "invalidStatusTransition": "Ce changement de statut n'est pas autorisé depuis l'état actuel de la commande.",
     "markedRefundedFromDrawer": "Marqué remboursé depuis le panneau",
+    "markedCancelledFromDrawer": "Marqué annulé depuis le panneau",
     "bulkRefundFromList": "Remboursement groupé depuis la liste des commandes",
     "overview": "Aperçu",
     "trackingTab": "Suivi",

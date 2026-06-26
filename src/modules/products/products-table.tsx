@@ -4,18 +4,13 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import {
-  Copy,
-  Eye,
-  Layers,
-  Loader2,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { Copy, Eye, Layers, Pencil, Trash2 } from "lucide-react";
 
 import { EmptyState } from "@/components/cards/empty-state";
 import { StatusBadge } from "@/components/cards/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -54,7 +49,9 @@ import { productToFormValues } from "./types";
 
 const easeOutExpo = [0.22, 1, 0.36, 1] as const;
 
-function statusToBadge(s: ProductStatus): Parameters<typeof StatusBadge>[0]["status"] {
+function statusToBadge(
+  s: ProductStatus
+): Parameters<typeof StatusBadge>[0]["status"] {
   if (s === "published") return "success";
   if (s === "draft") return "neutral";
   if (s === "pending_review") return "pending";
@@ -182,10 +179,7 @@ export function ProductsTable({
     if (syncLoading) {
       return (
         <Card className="border-border/80 text-muted-foreground border-dashed p-12 text-center text-sm">
-          <Loader2
-            className="text-primary mx-auto size-8 animate-spin"
-            aria-hidden
-          />
+          <Spinner size="lg" variant="primary" className="mx-auto" />
           <p className="mt-3">{t("list.loading")}</p>
         </Card>
       );
@@ -226,7 +220,7 @@ export function ProductsTable({
             exit={{ opacity: 0, height: 0, y: -8 }}
             transition={{ duration: 0.3, ease: easeOutExpo }}
           >
-            <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent shadow-vendor-card overflow-hidden">
+            <Card className="border-primary/30 from-primary/5 shadow-vendor-card overflow-hidden bg-gradient-to-r to-transparent">
               <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-end lg:justify-between">
                 <div className="flex items-center gap-2">
                   <div className="bg-primary/15 flex size-8 items-center justify-center rounded-lg">
@@ -234,11 +228,15 @@ export function ProductsTable({
                       {selected.size}
                     </span>
                   </div>
-                  <p className="text-sm font-medium">{t("list.bulkEdit", { count: selected.size })}</p>
+                  <p className="text-sm font-medium">
+                    {t("list.bulkEdit", { count: selected.size })}
+                  </p>
                 </div>
                 <div className="flex flex-wrap items-end gap-3">
                   <div className="grid gap-1.5">
-                    <Label className="text-muted-foreground text-xs">{t("list.setStatus")}</Label>
+                    <Label className="text-muted-foreground text-xs">
+                      {t("list.setStatus")}
+                    </Label>
                     <Select
                       value={bulkStatus}
                       onValueChange={(v) =>
@@ -250,15 +248,25 @@ export function ProductsTable({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="">—</SelectItem>
-                        <SelectItem value="draft">{t("status.draft")}</SelectItem>
-                        <SelectItem value="pending_review">{t("status.pending_review")}</SelectItem>
-                        <SelectItem value="published">{t("status.published")}</SelectItem>
-                        <SelectItem value="hidden">{t("status.hidden")}</SelectItem>
+                        <SelectItem value="draft">
+                          {t("status.draft")}
+                        </SelectItem>
+                        <SelectItem value="pending_review">
+                          {t("status.pending_review")}
+                        </SelectItem>
+                        <SelectItem value="published">
+                          {t("status.published")}
+                        </SelectItem>
+                        <SelectItem value="hidden">
+                          {t("status.hidden")}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="grid gap-1.5">
-                    <Label className="text-muted-foreground text-xs">{t("list.setPrimaryCategory")}</Label>
+                    <Label className="text-muted-foreground text-xs">
+                      {t("list.setPrimaryCategory")}
+                    </Label>
                     <Select
                       value={bulkCategory}
                       onValueChange={(v) => setBulkCategory(v ?? "")}
@@ -276,14 +284,15 @@ export function ProductsTable({
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button
+                  <LoadingButton
                     type="button"
                     size="sm"
-                    disabled={listBusy || !canWriteCatalog}
+                    loading={listBusy}
+                    disabled={!canWriteCatalog}
                     onClick={() => void applyBulk()}
                   >
                     {t("list.apply")}
-                  </Button>
+                  </LoadingButton>
                   <Button
                     type="button"
                     size="sm"
@@ -315,22 +324,22 @@ export function ProductsTable({
                     aria-label={t("list.selectAll")}
                   />
                 </TableHead>
-                <TableHead className="text-xs font-medium uppercase tracking-wider">
+                <TableHead className="text-xs font-medium tracking-wider uppercase">
                   {t("list.name")}
                 </TableHead>
-                <TableHead className="text-xs font-medium uppercase tracking-wider">
+                <TableHead className="text-xs font-medium tracking-wider uppercase">
                   {t("list.sku")}
                 </TableHead>
-                <TableHead className="hidden text-xs font-medium uppercase tracking-wider md:table-cell">
+                <TableHead className="hidden text-xs font-medium tracking-wider uppercase md:table-cell">
                   {t("list.categories")}
                 </TableHead>
-                <TableHead className="text-xs font-medium uppercase tracking-wider">
+                <TableHead className="text-xs font-medium tracking-wider uppercase">
                   {t("list.price")}
                 </TableHead>
-                <TableHead className="text-xs font-medium uppercase tracking-wider">
+                <TableHead className="text-xs font-medium tracking-wider uppercase">
                   {t("list.status")}
                 </TableHead>
-                <TableHead className="text-right text-xs font-medium uppercase tracking-wider">
+                <TableHead className="text-right text-xs font-medium tracking-wider uppercase">
                   {t("list.actions")}
                 </TableHead>
               </TableRow>
@@ -360,7 +369,7 @@ export function ProductsTable({
                       }}
                       data-state={selected.has(p.id) ? "selected" : undefined}
                       className={cn(
-                        "border-b transition-colors hover:bg-muted/40",
+                        "hover:bg-muted/40 border-b transition-colors",
                         p.status === "archived" && "opacity-60",
                         selected.has(p.id) && "bg-primary/5"
                       )}
@@ -425,27 +434,34 @@ export function ProductsTable({
                           >
                             <Layers className="size-4" aria-hidden />
                           </Link>
-                          <Button
+                          <LoadingButton
                             variant="ghost"
                             size="icon-sm"
                             title={t("list.duplicate")}
-                            disabled={listBusy || !canWriteCatalog}
+                            loading={listBusy}
+                            disabled={!canWriteCatalog}
                             onClick={() => {
                               void (async () => {
                                 setListError(null);
                                 if (getApiBaseUrl()) {
                                   setListBusy(true);
                                   try {
-                                    const copy = await duplicateProductOnGateway(p.id);
+                                    const copy =
+                                      await duplicateProductOnGateway(p.id);
                                     if (!copy) return;
                                     replaceCatalog([
                                       copy,
-                                      ...products.filter((x) => x.id !== copy.id),
+                                      ...products.filter(
+                                        (x) => x.id !== copy.id
+                                      ),
                                     ]);
                                     router.push(`/products/${copy.id}/edit`);
                                   } catch (e) {
                                     setListError(
-                                      httpErrorMessageForUser(e, t("list.couldNotDuplicate"))
+                                      httpErrorMessageForUser(
+                                        e,
+                                        t("list.couldNotDuplicate")
+                                      )
                                     );
                                   } finally {
                                     setListBusy(false);
@@ -458,12 +474,13 @@ export function ProductsTable({
                             }}
                           >
                             <Copy className="size-4" aria-hidden />
-                          </Button>
-                          <Button
+                          </LoadingButton>
+                          <LoadingButton
                             variant="ghost"
                             size="icon-sm"
                             title={t("list.delete")}
-                            disabled={listBusy || !canWriteCatalog}
+                            loading={listBusy}
+                            disabled={!canWriteCatalog}
                             onClick={() => {
                               void (async () => {
                                 setListError(null);
@@ -476,7 +493,10 @@ export function ProductsTable({
                                     );
                                   } catch (e) {
                                     setListError(
-                                      httpErrorMessageForUser(e, t("list.couldNotDelete"))
+                                      httpErrorMessageForUser(
+                                        e,
+                                        t("list.couldNotDelete")
+                                      )
                                     );
                                   } finally {
                                     setListBusy(false);
@@ -487,13 +507,15 @@ export function ProductsTable({
                                 const workbenchProductId =
                                   useVariantWorkbenchStore.getState().productId;
                                 if (workbenchProductId === p.id) {
-                                  useVariantWorkbenchStore.getState().resetWorkbench();
+                                  useVariantWorkbenchStore
+                                    .getState()
+                                    .resetWorkbench();
                                 }
                               })();
                             }}
                           >
                             <Trash2 className="size-4" aria-hidden />
-                          </Button>
+                          </LoadingButton>
                         </div>
                       </td>
                     </motion.tr>

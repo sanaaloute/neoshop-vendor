@@ -91,7 +91,8 @@
     "requestNewLink": "Request new link",
     "passwordResetSuccess": "Your password has been reset. Please sign in with your new password.",
     "couldNotResetPassword": "Could not reset password. Try again.",
-    "resetPasswordButton": "Reset password"
+    "resetPasswordButton": "Reset password",
+    "saving": "Saving…"
   },
   "dashboard": {
     "overview": "Overview",
@@ -447,6 +448,7 @@
     "couldNotUpdateStatus": "Could not update order status. Try again.",
     "invalidStatusTransition": "That status change is not allowed from the current order state.",
     "markedRefundedFromDrawer": "Marked refunded from drawer",
+    "markedCancelledFromDrawer": "Marked cancelled from drawer",
     "bulkRefundFromList": "Bulk refund from vendor orders list",
     "overview": "Overview",
     "trackingTab": "Tracking",

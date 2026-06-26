@@ -26,12 +26,7 @@ import { VendorTextField } from "@/components/forms/vendor-text-field";
 import { VendorMuted } from "@/components/layout/typography";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -64,7 +59,6 @@ import { useProductEditorDraftStore } from "@/store/product-editor-draft-store";
 import { cn } from "@/lib/utils";
 import { BulkPricingEditor } from "./bulk-pricing-editor";
 
-
 import { ProductMediaGallery } from "./product-media-gallery";
 import { productFormSchema } from "./schemas";
 import type { ProductFormValues } from "./types";
@@ -87,7 +81,10 @@ type ProductFormProps = {
   editorKey: string;
   catalogProductId: string | null;
   defaultValues: ProductFormValues;
-  onSuccess?: (createdProductId?: string, wasSubmittedForReview?: boolean) => void;
+  onSuccess?: (
+    createdProductId?: string,
+    wasSubmittedForReview?: boolean
+  ) => void;
   onValuesSnapshot?: (values: ProductFormValues) => void;
   onSavingChange?: (saving: boolean) => void;
 };
@@ -213,7 +210,9 @@ export function ProductForm({
       if (originalMediaIds.current.has(id)) {
         removedMediaIds.current.add(id);
         const mediaUrl = form.getValues("media").find((m) => m.id === id)?.url;
-        const path = mediaUrl ? extractStoragePath(mediaUrl, "product-media") : null;
+        const path = mediaUrl
+          ? extractStoragePath(mediaUrl, "product-media")
+          : null;
         if (path) {
           storagePathsByMediaId.current.set(id, path);
         }
@@ -251,7 +250,9 @@ export function ProductForm({
   ) => {
     const entries = media
       .map((m) => ({ m, file: filesByMediaId.current.get(m.id) }))
-      .filter((e): e is { m: ProductFormValues["media"][number]; file: File } => Boolean(e.file));
+      .filter((e): e is { m: ProductFormValues["media"][number]; file: File } =>
+        Boolean(e.file)
+      );
 
     const uploadedLocalIds: string[] = [];
 
@@ -417,9 +418,7 @@ export function ProductForm({
           onSuccess?.(p.id, true);
         }
       } catch (e) {
-        setSaveError(
-          httpErrorMessageForUser(e, t("couldNotSubmitReview"))
-        );
+        setSaveError(httpErrorMessageForUser(e, t("couldNotSubmitReview")));
       } finally {
         setSaving(false);
       }
@@ -443,7 +442,7 @@ export function ProductForm({
         <Card className="glass-card shadow-glass overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <ImageIcon className="size-4 text-primary" />
+              <ImageIcon className="text-primary size-4" />
               {t("productGallery")}
             </CardTitle>
           </CardHeader>
@@ -468,7 +467,7 @@ export function ProductForm({
         <Card className="glass-card shadow-glass">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <Sparkles className="size-4 text-primary" />
+              <Sparkles className="text-primary size-4" />
               {t("productDetails")}
             </CardTitle>
           </CardHeader>
@@ -573,7 +572,7 @@ export function ProductForm({
         <Card className="glass-card shadow-glass">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <FolderOpen className="size-4 text-primary" />
+              <FolderOpen className="text-primary size-4" />
               {t("categories")}
             </CardTitle>
           </CardHeader>
@@ -589,7 +588,7 @@ export function ProductForm({
         <div className="sticky bottom-0 z-20 -mx-4 px-4 pb-4 md:-mx-6 md:px-6 md:pb-6">
           <div className="glass-card shadow-glass rounded-xl p-4">
             {saveError ? (
-              <p className="text-destructive text-sm mb-3">{saveError}</p>
+              <p className="text-destructive mb-3 text-sm">{saveError}</p>
             ) : null}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <VendorMuted className="text-xs">
@@ -663,7 +662,7 @@ function CategorySelector() {
   return (
     <div className="grid gap-3">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+        <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
         <Input
           placeholder={t("searchCategories")}
           value={search}
@@ -684,9 +683,11 @@ function CategorySelector() {
           filtered.map((c) => {
             const on = selected.includes(c.id);
             return (
-              <button
+              <Button
                 key={c.id}
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   const next = on
                     ? selected.filter((id) => id !== c.id)
@@ -704,20 +705,18 @@ function CategorySelector() {
                 )}
               >
                 {on && (
-                  <span className="flex size-3.5 items-center justify-center rounded-full bg-primary text-[8px] text-primary-foreground font-bold">
+                  <span className="bg-primary text-primary-foreground flex size-3.5 items-center justify-center rounded-full text-[8px] font-bold">
                     ✓
                   </span>
                 )}
                 {c.name}
-              </button>
+              </Button>
             );
           })
         )}
       </div>
       {errors.categoryIds?.message ? (
-        <p className="text-destructive text-xs">
-          {errors.categoryIds.message}
-        </p>
+        <p className="text-destructive text-xs">{errors.categoryIds.message}</p>
       ) : null}
     </div>
   );
@@ -749,28 +748,29 @@ function SeoSection() {
 
   return (
     <Card className="glass-card shadow-glass overflow-hidden">
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        className="hover:bg-muted/20 flex w-full items-center justify-between px-5 py-4 text-left transition-colors"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-muted/20 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Search className="size-4 text-primary" />
+          <Search className="text-primary size-4" />
           <CardTitle className="text-base font-semibold">
             {t("seoSettings")}
           </CardTitle>
-          <span className="text-xs text-muted-foreground ml-1">
+          <span className="text-muted-foreground ml-1 text-xs">
             ({t("optional")})
           </span>
         </div>
         {open ? (
-          <ChevronUp className="size-4 text-muted-foreground" />
+          <ChevronUp className="text-muted-foreground size-4" />
         ) : (
-          <ChevronDown className="size-4 text-muted-foreground" />
+          <ChevronDown className="text-muted-foreground size-4" />
         )}
-      </button>
+      </Button>
       {open && (
-        <CardContent className="grid gap-5 border-t border-border/40 pt-4">
+        <CardContent className="border-border/40 grid gap-5 border-t pt-4">
           <div className="flex flex-wrap items-end gap-2">
             <div className="min-w-0 flex-1">
               <VendorTextField

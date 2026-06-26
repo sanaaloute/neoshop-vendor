@@ -91,7 +91,8 @@
     "requestNewLink": "请求新链接",
     "passwordResetSuccess": "您的密码已重置。请使用新密码登录。",
     "couldNotResetPassword": "无法重置密码。请重试。",
-    "resetPasswordButton": "重置密码"
+    "resetPasswordButton": "重置密码",
+    "saving": "保存中…"
   },
   "dashboard": {
     "overview": "概览",
@@ -557,6 +558,7 @@
     "couldNotUpdateStatus": "无法更新订单状态。请重试。",
     "invalidStatusTransition": "当前订单状态不允许该状态变更。",
     "markedRefundedFromDrawer": "从抽屉标记为已退款",
+    "markedCancelledFromDrawer": "从抽屉标记为已取消",
     "bulkRefundFromList": "从商家订单列表批量退款",
     "overview": "概览",
     "trackingTab": "物流追踪",

@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Loader2,
   Mail,
   MessageCircle,
   Phone,
@@ -16,6 +15,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import { Input } from "@/components/ui/input";
 import { getApiBaseUrl } from "@/config/auth";
 import { formatCurrency } from "@/lib/format";
@@ -100,7 +100,7 @@ function ProductMiniBars({ products }: { products: CustomerProduct[] }) {
           </div>
           <div className="bg-muted/60 mt-1 h-1.5 w-full overflow-hidden rounded-full">
             <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary"
+              className="from-primary/70 to-primary h-full rounded-full bg-gradient-to-r"
               initial={{ width: 0 }}
               animate={{ width: `${(p.totalQuantity / maxQty) * 100}%` }}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -137,7 +137,10 @@ function CustomerCard({
       initial="hidden"
       animate="show"
       transition={{ delay: index * 0.05 }}
-      whileHover={{ y: -4, transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] } }}
+      whileHover={{
+        y: -4,
+        transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] },
+      }}
       className="group"
     >
       <DashboardCard
@@ -186,25 +189,22 @@ function CustomerCard({
               )}
             </div>
             {onStartConversation && (
-              <Button
+              <LoadingButton
                 type="button"
                 variant="ghost"
                 size="icon-sm"
+                loading={startingConversation}
+                spinnerPosition="overlay"
                 className="text-muted-foreground hover:text-primary shrink-0"
                 aria-label={t("startConversation")}
                 title={t("startConversation")}
-                disabled={startingConversation}
                 onClick={(e) => {
                   e.stopPropagation();
                   onStartConversation(customer);
                 }}
               >
-                {startingConversation ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <MessageCircle className="size-4" />
-                )}
-              </Button>
+                <MessageCircle className="size-4" />
+              </LoadingButton>
             )}
           </div>
 
@@ -214,7 +214,8 @@ function CustomerCard({
               variant={repeat ? "default" : "secondary"}
               className={cn(
                 "h-5 text-[10px] font-medium",
-                repeat && "bg-amber-500/15 text-amber-700 hover:bg-amber-500/20 border-amber-500/30"
+                repeat &&
+                  "border-amber-500/30 bg-amber-500/15 text-amber-700 hover:bg-amber-500/20"
               )}
             >
               <ShoppingBag className="mr-1 size-3" />
@@ -223,7 +224,7 @@ function CustomerCard({
             {repeat && (
               <Badge
                 variant="outline"
-                className="h-5 text-[10px] border-emerald-500/30 text-emerald-700 bg-emerald-500/10"
+                className="h-5 border-emerald-500/30 bg-emerald-500/10 text-[10px] text-emerald-700"
               >
                 <TrendingUp className="mr-1 size-3" />
                 {t("repeat")}
@@ -236,7 +237,7 @@ function CustomerCard({
             <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
               {t("totalSpent")}
             </p>
-            <p className="mt-0.5 text-2xl font-semibold tabular-nums tracking-tight">
+            <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums">
               {formatCurrency(customer.totalSpent, "CNY", 2)}
             </p>
           </div>
@@ -247,11 +248,11 @@ function CustomerCard({
           )}
 
           {/* Footer Action */}
-          <div className="mt-4 pt-3 border-t border-border/40">
+          <div className="border-border/40 mt-4 border-t pt-3">
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-full justify-between text-xs font-medium hover:bg-primary/5"
+              className="hover:bg-primary/5 h-8 w-full justify-between text-xs font-medium"
               onClick={() => onOpenProfile(customer.id)}
             >
               <span>{t("viewProfile")}</span>
@@ -269,24 +270,24 @@ function SkeletonCard() {
   return (
     <DashboardCard className="overflow-hidden p-5">
       <div className="flex items-start gap-3">
-        <div className="h-12 w-12 shrink-0 rounded-xl bg-muted animate-pulse" />
+        <div className="bg-muted h-12 w-12 shrink-0 animate-pulse rounded-xl" />
         <div className="flex-1 space-y-2">
-          <div className="h-4 w-2/3 rounded bg-muted animate-pulse" />
-          <div className="h-3 w-1/2 rounded bg-muted animate-pulse" />
+          <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
+          <div className="bg-muted h-3 w-1/2 animate-pulse rounded" />
         </div>
       </div>
       <div className="mt-4 flex gap-2">
-        <div className="h-5 w-20 rounded-full bg-muted animate-pulse" />
+        <div className="bg-muted h-5 w-20 animate-pulse rounded-full" />
       </div>
       <div className="mt-3 space-y-1">
-        <div className="h-3 w-16 rounded bg-muted animate-pulse" />
-        <div className="h-8 w-full rounded bg-muted animate-pulse" />
+        <div className="bg-muted h-3 w-16 animate-pulse rounded" />
+        <div className="bg-muted h-8 w-full animate-pulse rounded" />
       </div>
       <div className="mt-4 space-y-2">
-        <div className="h-3 w-full rounded bg-muted animate-pulse" />
-        <div className="h-1.5 w-full rounded-full bg-muted animate-pulse" />
-        <div className="h-3 w-3/4 rounded bg-muted animate-pulse" />
-        <div className="h-1.5 w-3/4 rounded-full bg-muted animate-pulse" />
+        <div className="bg-muted h-3 w-full animate-pulse rounded" />
+        <div className="bg-muted h-1.5 w-full animate-pulse rounded-full" />
+        <div className="bg-muted h-3 w-3/4 animate-pulse rounded" />
+        <div className="bg-muted h-1.5 w-3/4 animate-pulse rounded-full" />
       </div>
     </DashboardCard>
   );
@@ -367,19 +368,22 @@ export function CustomerCardGrid({
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => setRepeatOnly((v) => !v)}
+            aria-pressed={repeatOnly}
             className={cn(
-              "inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-all",
+              "h-9 gap-1.5 px-3 text-xs font-medium transition-all",
               repeatOnly
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-700"
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/15"
                 : "border-border/60 bg-card text-muted-foreground hover:bg-muted/50"
             )}
           >
             <TrendingUp className="size-3.5" />
             {t("repeatBuyers")}
-          </button>
+          </Button>
           <select
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
@@ -395,13 +399,16 @@ export function CustomerCardGrid({
       {/* Results count */}
       {customers.length > 0 && (
         <p className="text-muted-foreground text-xs">
-          {t("showingOf", { filtered: filtered.length, total: customers.length })}
+          {t("showingOf", {
+            filtered: filtered.length,
+            total: customers.length,
+          })}
         </p>
       )}
 
       {/* Grid */}
       {!filtered.length ? (
-        <div className="border-border/80 bg-muted/15 text-muted-foreground border-dashed rounded-xl border p-12 text-center">
+        <div className="border-border/80 bg-muted/15 text-muted-foreground rounded-xl border border-dashed p-12 text-center">
           {syncLoading && customers.length === 0 ? (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -418,13 +425,11 @@ export function CustomerCardGrid({
             </div>
           ) : !syncLoading && customers.length === 0 && api ? (
             <div className="flex flex-col items-center gap-3">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5">
+              <div className="from-primary/10 to-primary/5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br">
                 <ShoppingBag className="text-primary/60 size-8" />
               </div>
               <p className="text-sm font-medium">{t("noCustomersYet")}</p>
-              <p className="max-w-xs text-xs">
-                {t("noCustomersDescription")}
-              </p>
+              <p className="max-w-xs text-xs">{t("noCustomersDescription")}</p>
             </div>
           ) : !syncLoading && customers.length === 0 && !api ? (
             <div className="flex flex-col items-center gap-3">

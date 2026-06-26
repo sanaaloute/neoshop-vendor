@@ -1,12 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ArrowLeft,
-  HelpCircle,
-  Loader2,
-  MessageCircleQuestion,
-} from "lucide-react";
+import { ArrowLeft, HelpCircle, MessageCircleQuestion } from "lucide-react";
 
 import {
   DashboardCard,
@@ -17,6 +12,8 @@ import {
 } from "@/components/cards/dashboard-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/feedback/loading-button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Select,
   SelectContent,
@@ -160,20 +157,15 @@ function ThreadDetailPanel({
           className="min-h-[100px] resize-none"
         />
         <div className="flex justify-end">
-          <Button
+          <LoadingButton
             type="button"
-            disabled={!answer.trim() || submitting}
+            disabled={!answer.trim()}
+            loading={submitting}
+            loadingText={t("posting")}
             onClick={handleSubmit}
           >
-            {submitting ? (
-              <>
-                <Loader2 className="mr-1 size-3.5 animate-spin" />
-                {t("posting")}
-              </>
-            ) : (
-              t("postAnswer")
-            )}
-          </Button>
+            {t("postAnswer")}
+          </LoadingButton>
         </div>
       </div>
     </div>
@@ -203,9 +195,7 @@ export function QaHome() {
 
   const { list: listQa, answer: answerQa } = useQaVendor();
 
-  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(
-    null
-  );
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const desktop = useIsDesktop();
@@ -235,9 +225,7 @@ export function QaHome() {
         setThreads(Array.isArray(data) ? data : []);
       } catch (e) {
         if (cancelled) return;
-        setThreadsError(
-          httpErrorMessageForUser(e, t("couldNotLoadQuestions"))
-        );
+        setThreadsError(httpErrorMessageForUser(e, t("couldNotLoadQuestions")));
       } finally {
         if (!cancelled) setThreadsLoading(false);
       }
@@ -280,7 +268,9 @@ export function QaHome() {
       const data = await listQa(selectedProductId);
       setThreads(Array.isArray(data) ? data : []);
     } catch (e) {
-      setThreadsError(httpErrorMessageForUser(e, t("couldNotRefreshQuestions")));
+      setThreadsError(
+        httpErrorMessageForUser(e, t("couldNotRefreshQuestions"))
+      );
     } finally {
       setThreadsLoading(false);
     }
@@ -289,7 +279,7 @@ export function QaHome() {
   if (productsLoading) {
     return (
       <div className="flex min-h-[420px] flex-col items-center justify-center gap-3">
-        <Loader2 className="text-muted-foreground size-8 animate-spin" />
+        <Spinner size="xl" />
         <p className="text-muted-foreground text-sm">{t("loadingProducts")}</p>
       </div>
     );
@@ -359,18 +349,18 @@ export function QaHome() {
           <div className="max-h-[480px] overflow-y-auto lg:max-h-[calc(100vh-320px)]">
             {threadsLoading && threads.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 py-12">
-                <Loader2 className="text-muted-foreground size-6 animate-spin" />
+                <Spinner size="lg" />
                 <p className="text-muted-foreground text-xs">{t("loading")}</p>
               </div>
             ) : threadsError && threads.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-12 px-4 text-center">
+              <div className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center">
                 <p className="text-destructive text-xs font-medium">
                   {t("failedToLoadQuestions")}
                 </p>
                 <p className="text-muted-foreground text-xs">{threadsError}</p>
               </div>
             ) : !selectedProductId ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-12 px-4 text-center">
+              <div className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center">
                 <MessageCircleQuestion
                   className="text-muted-foreground size-8"
                   aria-hidden
@@ -383,14 +373,12 @@ export function QaHome() {
                 </p>
               </div>
             ) : threads.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-12 px-4 text-center">
+              <div className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center">
                 <HelpCircle
                   className="text-muted-foreground size-8"
                   aria-hidden
                 />
-                <p className="text-sm font-medium">
-                  {t("noQuestionsYet")}
-                </p>
+                <p className="text-sm font-medium">{t("noQuestionsYet")}</p>
                 <p className="text-muted-foreground max-w-xs text-xs">
                   {t("noQuestionsHint")}
                 </p>
@@ -400,7 +388,9 @@ export function QaHome() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="pl-3">{t("question")}</TableHead>
-                    <TableHead className="pr-3 text-right">{t("status")}</TableHead>
+                    <TableHead className="pr-3 text-right">
+                      {t("status")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -506,9 +496,7 @@ export function QaHome() {
                   {t("qaDetail")}
                 </SheetTitle>
                 <SheetDescription className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-xs">
-                    {selectedThread.id}
-                  </span>
+                  <span className="font-mono text-xs">{selectedThread.id}</span>
                   <AnsweredBadge answered={selectedThread.answers.length > 0} />
                 </SheetDescription>
               </SheetHeader>
@@ -536,9 +524,7 @@ export function QaHome() {
           ) : (
             <SheetHeader>
               <SheetTitle>Q&A</SheetTitle>
-              <SheetDescription>
-                {t("selectQuestion")}
-              </SheetDescription>
+              <SheetDescription>{t("selectQuestion")}</SheetDescription>
             </SheetHeader>
           )}
         </SheetContent>

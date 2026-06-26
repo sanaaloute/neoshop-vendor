@@ -14,6 +14,7 @@ import { useTranslations } from "next-intl";
 import { StatusBadge } from "@/components/cards/status-badge";
 import { GatewaySyncBanner } from "@/components/feedback/gateway-sync-banner";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -52,15 +53,55 @@ import { nextWorkflowStatus, statusLabel } from "./workflow";
 
 const easeOutExpo = [0.22, 1, 0.36, 1] as const;
 
-const ORDER_STATUSES: { key: OrderStatus | "cancelled"; labelKey: string; status: Parameters<typeof StatusBadge>[0]["status"]; clickable: boolean }[] = [
-  { key: "pending", labelKey: "status.pending", status: "pending", clickable: true },
+const ORDER_STATUSES: {
+  key: OrderStatus | "cancelled";
+  labelKey: string;
+  status: Parameters<typeof StatusBadge>[0]["status"];
+  clickable: boolean;
+}[] = [
+  {
+    key: "pending",
+    labelKey: "status.pending",
+    status: "pending",
+    clickable: true,
+  },
   { key: "paid", labelKey: "status.paid", status: "info", clickable: true },
-  { key: "processing", labelKey: "status.processing", status: "info", clickable: true },
-  { key: "shipped", labelKey: "status.shipped", status: "warning", clickable: true },
-  { key: "delivered", labelKey: "status.delivered", status: "success", clickable: true },
-  { key: "disputed", labelKey: "status.disputed", status: "danger", clickable: true },
-  { key: "refunded", labelKey: "status.refunded", status: "danger", clickable: true },
-  { key: "cancelled", labelKey: "status.cancelled", status: "neutral", clickable: false },
+  {
+    key: "processing",
+    labelKey: "status.processing",
+    status: "info",
+    clickable: true,
+  },
+  {
+    key: "shipped",
+    labelKey: "status.shipped",
+    status: "warning",
+    clickable: true,
+  },
+  {
+    key: "delivered",
+    labelKey: "status.delivered",
+    status: "success",
+    clickable: true,
+  },
+  {
+    key: "disputed",
+    labelKey: "status.disputed",
+    status: "danger",
+    clickable: true,
+  },
+  {
+    key: "refunded",
+    labelKey: "status.refunded",
+    status: "danger",
+    clickable: true,
+  },
+  {
+    key: "cancelled",
+    labelKey: "status.cancelled",
+    status: "neutral",
+    clickable: false,
+  },
 ];
 
 function toApi(s: OrderStatus): ApiOrderStatus {
@@ -83,11 +124,12 @@ export function OrdersHome() {
   const { updateStatus: updateOrderStatus } = useOrderDetail();
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const { loading: gatewayLoading, error: gatewayError } =
     useGatewayOrdersBootstrap();
   const { stats: orderStats } = useOrderStats();
-  
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -102,14 +144,9 @@ export function OrdersHome() {
     setSearch("");
   }, []);
 
-  const handleStatClick = useCallback(
-    (status: OrderStatus) => {
-      setStatusFilter((prev) =>
-        prev === status ? "all" : status
-      );
-    },
-    []
-  );
+  const handleStatClick = useCallback((status: OrderStatus) => {
+    setStatusFilter((prev) => (prev === status ? "all" : status));
+  }, []);
 
   const openOrder = (id: string) => {
     setActiveOrderId(id);
@@ -175,12 +212,14 @@ export function OrdersHome() {
         if (!nxt) continue;
         await updateOrderStatus(id, toApi(nxt), undefined, toApi(o.status));
       }
+      setRefreshing(true);
       await refetch();
       setSelected(new Set());
     } catch (e) {
       setBulkError(httpErrorMessageForUser(e, t("couldNotAdvance")));
     } finally {
       setBulkBusy(false);
+      setRefreshing(false);
     }
   };
 
@@ -197,17 +236,36 @@ export function OrdersHome() {
         const o = orders.find((x) => x.id === id);
         if (!o) continue;
         // Only refund orders that have been paid or are in a refundable state.
-        if (!["paid", "processing", "shipped", "delivered"].includes(o.status)) {
+        if (
+          !["paid", "processing", "shipped", "delivered"].includes(o.status)
+        ) {
           continue;
         }
-        await updateOrderStatus(id, "refunded", t("bulkRefundFromList"), toApi(o.status));
+        await updateOrderStatus(
+          id,
+          "refunded",
+          t("bulkRefundFromList"),
+          toApi(o.status)
+        );
       }
+      setRefreshing(true);
       await refetch();
       setSelected(new Set());
     } catch (e) {
       setBulkError(httpErrorMessageForUser(e, t("couldNotRefund")));
     } finally {
       setBulkBusy(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    setBulkError(null);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -256,17 +314,26 @@ export function OrdersHome() {
                     transition: { duration: 0.35, ease: easeOutExpo },
                   },
                 }}
-                whileHover={clickable ? { y: -3, transition: { duration: 0.25 } } : undefined}
+                whileHover={
+                  clickable
+                    ? { y: -3, transition: { duration: 0.25 } }
+                    : undefined
+                }
                 whileTap={clickable ? { scale: 0.97 } : undefined}
-                onClick={clickable ? () => handleStatClick(key as OrderStatus) : undefined}
+                onClick={
+                  clickable
+                    ? () => handleStatClick(key as OrderStatus)
+                    : undefined
+                }
                 className={cn(
                   "relative overflow-hidden rounded-xl border p-3 text-left transition-all duration-300",
                   "bg-card/80 shadow-vendor-card ring-1 ring-white/5 backdrop-blur-md",
                   "dark:bg-card/60 dark:ring-white/10",
                   !clickable && "opacity-70",
                   active
-                    ? "border-primary/50 bg-primary/5 shadow-lg shadow-primary/10 ring-primary/20"
-                    : clickable && "border-border/60 hover:border-primary/30 hover:shadow-lg"
+                    ? "border-primary/50 bg-primary/5 shadow-primary/10 ring-primary/20 shadow-lg"
+                    : clickable &&
+                        "border-border/60 hover:border-primary/30 hover:shadow-lg"
                 )}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -281,7 +348,7 @@ export function OrdersHome() {
                     />
                   )}
                 </div>
-                <div className="mt-2 text-2xl font-semibold tabular-nums tracking-tight">
+                <div className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">
                   {count}
                 </div>
                 <div
@@ -320,10 +387,15 @@ export function OrdersHome() {
             variant="outline"
             size="sm"
             className="gap-1.5 rounded-lg"
-            disabled={!getApiBaseUrl() || gatewayLoading}
-            onClick={() => void refetch()}
+            disabled={!getApiBaseUrl() || gatewayLoading || refreshing}
+            onClick={() => void handleRefresh()}
           >
-            <RefreshCw className="size-3.5" />
+            <RefreshCw
+              className={cn(
+                "size-3.5 transition-transform",
+                refreshing && "animate-spin"
+              )}
+            />
             {t("refresh")}
           </Button>
         </div>
@@ -348,7 +420,7 @@ export function OrdersHome() {
             exit={{ opacity: 0, height: 0, y: -8 }}
             transition={{ duration: 0.3, ease: easeOutExpo }}
           >
-            <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent shadow-vendor-card overflow-hidden">
+            <Card className="border-primary/30 from-primary/5 shadow-vendor-card overflow-hidden bg-gradient-to-r to-transparent">
               <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                   <div className="bg-primary/15 flex size-8 items-center justify-center rounded-lg">
@@ -361,23 +433,27 @@ export function OrdersHome() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button
+                  <LoadingButton
                     type="button"
                     size="sm"
-                    disabled={bulkBusy || !getApiBaseUrl() || !canWriteOrders}
+                    loading={bulkBusy}
+                    loadingText={t("processing")}
+                    disabled={!getApiBaseUrl() || !canWriteOrders}
                     onClick={() => void runBulkAdvance()}
                   >
                     {t("advanceWorkflow")}
-                  </Button>
-                  <Button
+                  </LoadingButton>
+                  <LoadingButton
                     type="button"
                     size="sm"
                     variant="destructive"
-                    disabled={bulkBusy || !getApiBaseUrl() || !canWriteOrders}
+                    loading={bulkBusy}
+                    loadingText={t("processing")}
+                    disabled={!getApiBaseUrl() || !canWriteOrders}
                     onClick={() => void runBulkRefund()}
                   >
                     {t("refundSelected")}
-                  </Button>
+                  </LoadingButton>
                   <Button
                     type="button"
                     size="sm"
@@ -400,10 +476,10 @@ export function OrdersHome() {
         transition={{ duration: 0.35, delay: 0.25, ease: easeOutExpo }}
       >
         <Card className="border-border/60 shadow-vendor-card overflow-hidden">
-          <div className="bg-gradient-to-r from-primary/5 via-transparent to-chart-2/5 border-border/50 border-b px-4 py-2.5">
+          <div className="from-primary/5 to-chart-2/5 border-border/50 border-b bg-gradient-to-r via-transparent px-4 py-2.5">
             <div className="flex items-center gap-2 text-xs font-medium">
               <SlidersHorizontal className="text-muted-foreground size-3.5" />
-              <span className="text-muted-foreground uppercase tracking-wider">
+              <span className="text-muted-foreground tracking-wider uppercase">
                 {t("filters")}
               </span>
               {activeFiltersCount > 0 && (
@@ -433,9 +509,7 @@ export function OrdersHome() {
               </Label>
               <Select
                 value={statusFilter}
-                onValueChange={(v) =>
-                  setStatusFilter(v as OrderStatus | "all")
-                }
+                onValueChange={(v) => setStatusFilter(v as OrderStatus | "all")}
               >
                 <SelectTrigger className="h-10">
                   <SelectValue placeholder={t("allStatuses")} />
@@ -493,19 +567,19 @@ export function OrdersHome() {
                     aria-label={t("selectAll")}
                   />
                 </TableHead>
-                <TableHead className="text-xs font-medium uppercase tracking-wider">
+                <TableHead className="text-xs font-medium tracking-wider uppercase">
                   {t("reference")}
                 </TableHead>
-                <TableHead className="hidden text-xs font-medium uppercase tracking-wider md:table-cell">
+                <TableHead className="hidden text-xs font-medium tracking-wider uppercase md:table-cell">
                   {t("customer")}
                 </TableHead>
-                <TableHead className="text-xs font-medium uppercase tracking-wider">
+                <TableHead className="text-xs font-medium tracking-wider uppercase">
                   {t("statusFilter")}
                 </TableHead>
-                <TableHead className="text-right text-xs font-medium uppercase tracking-wider">
+                <TableHead className="text-right text-xs font-medium tracking-wider uppercase">
                   {t("total")}
                 </TableHead>
-                <TableHead className="hidden text-xs font-medium uppercase tracking-wider sm:table-cell">
+                <TableHead className="hidden text-xs font-medium tracking-wider uppercase sm:table-cell">
                   {t("updated")}
                 </TableHead>
                 <TableHead className="text-right"> </TableHead>
@@ -521,9 +595,13 @@ export function OrdersHome() {
                     >
                       {gatewayLoading && orders.length === 0
                         ? t("loading")
-                        : !gatewayLoading && orders.length === 0 && getApiBaseUrl()
+                        : !gatewayLoading &&
+                            orders.length === 0 &&
+                            getApiBaseUrl()
                           ? t("noOrdersYet")
-                          : !gatewayLoading && orders.length === 0 && !getApiBaseUrl()
+                          : !gatewayLoading &&
+                              orders.length === 0 &&
+                              !getApiBaseUrl()
                             ? t("connectMarketplace")
                             : t("noMatches")}
                     </TableCell>
@@ -543,15 +621,12 @@ export function OrdersHome() {
                       }}
                       data-state={selected.has(o.id) ? "selected" : undefined}
                       className={cn(
-                        "border-b transition-colors hover:bg-muted/40",
+                        "hover:bg-muted/40 border-b transition-colors",
                         selected.has(o.id) && "bg-primary/5"
                       )}
                       onClick={() => openOrder(o.id)}
                     >
-                      <td
-                        className="pr-0"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <td className="pr-0" onClick={(e) => e.stopPropagation()}>
                         <Checkbox
                           disabled={!canWriteOrders}
                           checked={selected.has(o.id)}

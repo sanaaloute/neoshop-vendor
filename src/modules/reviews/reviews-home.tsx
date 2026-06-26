@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import {
@@ -12,6 +12,8 @@ import {
 } from "@/components/cards/dashboard-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/feedback/loading-button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Select,
   SelectContent,
@@ -72,9 +74,7 @@ function RatingStars({ rating }: { rating: number }) {
         <Star
           key={i}
           className={`size-3.5 ${
-            i < rating
-              ? "fill-red-400 text-red-400"
-              : "text-muted-foreground"
+            i < rating ? "fill-red-400 text-red-400" : "text-muted-foreground"
           }`}
         />
       ))}
@@ -137,13 +137,18 @@ export function ReviewsHome() {
     <div className="space-y-6">
       <DashboardCard className="gap-0 py-0">
         <DashboardCardHeader className="border-border/50 flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <DashboardCardTitle className="text-base">{t("allReviews")}</DashboardCardTitle>
+          <DashboardCardTitle className="text-base">
+            {t("allReviews")}
+          </DashboardCardTitle>
           <div className="flex items-center gap-2">
             <Select
               value={params.status ?? "all"}
               onValueChange={handleStatusChange}
             >
-              <SelectTrigger className="w-[140px]" aria-label={t("filterByStatus")}>
+              <SelectTrigger
+                className="w-[140px]"
+                aria-label={t("filterByStatus")}
+              >
                 <SelectValue placeholder={t("allStatuses")} />
               </SelectTrigger>
               <SelectContent>
@@ -155,7 +160,7 @@ export function ReviewsHome() {
             </Select>
             {loading && reviews.length === 0 ? (
               <span className="text-muted-foreground inline-flex items-center gap-2 text-xs">
-                <Loader2 className="size-3.5 animate-spin" />
+                <Spinner size="sm" />
                 {t("loading")}
               </span>
             ) : null}
@@ -165,7 +170,12 @@ export function ReviewsHome() {
           {error && reviews.length === 0 ? (
             <div className="text-destructive flex flex-col items-center gap-2 p-6 text-center text-sm">
               <p>{error}</p>
-              <Button type="button" variant="outline" size="sm" onClick={() => refetch()}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+              >
                 {t("retry")}
               </Button>
             </div>
@@ -177,9 +187,13 @@ export function ReviewsHome() {
                     <TableHead>{t("product")}</TableHead>
                     <TableHead>{t("customer")}</TableHead>
                     <TableHead>{t("rating")}</TableHead>
-                    <TableHead className="hidden md:table-cell">{t("review")}</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      {t("review")}
+                    </TableHead>
                     <TableHead>{t("status")}</TableHead>
-                    <TableHead className="hidden sm:table-cell">{t("date")}</TableHead>
+                    <TableHead className="hidden sm:table-cell">
+                      {t("date")}
+                    </TableHead>
                     <TableHead className="text-right"> </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -191,21 +205,27 @@ export function ReviewsHome() {
                           {r.productTitle}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm">{r.customerName}</TableCell>
+                      <TableCell className="text-sm">
+                        {r.customerName}
+                      </TableCell>
                       <TableCell>
                         <RatingStars rating={r.rating} />
                       </TableCell>
                       <TableCell className="text-muted-foreground hidden max-w-xs truncate text-sm md:table-cell">
                         {r.vendorResponse ? (
                           <span className="text-foreground block truncate">
-                            <span className="text-muted-foreground mr-1">{t("youReplied")}:</span>
+                            <span className="text-muted-foreground mr-1">
+                              {t("youReplied")}:
+                            </span>
                             {r.vendorResponse}
                           </span>
                         ) : (
                           r.body
                         )}
                       </TableCell>
-                      <TableCell><StatusBadge status={r.status} /></TableCell>
+                      <TableCell>
+                        <StatusBadge status={r.status} />
+                      </TableCell>
                       <TableCell className="text-muted-foreground hidden text-xs sm:table-cell">
                         {new Date(r.createdAt).toLocaleDateString(undefined, {
                           month: "short",
@@ -286,7 +306,11 @@ export function ReviewsHome() {
       </DashboardCard>
 
       <Sheet open={respondSheetOpen} onOpenChange={setRespondSheetOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-lg" showCloseButton>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-lg"
+          showCloseButton
+        >
           <SheetHeader>
             <SheetTitle>{t("respondToReview")}</SheetTitle>
             <SheetDescription>
@@ -340,20 +364,15 @@ export function ReviewsHome() {
             >
               {t("cancel")}
             </Button>
-            <Button
+            <LoadingButton
               type="button"
-              disabled={!responseText.trim() || submitting}
+              disabled={!responseText.trim()}
+              loading={submitting}
+              loadingText={t("saving")}
               onClick={handleSubmitResponse}
             >
-              {submitting ? (
-                <>
-                  <Loader2 className="mr-1 size-3.5 animate-spin" />
-                  {t("saving")}
-                </>
-              ) : (
-                t("submitResponse")
-              )}
-            </Button>
+              {t("submitResponse")}
+            </LoadingButton>
           </SheetFooter>
         </SheetContent>
       </Sheet>

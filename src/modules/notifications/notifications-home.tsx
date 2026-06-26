@@ -10,7 +10,7 @@ import {
   DashboardCardHeader,
   DashboardCardTitle,
 } from "@/components/cards/dashboard-card";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import { getOrCreateDeviceId } from "@/lib/get-device-id";
 import {
   getUnreadNotificationCount,
@@ -118,39 +118,40 @@ export function NotificationsHome() {
         </DashboardCardHeader>
         <DashboardCardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Button
+            <LoadingButton
               type="button"
+              loading={loading}
               onClick={handleRegister}
-              disabled={loading || registered}
+              disabled={registered}
             >
               {t("registerDevice")}
-            </Button>
-            <Button
+            </LoadingButton>
+            <LoadingButton
               type="button"
               variant="outline"
+              loading={loading}
               onClick={handleHeartbeat}
-              disabled={loading || !registered}
+              disabled={!registered}
             >
               {t("sendHeartbeat")}
-            </Button>
-            <Button
+            </LoadingButton>
+            <LoadingButton
               type="button"
               variant="outline"
+              loading={loading}
               onClick={handleUnregister}
-              disabled={loading || !registered}
+              disabled={!registered}
             >
               {t("unregisterDevice")}
-            </Button>
+            </LoadingButton>
           </div>
           {token ? (
-            <p className="text-muted-foreground break-all text-xs">
+            <p className="text-muted-foreground text-xs break-all">
               <span className="font-medium">Token:</span> {token}
             </p>
           ) : null}
           {error ? <p className="text-destructive text-sm">{error}</p> : null}
-          {success ? (
-            <p className="text-green-600 text-sm">{success}</p>
-          ) : null}
+          {success ? <p className="text-sm text-green-600">{success}</p> : null}
         </DashboardCardContent>
       </DashboardCard>
     </div>

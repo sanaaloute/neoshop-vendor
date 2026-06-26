@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { Eye, Loader2, Save } from "lucide-react";
+import { Eye, Save } from "lucide-react";
 
 import { GatewaySyncBanner } from "@/components/feedback/gateway-sync-banner";
+import { LoadingButton } from "@/components/feedback/loading-button";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { getApiBaseUrl } from "@/config/auth";
@@ -54,12 +55,7 @@ export function VariantsHome() {
   const catalogSync = useGatewayCatalogBootstrap();
   const variantSync = useGatewayVariantsBootstrap(selectedProductId);
   const categories = useCategories();
-  const {
-    createBulk,
-    updateBulk,
-    remove,
-    removeBulk,
-  } = useVariantsWrite();
+  const { createBulk, updateBulk, remove, removeBulk } = useVariantsWrite();
   const { fetchVariants } = useVariants();
   const { setQuantity } = useInventoryWrite();
   const { createAttribute, createAttributeValues } = useProductAttributes();
@@ -86,12 +82,21 @@ export function VariantsHome() {
       }
     }
 
-    if (selectedProductId && !products.some((p) => p.id === selectedProductId)) {
+    if (
+      selectedProductId &&
+      !products.some((p) => p.id === selectedProductId)
+    ) {
       setSelectedProductId(null);
       setSelected(new Set());
       resetWorkbench();
     }
-  }, [products, urlProductId, catalogSync.loading, selectedProductId, resetWorkbench]);
+  }, [
+    products,
+    urlProductId,
+    catalogSync.loading,
+    selectedProductId,
+    resetWorkbench,
+  ]);
 
   // Reset preset tracker whenever the selected product changes.
   useEffect(() => {
@@ -125,7 +130,13 @@ export function VariantsHome() {
         store.addValueToAttribute(addedId, value);
       }
     }
-  }, [variantSync.loading, selectedProductId, attributes.length, products, categories]);
+  }, [
+    variantSync.loading,
+    selectedProductId,
+    attributes.length,
+    products,
+    categories,
+  ]);
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -169,9 +180,7 @@ export function VariantsHome() {
     try {
       await remove(selectedProductId, variantId);
     } catch (e) {
-      setSaveMessage(
-        httpErrorMessageForUser(e, t("couldNotDeleteVariant"))
-      );
+      setSaveMessage(httpErrorMessageForUser(e, t("couldNotDeleteVariant")));
       if (saveMessageTimerRef.current !== undefined) {
         window.clearTimeout(saveMessageTimerRef.current);
       }
@@ -218,15 +227,10 @@ export function VariantsHome() {
           };
           const m = ax.response?.data?.message;
           const backendMsg = (
-            typeof m === "string"
-              ? m
-              : Array.isArray(m)
-                ? m.join(", ")
-                : ""
+            typeof m === "string" ? m : Array.isArray(m) ? m.join(", ") : ""
           ).toLowerCase();
           const errMsg = (
-            backendMsg ||
-            (e instanceof Error ? e.message : String(e))
+            backendMsg || (e instanceof Error ? e.message : String(e))
           ).toLowerCase();
           if (
             errMsg.includes("variants have been created") ||
@@ -250,9 +254,13 @@ export function VariantsHome() {
         const missingValues = attr.values.filter((v) => !valueIdMap[v]);
         if (missingValues.length > 0) {
           try {
-            const created = await createAttributeValues(productId, backendAttrId, {
-              values: missingValues.map((value) => ({ value })),
-            });
+            const created = await createAttributeValues(
+              productId,
+              backendAttrId,
+              {
+                values: missingValues.map((value) => ({ value })),
+              }
+            );
             const createdItems = Array.isArray(created) ? created : [created];
             for (const item of createdItems as Array<Record<string, unknown>>) {
               const id = item?.id;
@@ -274,15 +282,10 @@ export function VariantsHome() {
             };
             const m = ax.response?.data?.message;
             const backendMsg = (
-              typeof m === "string"
-                ? m
-                : Array.isArray(m)
-                  ? m.join(", ")
-                  : ""
+              typeof m === "string" ? m : Array.isArray(m) ? m.join(", ") : ""
             ).toLowerCase();
             const errMsg = (
-              backendMsg ||
-              (e instanceof Error ? e.message : String(e))
+              backendMsg || (e instanceof Error ? e.message : String(e))
             ).toLowerCase();
             if (
               !errMsg.includes("variants have been created") &&
@@ -326,7 +329,10 @@ export function VariantsHome() {
     try {
       // 1. Sync attributes so every value has a backend id.
       const currentAttributes = useVariantWorkbenchStore.getState().attributes;
-      const synced = await syncAttributesToBackend(selectedProductId, currentAttributes);
+      const synced = await syncAttributesToBackend(
+        selectedProductId,
+        currentAttributes
+      );
       const store = useVariantWorkbenchStore.getState();
       for (const { oldId, attr } of synced) {
         if (oldId !== attr.id) {
@@ -355,9 +361,7 @@ export function VariantsHome() {
       );
       const skippedCount = rowsToSave.length - validRows.length;
       if (validRows.length === 0 && rowsToSave.length > 0) {
-        throw new Error(
-          t("attributeValuesNotResolved")
-        );
+        throw new Error(t("attributeValuesNotResolved"));
       }
 
       // 3. Discover which backend variants are being replaced.
@@ -492,15 +496,16 @@ export function VariantsHome() {
       setSaveMessage(msg);
       resetWorkbench();
     } catch (e) {
-      setSaveMessage(
-        httpErrorMessageForUser(e, t("couldNotSaveVariants"))
-      );
+      setSaveMessage(httpErrorMessageForUser(e, t("couldNotSaveVariants")));
     } finally {
       setSaveBusy(false);
       if (saveMessageTimerRef.current !== undefined) {
         window.clearTimeout(saveMessageTimerRef.current);
       }
-      saveMessageTimerRef.current = window.setTimeout(() => setSaveMessage(null), 5000);
+      saveMessageTimerRef.current = window.setTimeout(
+        () => setSaveMessage(null),
+        5000
+      );
     }
   };
 
@@ -543,7 +548,9 @@ export function VariantsHome() {
           {selectedProductId && (
             <div className="flex flex-wrap items-center gap-1">
               {(() => {
-                const product = products.find((p) => p.id === selectedProductId);
+                const product = products.find(
+                  (p) => p.id === selectedProductId
+                );
                 if (!product || product.categoryIds.length === 0) return null;
                 return product.categoryIds.map((id) => {
                   const cat = categories.find((c) => c.id === id);
@@ -564,43 +571,44 @@ export function VariantsHome() {
           {saveMessage ? (
             <span className="text-muted-foreground text-xs">{saveMessage}</span>
           ) : null}
-          <Button
+          <LoadingButton
             type="button"
             size="sm"
+            loading={saveBusy}
+            loadingText={t("saveSelected")}
             disabled={
-              saveBusy ||
-              variantSync.loading ||
-              !selectedRows.length ||
-              !selectedProductId
+              variantSync.loading || !selectedRows.length || !selectedProductId
             }
-            onClick={() => void saveRows(selectedRows, { deleteOrphans: false })}
+            onClick={() =>
+              void saveRows(selectedRows, { deleteOrphans: false })
+            }
           >
-            {saveBusy ? (
-              <Loader2 className="size-4 animate-spin" aria-hidden />
-            ) : (
-              <Save className="size-4" aria-hidden />
-            )}
+            <Save className="size-4" aria-hidden />
             {t("saveSelected")}
-          </Button>
-          <Button
+          </LoadingButton>
+          <LoadingButton
             type="button"
             size="sm"
             variant="outline"
+            loading={saveBusy}
+            loadingText={t("saveAll")}
             disabled={
-              saveBusy ||
-              variantSync.loading ||
-              !variants.length ||
-              !selectedProductId
+              variantSync.loading || !variants.length || !selectedProductId
             }
             onClick={() => void saveRows(variants)}
           >
             {t("saveAll")}
-          </Button>
+          </LoadingButton>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            disabled={!variants.length || selected.size === 0}
+            disabled={
+              saveBusy ||
+              variantSync.loading ||
+              !variants.length ||
+              selected.size === 0
+            }
             onClick={() =>
               openPreview(
                 variants.filter((v) => selected.has(v.id)),
@@ -615,7 +623,7 @@ export function VariantsHome() {
             type="button"
             variant="outline"
             size="sm"
-            disabled={!variants.length}
+            disabled={saveBusy || variantSync.loading || !variants.length}
             onClick={() => openPreview(variants, t("allVariants"))}
           >
             <Eye className="size-4" aria-hidden />
@@ -625,15 +633,19 @@ export function VariantsHome() {
       </div>
 
       {variants.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">
-            {t("saved", { count: variants.filter((v) => !v.isLocalOnly).length })}
+        <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-foreground font-medium">
+            {t("saved", {
+              count: variants.filter((v) => !v.isLocalOnly).length,
+            })}
           </span>
           {variants.some((v) => v.isLocalOnly) && (
             <>
               <span>·</span>
               <span className="font-medium text-amber-600">
-                {t("new", { count: variants.filter((v) => v.isLocalOnly).length })}
+                {t("new", {
+                  count: variants.filter((v) => v.isLocalOnly).length,
+                })}
               </span>
             </>
           )}
@@ -661,7 +673,7 @@ export function VariantsHome() {
                 key={img.id}
                 src={img.url}
                 alt={img.fileName}
-                className="h-16 w-16 rounded-md border border-border/60 object-cover"
+                className="border-border/60 h-16 w-16 rounded-md border object-cover"
               />
             ))}
           </div>
