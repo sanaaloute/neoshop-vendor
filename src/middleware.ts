@@ -51,12 +51,12 @@ function buildCspHeader(nonce: string): string {
   return [
     "default-src 'self'",
     isDev
-      ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"
-      : `script-src 'self' 'nonce-${nonce}'`,
+      ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com"
+      : `script-src 'self' 'nonce-${nonce}' https://va.vercel-scripts.com`,
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' blob: data:${apiOrigin ? ` ${apiOrigin}` : ""}${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
+    `img-src 'self' blob: data: https://*.supabase.co${apiOrigin ? ` ${apiOrigin}` : ""}${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
     "font-src 'self'",
-    `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ""}${socketOrigin ? ` ${socketOrigin}` : ""}`,
+    `connect-src 'self' wss:${apiOrigin ? ` ${apiOrigin}` : ""}${socketOrigin ? ` ${socketOrigin} wss://${new URL(socketOrigin).host}` : ""}`,
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
