@@ -4,8 +4,12 @@ export type ChatMessageType = "text" | "image" | "mixed" | "document";
 
 export type ChatAttachment = {
   id: string;
-  /** Canonical object path returned by the chat attachment upload endpoint. */
+  /** Display URL (HTTPS) returned by the chat attachment upload endpoint. */
   fileUrl?: string;
+  /** Storage object path; used to refresh an expired display URL through /storage/read-urls. */
+  storagePath?: string;
+  /** Storage bucket name; used when refreshing the display URL. */
+  storageBucket?: string;
   /** Original file name (alias kept for backwards compatibility). */
   filename?: string;
   fileName?: string;

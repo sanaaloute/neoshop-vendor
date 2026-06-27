@@ -15,6 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,15 +56,6 @@ function unreadCount(t: ChatThread): number {
   return t.messages.filter(
     (m) => m.authorRole !== "vendor" && m.sentAt > t.lastReadAt
   ).length;
-}
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
 }
 
 function roleBadge(role: string, t: (key: string) => string): string | null {
@@ -114,6 +106,31 @@ function formatFileSize(bytes?: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function isHttpUrl(value?: string): boolean {
+  return Boolean(value && /^https?:\/\//i.test(value));
+}
+
+/** Best display URL for a chat attachment: signedUrl first, then the fileUrl HTTPS URL. */
+function getAttachmentDisplayUrl(
+  a: ChatAttachment,
+  resolvedSignedUrl?: string
+): string | undefined {
+  if (resolvedSignedUrl) return resolvedSignedUrl;
+  if (a.signedUrl) return a.signedUrl;
+  if (isHttpUrl(a.fileUrl)) return a.fileUrl;
+  return undefined;
+}
+
+/** Storage key used to refresh an expired attachment URL via /storage/read-urls. */
+function getAttachmentStorageKey(
+  a: ChatAttachment
+): { bucket: string; path: string } | undefined {
+  const bucket = a.storageBucket || "chat-media";
+  const path = a.storagePath || (!isHttpUrl(a.fileUrl) ? a.fileUrl : undefined);
+  if (path) return { bucket, path };
+  return undefined;
+}
+
 export function MessagingHome() {
   const t = useTranslations("chat");
   const { loading: chatSyncLoading, error: chatSyncError } =
@@ -137,6 +154,8 @@ export function MessagingHome() {
   const [previewSignedUrls, setPreviewSignedUrls] = useState<
     Record<string, string>
   >({});
+  const requestedSignedUrlsRef = useRef<Set<string>>(new Set());
+  const requestedPreviewUrlsRef = useRef<Set<string>>(new Set());
   const desktop = useIsDesktop();
   const {
     sendMessage,
@@ -203,23 +222,27 @@ export function MessagingHome() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selected?.messages.length, peerTyping]);
 
-  // Resolve signed URLs for history attachments that don't have one
+  // Resolve signed URLs for history attachments that don't have a display URL.
+  // A ref tracks requested storage paths so updating signedUrls doesn't re-trigger the effect.
   useEffect(() => {
     if (!getApiBaseUrl() || !selectedId || !selected) return;
-    const attachments = selected.messages.flatMap(
-      (m) =>
-        m.attachments?.filter(
-          (a) => a.fileUrl && !a.signedUrl && !signedUrls[a.fileUrl]
-        ) ?? []
-    );
-    if (attachments.length === 0) return;
+    const items = selected.messages
+      .flatMap((m) => m.attachments ?? [])
+      .filter((a) => {
+        if (getAttachmentDisplayUrl(a)) return false;
+        const key = getAttachmentStorageKey(a);
+        if (!key) return false;
+        return !requestedSignedUrlsRef.current.has(key.path);
+      })
+      .map((a) => getAttachmentStorageKey(a)!);
+    if (items.length === 0) return;
+
+    items.forEach((item) => requestedSignedUrlsRef.current.add(item.path));
 
     let cancelled = false;
     (async () => {
       try {
-        const res = await readStorageUrls(
-          attachments.map((a) => ({ bucket: "chat-media", path: a.fileUrl! }))
-        );
+        const res = await readStorageUrls(items);
         if (cancelled) return;
         const next: Record<string, string> = {};
         for (const r of res.results) {
@@ -235,33 +258,35 @@ export function MessagingHome() {
     return () => {
       cancelled = true;
     };
-  }, [selectedId, signedUrls, selected, selected?.messages.length]);
+  }, [selectedId, selected, selected?.messages.length, signedUrls]);
 
   // Resolve signed URLs for image previews in the conversation list.
+  // A ref tracks requested storage paths so updating previewSignedUrls doesn't re-trigger the effect.
   useEffect(() => {
     if (!getApiBaseUrl()) return;
-    const attachments = threads.flatMap((thread) => {
-      const last = thread.messages[thread.messages.length - 1];
-      return (
-        last?.attachments?.filter((a) => {
+    const items = threads
+      .flatMap((thread) => {
+        const last = thread.messages[thread.messages.length - 1];
+        return (last?.attachments ?? []).filter((a) => {
           const mime = (a.mimeType ?? a.mime ?? "").toLowerCase();
-          return (
-            mime.startsWith("image/") &&
-            a.fileUrl &&
-            !a.signedUrl &&
-            !previewSignedUrls[a.fileUrl]
-          );
-        }) ?? []
-      );
-    });
-    if (attachments.length === 0) return;
+          return mime.startsWith("image/");
+        });
+      })
+      .filter((a) => {
+        if (getAttachmentDisplayUrl(a)) return false;
+        const key = getAttachmentStorageKey(a);
+        if (!key) return false;
+        return !requestedPreviewUrlsRef.current.has(key.path);
+      })
+      .map((a) => getAttachmentStorageKey(a)!);
+    if (items.length === 0) return;
+
+    items.forEach((item) => requestedPreviewUrlsRef.current.add(item.path));
 
     let cancelled = false;
     (async () => {
       try {
-        const res = await readStorageUrls(
-          attachments.map((a) => ({ bucket: "chat-media", path: a.fileUrl! }))
-        );
+        const res = await readStorageUrls(items);
         if (cancelled) return;
         const next: Record<string, string> = {};
         for (const r of res.results) {
@@ -278,6 +303,24 @@ export function MessagingHome() {
       cancelled = true;
     };
   }, [threads, previewSignedUrls]);
+
+  /** Refresh an expired signed URL for an active-conversation attachment. */
+  const refreshSignedUrl = useCallback(async (a: ChatAttachment) => {
+    const key = getAttachmentStorageKey(a);
+    if (!getApiBaseUrl() || !key) return;
+    try {
+      const res = await readStorageUrls([key]);
+      const item = res.results[0];
+      if (item?.path && (item.signedUrl || item.publicUrl)) {
+        setSignedUrls((prev) => ({
+          ...prev,
+          [item.path]: item.signedUrl ?? item.publicUrl!,
+        }));
+      }
+    } catch {
+      /* ignore transient signed-url failures */
+    }
+  }, []);
 
   const selectThread = (id: string) => {
     setSelectedThreadId(id);
@@ -338,6 +381,8 @@ export function MessagingHome() {
     const attachments: ChatAttachment[] | undefined = uploaded?.map((a) => ({
       id: a.id,
       fileUrl: a.fileUrl,
+      storagePath: a.storagePath,
+      storageBucket: a.storageBucket,
       fileName: a.fileName,
       filename: a.fileName,
       mimeType: a.mimeType,
@@ -381,6 +426,8 @@ export function MessagingHome() {
               mimeType: a.mimeType ?? a.mime ?? "application/octet-stream",
               fileSize: a.fileSize ?? a.sizeBytes ?? 0,
               fileUrl: a.fileUrl ?? "",
+              storagePath: a.storagePath,
+              storageBucket: a.storageBucket,
             }))
           )) as Record<string, unknown>;
           const real = mapChatMessage(sent, selectedId, currentUserIds);
@@ -497,17 +544,12 @@ export function MessagingHome() {
                       onClick={() => selectThread(threadItem.id)}
                     >
                       <div className="shrink-0">
-                        {peer?.avatarUrl ? (
-                          <img
-                            src={peer.avatarUrl}
-                            alt=""
-                            className="size-9 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-full text-xs font-semibold">
-                            {initials(threadItem.customerName)}
-                          </div>
-                        )}
+                        <Avatar
+                          src={peer?.avatarUrl}
+                          name={threadItem.customerName}
+                          alt={peer?.name ?? threadItem.customerName}
+                          className="size-9"
+                        />
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <div className="flex items-center justify-between gap-2">
@@ -521,17 +563,16 @@ export function MessagingHome() {
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-muted-foreground flex min-w-0 items-center gap-1.5 truncate text-xs">
                             {preview?.messageType === "image" &&
-                              preview.attachments?.[0]?.fileUrl && (
-                                <img
-                                  src={
+                              preview.attachments?.[0] && (
+                                <ChatImagePreview
+                                  attachment={preview.attachments[0]}
+                                  resolvedUrl={
                                     previewSignedUrls[
-                                      preview.attachments[0].fileUrl
-                                    ] ??
-                                    preview.attachments[0].signedUrl ??
-                                    preview.attachments[0].fileUrl
+                                      getAttachmentStorageKey(
+                                        preview.attachments[0]
+                                      )?.path ?? ""
+                                    ]
                                   }
-                                  alt=""
-                                  className="size-5 shrink-0 rounded object-cover"
                                 />
                               )}
                             {previewText(preview)}
@@ -575,6 +616,7 @@ export function MessagingHome() {
               onDeleteMessage={handleDeleteMessage}
               currentUserIds={currentUserIds}
               signedUrls={signedUrls}
+              refreshSignedUrl={refreshSignedUrl}
               sending={sending}
             />
           ) : (
@@ -602,16 +644,13 @@ export function MessagingHome() {
                   const peer = Object.values(selected.participantMap).find(
                     (p) => p.role !== "vendor"
                   );
-                  return peer?.avatarUrl ? (
-                    <img
-                      src={peer.avatarUrl}
-                      alt=""
-                      className="size-9 rounded-full object-cover"
+                  return (
+                    <Avatar
+                      src={peer?.avatarUrl}
+                      name={selected.customerName}
+                      alt={peer?.name ?? selected.customerName}
+                      className="size-9"
                     />
-                  ) : (
-                    <div className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-full text-xs font-semibold">
-                      {initials(selected.customerName)}
-                    </div>
                   );
                 })()}
                 <div className="min-w-0">
@@ -656,6 +695,7 @@ export function MessagingHome() {
                   onDeleteMessage={handleDeleteMessage}
                   currentUserIds={currentUserIds}
                   signedUrls={signedUrls}
+                  refreshSignedUrl={refreshSignedUrl}
                   sending={sending}
                 />
               </div>
@@ -701,17 +741,49 @@ function TranslationBadge({
   );
 }
 
+function ChatImagePreview({
+  attachment,
+  resolvedUrl,
+}: {
+  attachment: ChatAttachment;
+  resolvedUrl?: string;
+}) {
+  const [broken, setBroken] = useState(false);
+  const url = getAttachmentDisplayUrl(attachment, resolvedUrl);
+
+  if (!url || broken) {
+    return <ImageIcon className="text-muted-foreground size-5 shrink-0" />;
+  }
+
+  return (
+    <img
+      src={url}
+      alt=""
+      className="size-5 shrink-0 rounded object-cover"
+      onError={() => setBroken(true)}
+    />
+  );
+}
+
 function AttachmentThumbnail({
   a,
-  signedUrl,
+  resolvedUrl,
+  onRefresh,
 }: {
   a: ChatAttachment;
-  signedUrl?: string;
+  resolvedUrl?: string;
+  onRefresh?: () => void;
 }) {
   const t = useTranslations("chat");
-  const url = signedUrl ?? a.signedUrl;
+  const [broken, setBroken] = useState(false);
+  const url = getAttachmentDisplayUrl(a, resolvedUrl);
   const mime = (a.mimeType ?? a.mime ?? "").toLowerCase();
   const name = a.fileName ?? a.filename ?? t("attachment");
+
+  // Reset broken state when the resolved URL changes (e.g. after a refresh).
+  useEffect(() => {
+    setBroken(false);
+  }, [url]);
 
   if (mime.startsWith("image/")) {
     return (
@@ -721,12 +793,18 @@ function AttachmentThumbnail({
         rel="noreferrer"
         className="group/image relative block overflow-hidden rounded-md border"
       >
-        {url ? (
+        {url && !broken ? (
           <img
             src={url}
             alt={name}
             className="max-h-[180px] max-w-[260px] object-contain transition-opacity group-hover/image:opacity-90"
             loading="lazy"
+            onError={() => {
+              if (onRefresh) {
+                onRefresh();
+              }
+              setBroken(true);
+            }}
           />
         ) : (
           <div className="bg-muted flex h-[120px] w-[160px] items-center justify-center">
@@ -766,6 +844,7 @@ function MessageBubble({
   setHoveredMessageId,
   onDeleteMessage,
   signedUrls,
+  refreshSignedUrl,
 }: {
   m: ChatMessage;
   thread: ChatThread;
@@ -774,6 +853,7 @@ function MessageBubble({
   setHoveredMessageId: (id: string | null) => void;
   onDeleteMessage: (id: string) => void;
   signedUrls: Record<string, string>;
+  refreshSignedUrl?: (attachment: ChatAttachment) => void;
 }) {
   const t = useTranslations("chat");
   const isVendor = m.authorRole === "vendor";
@@ -793,16 +873,14 @@ function MessageBubble({
       onMouseEnter={() => setHoveredMessageId(m.id)}
       onMouseLeave={() => setHoveredMessageId(null)}
     >
-      {!isVendor && sender?.avatarUrl ? (
-        <img
-          src={sender.avatarUrl}
-          alt=""
-          className="mt-1 size-7 shrink-0 rounded-full object-cover"
+      {!isVendor ? (
+        <Avatar
+          src={sender?.avatarUrl}
+          name={senderName}
+          alt={sender?.name ?? senderName}
+          className="mt-1 size-7 shrink-0"
+          fallbackClassName="text-[10px]"
         />
-      ) : !isVendor ? (
-        <div className="bg-primary/10 text-primary mt-1 flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
-          {initials(senderName)}
-        </div>
       ) : null}
       <div className="flex max-w-[min(100%,420px)] flex-col">
         {!isVendor && (
@@ -873,7 +951,16 @@ function MessageBubble({
                 <AttachmentThumbnail
                   key={a.id}
                   a={a}
-                  signedUrl={a.fileUrl ? signedUrls[a.fileUrl] : undefined}
+                  resolvedUrl={
+                    signedUrls[
+                      getAttachmentStorageKey(a)?.path ?? ""
+                    ]
+                  }
+                  onRefresh={
+                    getAttachmentStorageKey(a)
+                      ? () => refreshSignedUrl?.(a)
+                      : undefined
+                  }
                 />
               ))}
             </div>
@@ -901,6 +988,7 @@ function ConversationBody({
   onDeleteMessage,
   currentUserIds,
   signedUrls,
+  refreshSignedUrl,
   sending,
 }: {
   thread: ChatThread;
@@ -916,6 +1004,7 @@ function ConversationBody({
   onDeleteMessage: (messageId: string) => void;
   currentUserIds: string[];
   signedUrls: Record<string, string>;
+  refreshSignedUrl?: (attachment: ChatAttachment) => void;
   sending: boolean;
 }) {
   const t = useTranslations("chat");
@@ -928,16 +1017,13 @@ function ConversationBody({
           const peer = Object.values(thread.participantMap).find(
             (p) => p.role !== "vendor"
           );
-          return peer?.avatarUrl ? (
-            <img
-              src={peer.avatarUrl}
-              alt=""
-              className="size-9 rounded-full object-cover"
+          return (
+            <Avatar
+              src={peer?.avatarUrl}
+              name={thread.customerName}
+              alt={peer?.name ?? thread.customerName}
+              className="size-9"
             />
-          ) : (
-            <div className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-full text-xs font-semibold">
-              {initials(thread.customerName)}
-            </div>
           );
         })()}
         <div className="min-w-0">
@@ -965,6 +1051,7 @@ function ConversationBody({
               setHoveredMessageId={setHoveredMessageId}
               onDeleteMessage={onDeleteMessage}
               signedUrls={signedUrls}
+              refreshSignedUrl={refreshSignedUrl}
             />
           ))}
           {peerTyping ? (

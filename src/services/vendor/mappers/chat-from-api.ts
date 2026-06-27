@@ -53,6 +53,14 @@ function mapAttachment(raw: Record<string, unknown>): ChatAttachment {
     (typeof raw.fileUrl === "string" && raw.fileUrl) ||
     (typeof raw.url === "string" && raw.url) ||
     "";
+  const storagePath =
+    typeof raw.storagePath === "string" && raw.storagePath
+      ? raw.storagePath
+      : undefined;
+  const storageBucket =
+    typeof raw.storageBucket === "string" && raw.storageBucket
+      ? raw.storageBucket
+      : undefined;
   const fileName =
     (typeof raw.fileName === "string" && raw.fileName) ||
     (typeof raw.filename === "string" && raw.filename) ||
@@ -71,6 +79,8 @@ function mapAttachment(raw: Record<string, unknown>): ChatAttachment {
   return {
     id: String(raw.id ?? ""),
     fileUrl,
+    storagePath,
+    storageBucket,
     fileName,
     filename: fileName,
     mimeType,

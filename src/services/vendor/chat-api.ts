@@ -7,6 +7,8 @@ export type ChatMessageAttachmentInput = {
   mimeType: string;
   fileSize: number;
   fileUrl: string;
+  storagePath?: string;
+  storageBucket?: string;
 };
 
 /** POST /chat/conversations — open or resume a conversation with a user or vendor */
@@ -53,6 +55,8 @@ export async function uploadChatAttachment(conversationId: string, file: File) {
     id: string;
     messageId: string | null;
     fileUrl: string;
+    storagePath?: string;
+    storageBucket?: string;
     mimeType: string;
     fileSize: number;
     fileName: string;
