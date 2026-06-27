@@ -14,8 +14,26 @@ function getEnvOrigin(key: string): string | null {
   }
 }
 
+/** Derive the Supabase origin from AUTH_ISSUER when NEXT_PUBLIC_SUPABASE_URL is not set. */
+function getSupabaseOrigin(): string | null {
+  const explicit = getEnvOrigin("NEXT_PUBLIC_SUPABASE_URL");
+  if (explicit) return explicit;
+  try {
+    const issuer = process.env.AUTH_ISSUER;
+    if (!issuer) return null;
+    const url = new URL(issuer);
+    // AUTH_ISSUER looks like https://<project>.supabase.co/auth/v1
+    if (/\.supabase\.co$/i.test(url.hostname)) {
+      return url.origin;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 const apiOrigin = getEnvOrigin("NEXT_PUBLIC_API_BASE_URL");
-const supabaseOrigin = getEnvOrigin("NEXT_PUBLIC_SUPABASE_URL");
+const supabaseOrigin = getSupabaseOrigin();
 const socketOrigin = getEnvOrigin("NEXT_PUBLIC_SOCKET_IO_URL") ?? apiOrigin;
 
 function generateNonce(): string {
