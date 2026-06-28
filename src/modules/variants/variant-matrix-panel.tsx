@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
 import { useVariantWorkbenchStore } from "@/store/variant-workbench-store";
 
-import { CATEGORY_ATTRIBUTE_PRESETS } from "./category-attribute-presets";
+import { resolvePresetAttributes } from "./category-attribute-presets";
 import type { VariantAttributeKind } from "./types";
 import { emptyGenerationDefaults } from "./types";
 
@@ -77,24 +77,15 @@ export function VariantMatrixPanel() {
 
   // Suggested attributes based on product categories
   const suggestedAttributes = useMemo(() => {
-    if (!productCategoryNames.length) return [];
+    if (!product || product.categoryIds.length === 0) return [];
+    const resolved = resolvePresetAttributes(product.categoryIds, categories);
     const seen = new Set(attributes.map((a) => a.name.toLowerCase()));
-    const result: Array<{
-      name: string;
-      kind: VariantAttributeKind;
-      values: string[];
-    }> = [];
-    for (const rawName of productCategoryNames) {
-      const presets = CATEGORY_ATTRIBUTE_PRESETS[rawName.trim().toLowerCase()];
-      if (!presets) continue;
-      for (const preset of presets) {
-        if (seen.has(preset.name.toLowerCase())) continue;
-        seen.add(preset.name.toLowerCase());
-        result.push(preset);
-      }
-    }
-    return result;
-  }, [productCategoryNames, attributes]);
+    return resolved.filter((attr) => {
+      if (seen.has(attr.name.toLowerCase())) return false;
+      seen.add(attr.name.toLowerCase());
+      return true;
+    });
+  }, [product, categories, attributes]);
 
   const handleAddSuggestedAttribute = (
     name: string,

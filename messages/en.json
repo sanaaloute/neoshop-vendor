@@ -782,6 +782,7 @@
     "update": "Update",
     "saveDraft": "Save Draft",
     "submitReview": "Submit Review",
+    "publish": "Publish",
     "preview": "Preview",
     "lastSaved": "Last saved {time}",
     "draft": "Draft",

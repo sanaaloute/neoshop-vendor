@@ -3,7 +3,7 @@
 import { create } from "zustand";
 
 import { buildVariantMatrix } from "@/modules/variants/generate-matrix";
-import { slugify } from "@/lib/slugify";
+import { toAttributeCode } from "@/lib/slugify";
 import type {
   VariantAttributeDefinition,
   VariantAttributeKind,
@@ -84,9 +84,9 @@ export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
 
     addAttribute: (name, kind) => {
       const desired = name.trim() || "Attribute";
-      const desiredCode = slugify(desired);
+      const desiredCode = toAttributeCode(desired);
       const existing = get().attributes.find(
-        (a) => slugify(a.name) === desiredCode
+        (a) => toAttributeCode(a.name) === desiredCode
       );
       if (existing) return existing.id;
 
@@ -113,9 +113,9 @@ export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
     renameAttribute: (id, name) =>
       set((s) => {
         const desired = name.trim();
-        const desiredCode = slugify(desired);
+        const desiredCode = toAttributeCode(desired);
         const conflict = s.attributes.some(
-          (a) => a.id !== id && slugify(a.name) === desiredCode
+          (a) => a.id !== id && toAttributeCode(a.name) === desiredCode
         );
         if (conflict) return s;
         return {

@@ -358,7 +358,7 @@ export function ProductForm({
   });
 
   const publishNow = form.handleSubmit(async (v) => {
-    const next = { ...v, status: "pending_review" as const, publishAt: null };
+    const next = { ...v, status: "published" as const, publishAt: null };
     form.reset(next);
     setSaveError(null);
     if (!canWriteCatalog) {
@@ -592,7 +592,7 @@ export function ProductForm({
                       className="gap-1.5"
                     >
                       <Send className="size-4" />
-                      {t("submitReview")}
+                      {t("publish")}
                     </Button>
                   </>
                 )}

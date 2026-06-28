@@ -251,9 +251,6 @@ export function ProductsTable({
                         <SelectItem value="draft">
                           {t("status.draft")}
                         </SelectItem>
-                        <SelectItem value="pending_review">
-                          {t("status.pending_review")}
-                        </SelectItem>
                         <SelectItem value="published">
                           {t("status.published")}
                         </SelectItem>

@@ -54,11 +54,8 @@ export async function createProductFromForm(
   const pid = String((row as Record<string, unknown>).id);
 
   const apiStatus = uiStatusToApi(values.status);
-  // Vendor may only set draft, pending_review, or hidden via PATCH.
-  if (
-    apiStatus === "pending_review" ||
-    apiStatus === "hidden"
-  ) {
+  // Vendor may set draft, published, or hidden via PATCH.
+  if (apiStatus === "published" || apiStatus === "hidden") {
     await updateProduct(pid, { status: apiStatus });
   }
 
@@ -80,10 +77,10 @@ export async function updateProductFromForm(
     currency: values.currency,
     bulkPricing: values.bulkPricing.length > 0 ? uiBulkPricingToApi(values.bulkPricing) : undefined,
   };
-  // Vendor may only set draft, pending_review, or hidden via PATCH.
+  // Vendor may set draft, published, or hidden via PATCH.
   if (
     apiStatus === "draft" ||
-    apiStatus === "pending_review" ||
+    apiStatus === "published" ||
     apiStatus === "hidden"
   ) {
     body.status = apiStatus;
@@ -145,11 +142,11 @@ export async function bulkPatchProductsOnGateway(
   productIds: string[],
   patch: { status?: ProductStatus; categoryIds?: string[] }
 ) {
-  // Vendors may only set draft, pending_review, hidden per the API guide.
-  // published, archived, and rejected are admin-only.
+  // Vendors may set draft, published, or hidden per the API guide.
+  // archived and rejected are admin-only.
   const vendorControlledStatuses: ApiProductStatus[] = [
     "draft",
-    "pending_review",
+    "published",
     "hidden",
   ];
   for (const id of productIds) {

@@ -782,6 +782,7 @@
     "update": "更新",
     "saveDraft": "保存草稿",
     "submitReview": "提交审核",
+    "publish": "发布",
     "preview": "预览",
     "lastSaved": "上次保存 {time}",
     "draft": "草稿",

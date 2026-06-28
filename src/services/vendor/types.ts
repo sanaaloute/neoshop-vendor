@@ -231,7 +231,7 @@ export type UpdateProductDto = {
   description?: string;
   moq?: number;
   currency?: Currency;
-  status?: Extract<ApiProductStatus, "draft" | "pending_review" | "hidden">;
+  status?: Extract<ApiProductStatus, "draft" | "published" | "hidden">;
   bulkPricing?: BulkPricingTierInput[];
 };
 

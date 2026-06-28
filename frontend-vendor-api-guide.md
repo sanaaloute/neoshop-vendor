@@ -594,7 +594,7 @@ Update product descriptors, lifecycle status, or MOQ.
   "slug": "updated-t-shirt",               // optional, string, 2-120
   "description": "Updated description...",   // optional, string, max 20000
   "currency": "CNY",                       // optional, enum: CNY, XOF
-  "status": "pending_review",               // optional, enum — vendor may only set: draft, pending_review, hidden
+  "status": "published",                   // optional, enum — vendor may only set: draft, published, hidden
   "moq": 50,                               // optional, integer, min 1
   "bulkPricing": [                         // optional, replaces entire set
     { "minQuantity": 50, "unitPrice": 22.00 }
@@ -605,9 +605,9 @@ Update product descriptors, lifecycle status, or MOQ.
 **Response:** Updated `Product` with full includes
 
 **Status Rules:**
-- Vendors may set: `draft`, `pending_review`, `hidden`
+- Vendors may set: `draft`, `published`, `hidden`
 - Published products can only be moved to `hidden`
-- `published`, `rejected`, `archived` can only be set by admin
+- `rejected` and `archived` can only be set by admin
 - Sending current status is allowed as no-op
 
 ---

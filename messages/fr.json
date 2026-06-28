@@ -782,6 +782,7 @@
     "update": "Mettre à jour",
     "saveDraft": "Enregistrer le brouillon",
     "submitReview": "Soumettre pour révision",
+    "publish": "Publier",
     "preview": "Aperçu",
     "lastSaved": "Dernier enregistrement {time}",
     "draft": "Brouillon",

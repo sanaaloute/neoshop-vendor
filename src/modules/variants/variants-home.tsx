@@ -13,7 +13,7 @@ import { getApiBaseUrl } from "@/config/auth";
 import { useGatewayCatalogBootstrap } from "@/hooks/use-gateway-catalog-bootstrap";
 import { useGatewayVariantsBootstrap } from "@/hooks/use-gateway-variants-bootstrap";
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
-import { slugify } from "@/lib/slugify";
+import { toAttributeCode } from "@/lib/slugify";
 import { useVariantsWrite } from "@/hooks/use-variants-write";
 import { useVariants } from "@/hooks/use-variants";
 import { useInventoryWrite } from "@/hooks/use-inventory-write";
@@ -63,40 +63,52 @@ export function VariantsHome() {
 
   /*
    * Validate selectedProductId against the loaded catalog.
-   * - On first catalog load, honour ?productId= from the URL only if the
-   *   product actually exists in /products/me.
-   * - If the URL changes later, re-evaluate once.
-   * - If the currently selected product disappears from the catalog,
-   *   clear the workbench so we don't show stale rows or fire phantom
-   *   detail requests.
+   * - Select the product from ?productId= as soon as it appears in the
+   *   catalog (it may arrive via the initial store state or after the
+   *   catalog bootstrap finishes).
+   * - If the URL product is not in the catalog yet, preserve the current
+   *   selection/workbench instead of clearing it. This avoids losing data
+   *   when a vendor is redirected here immediately after creating a product
+   *   and the backend catalog has not yet caught up.
+   * - Only clear the workbench when there is no URL product and the
+   *   currently selected product truly disappeared from the catalog.
    */
   useEffect(() => {
-    if (catalogSync.loading) return;
-
     const urlChanged = urlProductId !== lastUrlProductId.current;
-    if (urlChanged) {
-      lastUrlProductId.current = urlProductId;
-      if (urlProductId && products.some((p) => p.id === urlProductId)) {
+
+    if (urlProductId && products.some((p) => p.id === urlProductId)) {
+      if (selectedProductId !== urlProductId) {
         setSelectedProductId(urlProductId);
-        return;
       }
+      lastUrlProductId.current = urlProductId;
+      return;
+    }
+
+    if (urlChanged && urlProductId) {
+      // URL points to a product that has not reached the catalog yet.
+      // Keep the URL recorded so we retry on the next catalog update.
+      lastUrlProductId.current = urlProductId;
+      return;
     }
 
     if (
       selectedProductId &&
-      !products.some((p) => p.id === selectedProductId)
+      !products.some((p) => p.id === selectedProductId) &&
+      !urlProductId
     ) {
       setSelectedProductId(null);
       setSelected(new Set());
       resetWorkbench();
     }
-  }, [
-    products,
-    urlProductId,
-    catalogSync.loading,
-    selectedProductId,
-    resetWorkbench,
-  ]);
+
+    if (!urlProductId) {
+      lastUrlProductId.current = null;
+    }
+  // catalogSync.loading is kept in dependencies only to avoid a React HMR
+  // "dependency array changed size" warning when the effect body is edited.
+  // The effect intentionally does not gate on it so the URL product can be
+  // selected as soon as it appears in the store.
+  }, [products, urlProductId, selectedProductId, resetWorkbench, catalogSync.loading]);
 
   // Reset preset tracker whenever the selected product changes.
   useEffect(() => {
@@ -116,10 +128,7 @@ export function VariantsHome() {
     const product = products.find((p) => p.id === selectedProductId);
     if (!product || product.categoryIds.length === 0) return;
 
-    const categoryNames = product.categoryIds.map(
-      (id) => categories.find((c) => c.id === id)?.name ?? id
-    );
-    const presets = resolvePresetAttributes(categoryNames);
+    const presets = resolvePresetAttributes(product.categoryIds, categories);
     if (presets.length === 0) return;
 
     presetInjectedFor.current.add(selectedProductId);
@@ -209,7 +218,7 @@ export function VariantsHome() {
         try {
           const created = await createAttribute(productId, {
             code:
-              slugify(attr.name) || `attr-${crypto.randomUUID().slice(0, 8)}`,
+              toAttributeCode(attr.name),
             label: attr.name,
           });
           const createdItem = Array.isArray(created)
@@ -307,7 +316,7 @@ export function VariantsHome() {
         attr: {
           ...attr,
           id: backendAttrId,
-          code: attr.code || slugify(attr.name),
+          code: attr.code || toAttributeCode(attr.name),
           valueIdMap,
         },
       };
@@ -346,12 +355,17 @@ export function VariantsHome() {
       }
 
       // 2. Rebuild rows with correct selectionIds.
+      // The rows argument is a snapshot from before syncAttributesToBackend,
+      // which may have remapped local attribute ids to backend ids in the
+      // store. Map old -> current ids so we can look up value ids correctly.
       const finalAttributes = useVariantWorkbenchStore.getState().attributes;
+      const attrIdMap = new Map(synced.map(({ oldId, attr }) => [oldId, attr.id]));
       const rowsToSave = rows.map((row) => {
         if (row.selectionIds && row.selectionIds.length > 0) return row;
         const selectionIds: string[] = [];
         for (const [attrId, value] of Object.entries(row.combo)) {
-          const attr = finalAttributes.find((a) => a.id === attrId);
+          const currentAttrId = attrIdMap.get(attrId) ?? attrId;
+          const attr = finalAttributes.find((a) => a.id === currentAttrId);
           const valueId = attr?.valueIdMap?.[value];
           if (valueId) selectionIds.push(valueId);
         }
