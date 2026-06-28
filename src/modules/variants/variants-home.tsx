@@ -243,6 +243,10 @@ export function VariantsHome() {
             if (isUuidV4(attr.id)) {
               backendAttrId = attr.id;
             }
+          } else if (errMsg.includes("attribute code must be unique")) {
+            throw new Error(
+              t("attributeCodeAlreadyExists", { name: attr.name })
+            );
           } else {
             throw e;
           }

@@ -942,6 +942,7 @@
     "variantsSaved": "已保存 {count} 个变体。",
     "rowsSkipped": "{count} 行因属性值无法同步而被跳过。",
     "couldNotSaveVariants": "无法保存变体。请重试。",
+    "attributeCodeAlreadyExists": "名为\"{name}\"的属性已存在于该商品中。每个属性必须具有唯一名称。",
     "couldNotDeleteVariant": "无法删除变体。请重试。",
     "attributeValuesNotResolved": "无法保存变体，因为属性值无法解析。请刷新页面后重试。",
     "kindColor": "颜色",

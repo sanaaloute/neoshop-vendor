@@ -942,6 +942,7 @@
     "variantsSaved": "{count} variant{count, plural, one {} other {s}} saved.",
     "rowsSkipped": "{count} row{count, plural, one {} other {s}} skipped because attribute values could not be synced.",
     "couldNotSaveVariants": "Could not save variants. Try again.",
+    "attributeCodeAlreadyExists": "An attribute named \"{name}\" already exists for this product. Each attribute must have a unique name.",
     "couldNotDeleteVariant": "Could not delete variant. Try again.",
     "attributeValuesNotResolved": "No variants could be saved because the attribute values could not be resolved. Please refresh the page and try again.",
     "kindColor": "Color",

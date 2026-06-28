@@ -33,7 +33,7 @@ function mergeFetchedProduct(
 ): ProductFormValues {
   // If local media is empty (list endpoint doesn't include media), use API media directly
   if (!target.media.length) {
-    return { ...target, media: source.media };
+    return { ...target, media: source.media, status: source.status };
   }
 
   const apiById = new Map(source.media.map((m) => [m.id, m]));
@@ -50,7 +50,7 @@ function mergeFetchedProduct(
     const extras = target.media.filter(
       (m) => m.url && !apiIds.has(m.id)
     );
-    return { ...target, media: [...source.media, ...extras] };
+    return { ...target, media: [...source.media, ...extras], status: source.status };
   }
 
   // Normal merge: backfill URLs from API into matching local items,
@@ -70,7 +70,7 @@ function mergeFetchedProduct(
       merged.push(api);
     }
   }
-  return { ...target, media: merged };
+  return { ...target, media: merged, status: source.status };
 }
 
 export function ProductEditor({ catalogProductId }: ProductEditorProps) {

@@ -942,6 +942,7 @@
     "variantsSaved": "{count} variante{count, plural, one {} other {s}} enregistrée{count, plural, one {} other {s}}.",
     "rowsSkipped": "{count} ligne{count, plural, one {} other {s}} ignorée{count, plural, one {} other {s}} car les valeurs d'attribut n'ont pas pu être synchronisées.",
     "couldNotSaveVariants": "Impossible d'enregistrer les variantes. Réessayez.",
+    "attributeCodeAlreadyExists": "Un attribut nommé \"{name}\" existe déjà pour ce produit. Chaque attribut doit avoir un nom unique.",
     "couldNotDeleteVariant": "Impossible de supprimer la variante. Réessayez.",
     "attributeValuesNotResolved": "Aucune variante n'a pu être enregistrée car les valeurs d'attribut n'ont pas pu être résolues. Veuillez actualiser la page et réessayer.",
     "kindColor": "Couleur",

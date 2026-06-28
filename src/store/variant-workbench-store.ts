@@ -3,6 +3,7 @@
 import { create } from "zustand";
 
 import { buildVariantMatrix } from "@/modules/variants/generate-matrix";
+import { slugify } from "@/lib/slugify";
 import type {
   VariantAttributeDefinition,
   VariantAttributeKind,
@@ -82,13 +83,20 @@ export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
       }),
 
     addAttribute: (name, kind) => {
+      const desired = name.trim() || "Attribute";
+      const desiredCode = slugify(desired);
+      const existing = get().attributes.find(
+        (a) => slugify(a.name) === desiredCode
+      );
+      if (existing) return existing.id;
+
       const id = genAttrId();
       set((s) => ({
         attributes: [
           ...s.attributes,
           {
             id,
-            name: name.trim() || "Attribute",
+            name: desired,
             kind,
             values: [],
           },
@@ -103,11 +111,19 @@ export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
       })),
 
     renameAttribute: (id, name) =>
-      set((s) => ({
-        attributes: s.attributes.map((a) =>
-          a.id === id ? { ...a, name: name.trim() } : a
-        ),
-      })),
+      set((s) => {
+        const desired = name.trim();
+        const desiredCode = slugify(desired);
+        const conflict = s.attributes.some(
+          (a) => a.id !== id && slugify(a.name) === desiredCode
+        );
+        if (conflict) return s;
+        return {
+          attributes: s.attributes.map((a) =>
+            a.id === id ? { ...a, name: desired } : a
+          ),
+        };
+      }),
 
     setAttributeKind: (id, kind) =>
       set((s) => ({

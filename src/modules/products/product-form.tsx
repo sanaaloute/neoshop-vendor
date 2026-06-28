@@ -51,6 +51,7 @@ import {
   deleteProductMedia,
   getProduct,
 } from "@/services/vendor/products-api";
+import { uploadStorageObject } from "@/services/vendor/storage-api";
 import { useStorageUpload } from "@/hooks/use-storage-upload";
 import { useVendorWritesAllowed } from "@/hooks/use-vendor-writes";
 import { useCategories } from "@/hooks/use-categories";
@@ -117,7 +118,7 @@ export function ProductForm({
   const storagePathsByMediaId = useRef(new Map<string, string>());
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const { uploadBatch, readUrls, signedUrl, remove } = useStorageUpload();
+  const { remove } = useStorageUpload();
 
   useEffect(() => {
     onSavingChange?.(saving);
@@ -256,60 +257,23 @@ export function ProductForm({
 
     const uploadedLocalIds: string[] = [];
 
-    if (entries.length > 0) {
-      const files = entries.map((e) => e.file);
-      const types = entries.map((_, i) => `img_${i}`);
-      const batch = await uploadBatch({
-        files,
+    for (const { m, file } of entries) {
+      const up = await uploadStorageObject({
+        file,
         bucket: "product-media",
         entityId: productId,
-        types,
+        type: `img_${m.sortIndex}`,
       });
-
-      const needReadUrls = batch.results
-        .filter((r) => !r.publicUrl && r.path)
-        .map((r) => ({ bucket: r.bucket || "product-media", path: r.path }));
-      let readResults: Awaited<ReturnType<typeof readUrls>> | null = null;
-      if (needReadUrls.length > 0) {
-        readResults = await readUrls(needReadUrls);
-      }
-
-      for (let i = 0; i < entries.length; i++) {
-        const { m } = entries[i];
-        const result = batch.results[i];
-        if (!result) continue;
-
-        let url = result.publicUrl;
-        if (!url && readResults) {
-          const read = readResults.results.find(
-            (r) =>
-              r.bucket === (result.bucket || "product-media") &&
-              r.path === result.path
-          );
-          url = read?.publicUrl ?? read?.signedUrl;
-        }
-        if (!url && result.path) {
-          try {
-            const signed = await signedUrl(
-              result.bucket || "product-media",
-              result.path
-            );
-            url = signed.signedUrl;
-          } catch {
-            /* ignore */
-          }
-        }
-        if (!url) continue;
-
-        await attachProductMedia(productId, {
-          url,
-          sortOrder: m.sortIndex,
-          isPrimary: m.sortIndex === 0,
-        });
-        filesByMediaId.current.delete(m.id);
-        storagePathsByMediaId.current.set(m.id, result.path);
-        uploadedLocalIds.push(m.id);
-      }
+      const url = up.publicUrl;
+      if (!url) continue;
+      await attachProductMedia(productId, {
+        url,
+        sortOrder: m.sortIndex,
+        isPrimary: m.sortIndex === 0,
+      });
+      filesByMediaId.current.delete(m.id);
+      storagePathsByMediaId.current.set(m.id, up.path);
+      uploadedLocalIds.push(m.id);
     }
 
     for (const mediaId of removedMediaIds.current) {
