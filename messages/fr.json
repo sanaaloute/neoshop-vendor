@@ -325,7 +325,10 @@
     "attachment": "Pièce jointe",
     "previewImage": "📷 Image",
     "previewDocument": "📄 Document",
-    "previewMixed": "🖼️ Image + texte"
+    "previewMixed": "🖼️ Image + texte",
+    "supportService": "Service d'assistance",
+    "supportContactUnavailable": "L'assistance n'est pas disponible pour le moment.",
+    "supportChatError": "Impossible de démarrer le chat d'assistance. Veuillez réessayer."
   },
   "notifications": {
     "notifications": "Notifications",

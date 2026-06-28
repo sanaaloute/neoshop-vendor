@@ -4,7 +4,7 @@
 > **Auth:** Supabase JWT Bearer token (`Authorization: Bearer <access_token>`)  
 > **Version:** `v1`
 
-Vendors **also** have access to many customer endpoints (`/auth/me`, `/chat`, `/notifications`, `/storage`, etc.) — those are listed in the _Shared Endpoints_ section at the bottom of this doc. Some endpoints (cart, checkout, wallet, returns, RFQ, customer reviews, referrals, coupons, addresses, shipping) are restricted to the `customer` role (or require customer-only permissions) and need a separate customer account.
+Vendors **also** have access to many customer endpoints (`/auth/me`, `/chat`, `/notifications`, `/storage`, etc.) — those are listed in the *Shared Endpoints* section at the bottom of this doc. Some endpoints (cart, checkout, wallet, returns, RFQ, customer reviews, referrals, coupons, addresses, shipping) are restricted to the `customer` role (or require customer-only permissions) and need a separate customer account.
 
 ---
 
@@ -12,14 +12,14 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/chat`, `/
 
 ### Required Headers
 
-| Header             | Required             | Description                                               |
-| ------------------ | -------------------- | --------------------------------------------------------- |
-| `Authorization`    | All vendor endpoints | `Bearer <supabase-access-token>` (JWT, HS256)             |
-| `X-Request-Id`     | Optional             | Unique request ID (echoed in response, used for tracing)  |
-| `X-Correlation-Id` | Optional             | Correlation ID for distributed tracing                    |
-| `Idempotency-Key`  | Optional             | 128-char max; ensures safe retries for state-changing ops |
-| `Content-Type`     | POST/PATCH/PUT       | `application/json` (or `multipart/form-data` for uploads) |
-| `User-Agent`       | Auto-captured        | Used for session tracking                                 |
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | All vendor endpoints | `Bearer <supabase-access-token>` (JWT, HS256) |
+| `X-Request-Id` | Optional | Unique request ID (echoed in response, used for tracing) |
+| `X-Correlation-Id` | Optional | Correlation ID for distributed tracing |
+| `Idempotency-Key` | Optional | 128-char max; ensures safe retries for state-changing ops |
+| `Content-Type` | POST/PATCH/PUT | `application/json` (or `multipart/form-data` for uploads) |
+| `User-Agent` | Auto-captured | Used for session tracking |
 
 ### Guard Chain (Authenticated Endpoints)
 
@@ -50,7 +50,9 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/chat`, `/
   "message": "Invalid request data. Please verify your input and try again.",
   "error": "Bad Request",
   "details": {
-    "fields": [{ "property": "email", "messages": ["email must be an email"] }]
+    "fields": [
+      { "property": "email", "messages": ["email must be an email"] }
+    ]
   },
   "path": "/api/v1/...",
   "requestId": "req-uuid",
@@ -82,7 +84,6 @@ Get vendor profile, documents, shops, and recent status history.
 **Permission:** `VENDOR_PROFILE_WRITE`
 
 **Response:**
-
 ```json
 {
   "id": "vendor-uuid",
@@ -118,29 +119,12 @@ Get vendor profile, documents, shops, and recent status history.
     }
   ],
   "shops": [
-    {
-      "id": "shop-uuid",
-      "slug": "acme-corp",
-      "name": "Acme Corp",
-      "isPublished": true
-    }
+    { "id": "shop-uuid", "slug": "acme-corp", "name": "Acme Corp", "isPublished": true }
   ],
   "statusHistory": [
-    {
-      "status": "PENDING_ONBOARDING",
-      "note": "Initial registration",
-      "createdAt": "2024-01-01T00:00:00Z"
-    },
-    {
-      "status": "PENDING_VERIFICATION",
-      "note": "Submitted for review",
-      "createdAt": "2024-06-01T10:00:00Z"
-    },
-    {
-      "status": "APPROVED",
-      "note": "Verified and approved",
-      "createdAt": "2024-06-05T10:00:00Z"
-    }
+    { "status": "PENDING_ONBOARDING", "note": "Initial registration", "createdAt": "2024-01-01T00:00:00Z" },
+    { "status": "PENDING_VERIFICATION", "note": "Submitted for review", "createdAt": "2024-06-01T10:00:00Z" },
+    { "status": "APPROVED", "note": "Verified and approved", "createdAt": "2024-06-05T10:00:00Z" }
   ]
 }
 ```
@@ -155,23 +139,21 @@ Create vendor profile for authenticated seller account.
 **Permission:** `VENDOR_PROFILE_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "vendorType": "COMPANY", // required, enum: INDIVIDUAL, COMPANY
-  "legalBusinessName": "Acme Corp LLC", // required, string, 2-200 chars
-  "tradeName": "Acme Corp", // optional, string, max 200
-  "taxId": "TAX123456", // optional, string, max 64
-  "businessEmail": "contact@acme.com", // optional, email, max 320
-  "businessPhone": "+22670123456", // optional, string, max 32
-  "countryCode": "BF" // optional, ISO 3166-1 alpha-2, exactly 2 chars
+  "vendorType": "COMPANY",                 // required, enum: INDIVIDUAL, COMPANY
+  "legalBusinessName": "Acme Corp LLC",  // required, string, 2-200 chars
+  "tradeName": "Acme Corp",               // optional, string, max 200
+  "taxId": "TAX123456",                   // optional, string, max 64
+  "businessEmail": "contact@acme.com",    // optional, email, max 320
+  "businessPhone": "+22670123456",        // optional, string, max 32
+  "countryCode": "BF"                     // optional, ISO 3166-1 alpha-2, exactly 2 chars
 }
 ```
 
 **Response:** Full `Vendor` object with `status: PENDING_ONBOARDING`
 
 **Error Codes:**
-
 - `400` — Validation error (invalid fields, missing required)
 - `409` — Vendor profile already exists
 
@@ -185,27 +167,25 @@ Update onboarding fields while status allows edits (`PENDING_ONBOARDING` or `REJ
 **Permission:** `VENDOR_PROFILE_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "vendorType": "COMPANY", // optional, enum: INDIVIDUAL, COMPANY
-  "legalBusinessName": "Acme Corp LLC", // optional, string, 2-200 chars
-  "tradeName": "Acme Corp", // optional, string, max 200
-  "taxId": "TAX123456", // optional, string, max 64
-  "businessEmail": "contact@acme.com", // optional, email, max 320
-  "businessPhone": "+22670123456", // optional, string, max 32
-  "countryCode": "BF", // optional, string, 2 chars
-  "region": "Centre", // optional, string, max 120
-  "city": "Ouagadougou", // optional, string, max 120
-  "addressLine1": "123 Main Street", // optional, string, max 240
-  "postalCode": "01" // optional, string, max 32
+  "vendorType": "COMPANY",                 // optional, enum: INDIVIDUAL, COMPANY
+  "legalBusinessName": "Acme Corp LLC",  // optional, string, 2-200 chars
+  "tradeName": "Acme Corp",               // optional, string, max 200
+  "taxId": "TAX123456",                   // optional, string, max 64
+  "businessEmail": "contact@acme.com",    // optional, email, max 320
+  "businessPhone": "+22670123456",        // optional, string, max 32
+  "countryCode": "BF",                    // optional, string, 2 chars
+  "region": "Centre",                     // optional, string, max 120
+  "city": "Ouagadougou",                  // optional, string, max 120
+  "addressLine1": "123 Main Street",      // optional, string, max 240
+  "postalCode": "01"                      // optional, string, max 32
 }
 ```
 
 **Response:** Updated `Vendor` profile (same shape as `GET /vendors/me`)
 
 **Error Codes:**
-
 - `400` — Profile locked (status not `PENDING_ONBOARDING` or `REJECTED`)
 - `403` — Insufficient permissions
 
@@ -221,20 +201,18 @@ Register a verification document metadata + URL.
 **Permission:** `VENDOR_PROFILE_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "type": "BUSINESS_REGISTRATION", // required, enum: BUSINESS_REGISTRATION, TAX_CERTIFICATE, BANK_PROOF, IDENTITY, OTHER
-  "fileUrl": "https://.../doc.pdf", // required, HTTPS URL, max 2048
-  "storageBucket": "vendor-documents", // optional, string, max 64 — preferred for signed URL refresh
+  "type": "BUSINESS_REGISTRATION",        // required, enum: BUSINESS_REGISTRATION, TAX_CERTIFICATE, BANK_PROOF, IDENTITY, OTHER
+  "fileUrl": "https://.../doc.pdf",       // required, HTTPS URL, max 2048
+  "storageBucket": "vendor-documents",     // optional, string, max 64 — preferred for signed URL refresh
   "storagePath": "vendor-uuid/doc_123.pdf", // optional, string, max 1024
-  "fileName": "business_reg.pdf", // optional, string, max 255
-  "mimeType": "application/pdf" // optional, string, max 128
+  "fileName": "business_reg.pdf",         // optional, string, max 255
+  "mimeType": "application/pdf"           // optional, string, max 128
 }
 ```
 
 **Response:**
-
 ```json
 {
   "id": "doc-uuid",
@@ -270,23 +248,20 @@ Submit vendor profile for backend verification / approval workflow.
 **Permission:** `VENDOR_PROFILE_WRITE`
 
 **Response:**
-
 ```json
 {
   "id": "vendor-uuid",
   "status": "PENDING_VERIFICATION",
-  "submittedAt": "2024-06-12T10:00:00Z"
+  "submittedAt": "2024-06-12T10:00:00Z",
   /* ... other vendor fields ... */
 }
 ```
 
 **Business Rules:**
-
 - Must have all required onboarding fields filled
 - Must have at least 1 document uploaded
 
 **Error Codes:**
-
 - `400` — Incomplete profile (missing required fields or documents)
 
 ---
@@ -301,17 +276,15 @@ Create a shop for the authenticated vendor.
 **Permission:** `VENDOR_SHOPS_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "slug": "acme-corp", // required, string, 2-80 chars, regex: ^[a-z0-9]+(?:-[a-z0-9]+)*$
-  "name": "Acme Corp", // required, string, 2-120 chars
+  "slug": "acme-corp",                    // required, string, 2-80 chars, regex: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+  "name": "Acme Corp",                    // required, string, 2-120 chars
   "description": "Premium apparel supplier" // optional, string, max 4000
 }
 ```
 
 **Response:**
-
 ```json
 {
   "id": "shop-uuid",
@@ -339,7 +312,6 @@ List shops owned by the authenticated vendor.
 **Permission:** `VENDOR_SHOPS_WRITE`
 
 **Response:**
-
 ```json
 {
   "items": [
@@ -364,7 +336,6 @@ List shops owned by the authenticated vendor.
 Get published shop payload (storefront-safe). Public — no auth required.
 
 **Response:**
-
 ```json
 {
   "id": "shop-uuid",
@@ -393,31 +364,27 @@ Update shop branding, shipping/payment configs, or publishing state.
 **Permission:** `VENDOR_SHOPS_WRITE` — only for shops owned by this vendor
 
 **Request Body:**
-
 ```json
 {
-  "slug": "acme-corp", // optional, string, 2-80, same regex
-  "name": "Acme Corp", // optional, string, 2-120
-  "description": "Updated description", // optional, string, max 4000
-  "logoUrl": "https://.../logo.webp", // optional, HTTPS URL, max 2048
+  "slug": "acme-corp",                    // optional, string, 2-80, same regex
+  "name": "Acme Corp",                    // optional, string, 2-120
+  "description": "Updated description",   // optional, string, max 4000
+  "logoUrl": "https://.../logo.webp",     // optional, HTTPS URL, max 2048
   "bannerUrl": "https://.../banner.webp", // optional, HTTPS URL, max 2048
-  "shippingConfig": {
-    // optional, JSON object — structured shipping rules
+  "shippingConfig": {                     // optional, JSON object — structured shipping rules
     "zones": [{ "country": "BF", "baseCost": "50.00" }]
   },
-  "paymentConfig": {
-    // optional, JSON object — payout config
+  "paymentConfig": {                      // optional, JSON object — payout config
     "method": "bank_transfer",
     "accountNumber": "BF123456789"
   },
-  "isPublished": true // optional, boolean — blocked unless vendor status is APPROVED
+  "isPublished": true                     // optional, boolean — blocked unless vendor status is APPROVED
 }
 ```
 
 **Response:** Updated `Shop` object
 
 **Error Codes:**
-
 - `400` — Cannot publish shop (vendor not approved)
 - `403` — Not owner of this shop
 
@@ -433,25 +400,22 @@ Create a vendor-owned product shell.
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "title": "Premium Cotton T-Shirt", // required, string, 2-180
-  "slug": "premium-cotton-t-shirt", // required, string, 2-120, regex: ^[a-z0-9]+(?:-[a-z0-9]+)*$
-  "description": "High-quality cotton...", // optional, string, max 20000
-  "currency": "CNY", // optional, enum: CNY, XOF — default CNY
-  "moq": 100, // optional, integer, min 1, default 1
-  "bulkPricing": [
-    // optional, array of tiers
-    { "minQuantity": 100, "unitPrice": 20.0 },
-    { "minQuantity": 500, "unitPrice": 18.0 }
+  "title": "Premium Cotton T-Shirt",       // required, string, 2-180
+  "slug": "premium-cotton-t-shirt",       // required, string, 2-120, regex: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+  "description": "High-quality cotton...",  // optional, string, max 20000
+  "currency": "CNY",                      // optional, enum: CNY, XOF — default CNY
+  "moq": 100,                             // optional, integer, min 1, default 1
+  "bulkPricing": [                        // optional, array of tiers
+    { "minQuantity": 100, "unitPrice": 20.00 },
+    { "minQuantity": 500, "unitPrice": 18.00 }
   ],
   "categoryIds": ["cat-uuid-1", "cat-uuid-2"] // optional, UUID array, unique
 }
 ```
 
 **Response:**
-
 ```json
 {
   "id": "prod-uuid",
@@ -497,7 +461,6 @@ List products owned by the authenticated vendor.
 | `take` | integer | 24 | 1-100 |
 
 **Response:**
-
 ```json
 {
   "items": [
@@ -529,7 +492,6 @@ Product count breakdown by status.
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Response:**
-
 ```json
 {
   "total": 50,
@@ -553,7 +515,6 @@ Fetch product detail including dynamic attributes and variants.
 **Permission:** `VENDOR_PRODUCTS_WRITE` — must own product
 
 **Response:**
-
 ```json
 {
   "id": "prod-uuid",
@@ -606,14 +567,8 @@ Fetch product detail including dynamic attributes and variants.
       "weightKg": "0.5000",
       "volumeCbm": "0.002000",
       "selections": [
-        {
-          "attributeValueId": "val-uuid-1",
-          "attributeValue": { "value": "Red" }
-        },
-        {
-          "attributeValueId": "val-uuid-4",
-          "attributeValue": { "value": "XL" }
-        }
+        { "attributeValueId": "val-uuid-1", "attributeValue": { "value": "Red" } },
+        { "attributeValueId": "val-uuid-4", "attributeValue": { "value": "XL" } }
       ],
       "inventory": { "quantity": 100, "reservedQuantity": 5 }
     }
@@ -633,18 +588,16 @@ Update product descriptors, lifecycle status, or MOQ.
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "title": "Updated T-Shirt Title", // optional, string, 2-180
-  "slug": "updated-t-shirt", // optional, string, 2-120
-  "description": "Updated description...", // optional, string, max 20000
-  "currency": "CNY", // optional, enum: CNY, XOF
-  "status": "pending_review", // optional, enum — vendor may only set: draft, pending_review, hidden
-  "moq": 50, // optional, integer, min 1
-  "bulkPricing": [
-    // optional, replaces entire set
-    { "minQuantity": 50, "unitPrice": 22.0 }
+  "title": "Updated T-Shirt Title",         // optional, string, 2-180
+  "slug": "updated-t-shirt",               // optional, string, 2-120
+  "description": "Updated description...",   // optional, string, max 20000
+  "currency": "CNY",                       // optional, enum: CNY, XOF
+  "status": "pending_review",               // optional, enum — vendor may only set: draft, pending_review, hidden
+  "moq": 50,                               // optional, integer, min 1
+  "bulkPricing": [                         // optional, replaces entire set
+    { "minQuantity": 50, "unitPrice": 22.00 }
   ]
 }
 ```
@@ -652,7 +605,6 @@ Update product descriptors, lifecycle status, or MOQ.
 **Response:** Updated `Product` with full includes
 
 **Status Rules:**
-
 - Vendors may set: `draft`, `pending_review`, `hidden`
 - Published products can only be moved to `hidden`
 - `published`, `rejected`, `archived` can only be set by admin
@@ -681,7 +633,6 @@ Replace category assignments for a product.
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Request Body:**
-
 ```json
 {
   "categoryIds": ["cat-uuid-1", "cat-uuid-2"] // optional, UUID array, unique — omit or empty to clear
@@ -702,19 +653,17 @@ Attach product media via HTTPS URL metadata.
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "url": "https://cdn.neoshop.com/product-media/vendor-uuid/prod-uuid/main.webp", // required, HTTPS URL, max 2048 — must be from product-media bucket
-  "alt": "Front view", // optional, string, max 255
-  "sortOrder": 0, // optional, integer, min 0
-  "isPrimary": true, // optional, boolean, default false — cannot be set with variantId
-  "variantId": "variant-uuid" // optional, UUID — associates image with specific variant
+  "url": "https://cdn.neoshop.com/product-media/vendor-uuid/prod-uuid/main.webp",  // required, HTTPS URL, max 2048 — must be from product-media bucket
+  "alt": "Front view",                      // optional, string, max 255
+  "sortOrder": 0,                           // optional, integer, min 0
+  "isPrimary": true,                       // optional, boolean, default false — cannot be set with variantId
+  "variantId": "variant-uuid"              // optional, UUID — associates image with specific variant
 }
 ```
 
 **Response:**
-
 ```json
 {
   "id": "media-uuid",
@@ -751,14 +700,12 @@ Define a dynamic attribute dimension (blocked once variants exist).
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "code": "color", // required, string, 2-64, regex: ^[a-z][a-z0-9_]*$
-  "label": "Color", // required, string, 1-120
-  "sortOrder": 0, // optional, integer, min 0
-  "values": [
-    // optional, array of initial values, min 1
+  "code": "color",                          // required, string, 2-64, regex: ^[a-z][a-z0-9_]*$
+  "label": "Color",                         // required, string, 1-120
+  "sortOrder": 0,                           // optional, integer, min 0
+  "values": [                               // optional, array of initial values, min 1
     { "value": "Red", "sortOrder": 0 },
     { "value": "Blue", "sortOrder": 1 },
     { "value": "Green", "sortOrder": 2 }
@@ -767,7 +714,6 @@ Define a dynamic attribute dimension (blocked once variants exist).
 ```
 
 **Response:**
-
 ```json
 {
   "id": "attr-uuid",
@@ -784,7 +730,6 @@ Define a dynamic attribute dimension (blocked once variants exist).
 ```
 
 **Error Codes:**
-
 - `400` — Cannot add attributes after variants exist
 
 ---
@@ -799,7 +744,6 @@ Remove an attribute dimension (must be unused by variants).
 **Response:** `204 No Content`
 
 **Error Codes:**
-
 - `400` — Attribute is used by existing variants
 
 ---
@@ -812,18 +756,15 @@ Append selectable values for an existing attribute.
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "values": [
-    // required, array, min 1
+  "values": [                               // required, array, min 1
     { "value": "Yellow", "sortOrder": 3 }
   ]
 }
 ```
 
 **Response:** `ProductAttribute` with full values
-
 ```json
 {
   "id": "attr-uuid",
@@ -851,7 +792,6 @@ Remove a single attribute option (must be unused by variants).
 **Response:** `204 No Content`
 
 **Error Codes:**
-
 - `400` — Value is used by existing variants
 
 ---
@@ -866,7 +806,6 @@ List variants for a product owned by the vendor.
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Response:**
-
 ```json
 {
   "items": [
@@ -880,14 +819,8 @@ List variants for a product owned by the vendor.
       "weightKg": "0.5000",
       "volumeCbm": "0.002000",
       "selections": [
-        {
-          "attributeValueId": "val-uuid-1",
-          "attributeValue": { "value": "Red" }
-        },
-        {
-          "attributeValueId": "val-uuid-4",
-          "attributeValue": { "value": "XL" }
-        }
+        { "attributeValueId": "val-uuid-1", "attributeValue": { "value": "Red" } },
+        { "attributeValueId": "val-uuid-4", "attributeValue": { "value": "XL" } }
       ],
       "inventory": { "quantity": 100, "reservedQuantity": 5 },
       "createdAt": "2024-06-12T10:00:00Z"
@@ -906,21 +839,19 @@ Create a dynamically composed variant (SKU auto-generated).
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "attributeValueIds": ["val-uuid-1", "val-uuid-4"], // required, UUID array, unique — one per dynamic dimension; empty if product has zero attributes
-  "wholesalePrice": 25.0, // required, number, min 0
-  "currency": "CNY", // optional, enum: CNY, XOF — defaults to product currency
-  "isActive": true, // optional, boolean, default true
-  "weightKg": 0.5, // optional, number, min 0
-  "volumeCbm": 0.002, // optional, number, min 0
-  "imageUrl": "https://.../red-xl.webp" // optional, string
+  "attributeValueIds": ["val-uuid-1", "val-uuid-4"],  // required, UUID array, unique — one per dynamic dimension; empty if product has zero attributes
+  "wholesalePrice": 25.00,                 // required, number, min 0
+  "currency": "CNY",                       // optional, enum: CNY, XOF — defaults to product currency
+  "isActive": true,                        // optional, boolean, default true
+  "weightKg": 0.5,                         // optional, number, min 0
+  "volumeCbm": 0.002,                      // optional, number, min 0
+  "imageUrl": "https://.../red-xl.webp"    // optional, string
 }
 ```
 
 **Response:** `ProductVariant` with selections and inventory
-
 ```json
 {
   "id": "variant-uuid",
@@ -952,14 +883,12 @@ Bulk create variants (up to 50).
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "variants": [
-    // required, array, min 1, max 50
+  "variants": [                             // required, array, min 1, max 50
     {
       "attributeValueIds": ["val-uuid-1", "val-uuid-4"],
-      "wholesalePrice": 25.0,
+      "wholesalePrice": 25.00,
       "currency": "CNY",
       "isActive": true,
       "weightKg": 0.5,
@@ -968,7 +897,7 @@ Bulk create variants (up to 50).
     },
     {
       "attributeValueIds": ["val-uuid-2", "val-uuid-4"],
-      "wholesalePrice": 25.0,
+      "wholesalePrice": 25.00,
       "currency": "CNY",
       "isActive": true,
       "weightKg": 0.5,
@@ -991,14 +920,12 @@ Bulk update variants (up to 50).
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "updates": [
-    // required, array, min 1, max 50
+  "updates": [                              // required, array, min 1, max 50
     {
       "variantId": "var-uuid-1",
-      "wholesalePrice": 26.0,
+      "wholesalePrice": 26.00,
       "currency": "CNY",
       "isActive": false
     },
@@ -1022,7 +949,6 @@ Bulk soft-delete variants (up to 50).
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Request Body:**
-
 ```json
 {
   "variantIds": ["var-uuid-1", "var-uuid-2"] // required, UUID array, min 1, max 50
@@ -1030,7 +956,6 @@ Bulk soft-delete variants (up to 50).
 ```
 
 **Response:**
-
 ```json
 {
   "deletedCount": 2
@@ -1047,15 +972,14 @@ Update pricing, activation state, or dimensions.
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "wholesalePrice": 26.0, // optional, number, min 0
-  "currency": "CNY", // optional, enum: CNY, XOF
-  "isActive": false, // optional, boolean
-  "weightKg": 0.6, // optional, number, min 0
-  "volumeCbm": 0.0025, // optional, number, min 0
-  "imageUrl": "https://.../new-image.jpg" // optional, string
+  "wholesalePrice": 26.00,                 // optional, number, min 0
+  "currency": "CNY",                       // optional, enum: CNY, XOF
+  "isActive": false,                       // optional, boolean
+  "weightKg": 0.6,                         // optional, number, min 0
+  "volumeCbm": 0.0025,                     // optional, number, min 0
+  "imageUrl": "https://.../new-image.jpg"  // optional, string
 }
 ```
 
@@ -1084,7 +1008,6 @@ Read variant stock snapshot.
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Response:**
-
 ```json
 {
   "variantId": "variant-uuid",
@@ -1105,15 +1028,13 @@ Set absolute on-hand quantity.
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "quantity": 150 // required, integer, min 0
+  "quantity": 150                          // required, integer, min 0
 }
 ```
 
 **Response:** Updated `VariantInventory`
-
 ```json
 {
   "variantId": "variant-uuid",
@@ -1136,15 +1057,13 @@ Apply a stock delta (restock or decrement).
 **Permission:** `VENDOR_PRODUCTS_WRITE`
 
 **Request Body:**
-
 ```json
 {
-  "delta": -5 // required, integer — negative allowed
+  "delta": -5                              // required, integer — negative allowed
 }
 ```
 
 **Response:** Updated `VariantInventory`
-
 ```json
 {
   "variantId": "variant-uuid",
@@ -1160,7 +1079,6 @@ Apply a stock delta (restock or decrement).
 **Business Rule:** Rejected if resulting quantity < 0
 
 **Error Codes:**
-
 - `400` — Resulting quantity would be negative
 
 ---
@@ -1175,7 +1093,6 @@ List orders for the authenticated vendor.
 **Permission:** `ORDERS_VENDOR_READ`
 
 **Response:**
-
 ```json
 {
   "items": [
@@ -1221,7 +1138,6 @@ Order count breakdown by status.
 **Permission:** `VENDOR_ANALYTICS_READ`
 
 **Response:**
-
 ```json
 {
   "total": 450,
@@ -1248,7 +1164,6 @@ List unique customers who ordered from this vendor.
 **Permission:** `VENDOR_CUSTOMERS_READ`
 
 **Response:**
-
 ```json
 {
   "items": [
@@ -1274,7 +1189,6 @@ List unique customers who ordered from this vendor.
 ```
 
 > **Notes:**
->
 > - `orderCount` — total orders placed by this customer with the vendor
 > - `totalSpent` — sum of all order grand-totals
 > - `products` — distinct products purchased, sorted by highest spend first
@@ -1289,7 +1203,6 @@ Get order detail with items, timeline, invoices, payments, refunds.
 **Roles:** `customer` (owner), `vendor` (seller), `admin`
 
 **Response:**
-
 ```json
 {
   "id": "order-uuid",
@@ -1297,11 +1210,7 @@ Get order detail with items, timeline, invoices, payments, refunds.
   "customerUserId": "user-uuid",
   "customer": { "id": "user-uuid", "email": "user@example.com" },
   "vendorId": "vendor-uuid",
-  "vendor": {
-    "id": "vendor-uuid",
-    "tradeName": "Acme Corp",
-    "legalBusinessName": "Acme Corp LLC"
-  },
+  "vendor": { "id": "vendor-uuid", "tradeName": "Acme Corp", "legalBusinessName": "Acme Corp LLC" },
   "status": "paid",
   "currency": "XOF",
   "vendorCurrency": "CNY",
@@ -1333,20 +1242,8 @@ Get order detail with items, timeline, invoices, payments, refunds.
     }
   ],
   "statusHistory": [
-    {
-      "id": "hist-uuid",
-      "status": "pending",
-      "note": null,
-      "actorUserId": null,
-      "createdAt": "2024-06-12T09:00:00Z"
-    },
-    {
-      "id": "hist-uuid-2",
-      "status": "paid",
-      "note": "Payment captured",
-      "actorUserId": "user-uuid",
-      "createdAt": "2024-06-12T10:00:00Z"
-    }
+    { "id": "hist-uuid", "status": "pending", "note": null, "actorUserId": null, "createdAt": "2024-06-12T09:00:00Z" },
+    { "id": "hist-uuid-2", "status": "paid", "note": "Payment captured", "actorUserId": "user-uuid", "createdAt": "2024-06-12T10:00:00Z" }
   ],
   "invoices": [],
   "payments": [],
@@ -1364,10 +1261,9 @@ Fulfillment status change (business rules enforced).
 **Permission:** `ORDERS_VENDOR_FULFILL`
 
 **Request Body:**
-
 ```json
 {
-  "status": "processing", // required, enum: pending, paid, processing, shipped, delivered, disputed, refunded, cancelled
+  "status": "processing",                 // required, enum: pending, paid, processing, shipped, delivered, disputed, refunded, cancelled
   "note": "Order confirmed, preparing shipment" // optional, string, max 2000
 }
 ```
@@ -1382,7 +1278,6 @@ Fulfillment status change (business rules enforced).
 **Response:** Updated `Order` with full detail include (same shape as `GET /orders/:orderId`)
 
 **Error Codes:**
-
 - `400` — Invalid status transition
 - `403` — Not order vendor
 
@@ -1396,7 +1291,6 @@ Get tracking events for an order.
 **Permission:** `ORDERS_CUSTOMER_READ`
 
 **Response:**
-
 ```json
 {
   "carrier": "DHL",
@@ -1427,7 +1321,6 @@ List reviews on products owned by this vendor.
 **Permission:** `VENDOR_REVIEWS_READ`
 
 **Response:**
-
 ```json
 {
   "items": [
@@ -1460,7 +1353,6 @@ Respond to a review as the vendor.
 **Permission:** `VENDOR_REVIEWS_RESPOND`
 
 **Request Body:**
-
 ```json
 {
   "response": "Thank you for your feedback!" // required, string
@@ -1468,7 +1360,6 @@ Respond to a review as the vendor.
 ```
 
 **Response:** Updated `Review` with `vendorResponse` and `vendorRespondedAt`
-
 ```json
 {
   "id": "review-uuid",
@@ -1500,7 +1391,6 @@ List disputes for orders placed with this vendor.
 **Permission:** `VENDOR_DISPUTES_READ`
 
 **Response:**
-
 ```json
 {
   "items": [
@@ -1530,7 +1420,6 @@ Get dispute detail (vendor view).
 **Permission:** `VENDOR_DISPUTES_READ`
 
 **Response:**
-
 ```json
 {
   "id": "dispute-uuid",
@@ -1569,17 +1458,15 @@ Post a message in a dispute.
 **Permission:** `VENDOR_DISPUTES_RESPOND`
 
 **Request Body:**
-
 ```json
 {
-  "body": "We apologize for the inconvenience...", // required, string, 1-8000 chars
-  "internal": false, // optional, boolean — internal notes visible only to admin/vendor
-  "replyToId": "msg-uuid" // optional, UUID — reply to specific message
+  "body": "We apologize for the inconvenience...",  // required, string, 1-8000 chars
+  "internal": false,                                   // optional, boolean — internal notes visible only to admin/vendor
+  "replyToId": "msg-uuid"                              // optional, UUID — reply to specific message
 }
 ```
 
 **Response:** Dispute message record
-
 ```json
 {
   "id": "msg-uuid",
@@ -1603,7 +1490,6 @@ All analytics endpoints require `vendor` role + `VENDOR_ANALYTICS_READ` permissi
 Returns KPIs, status breakdown, top products, geographic sales, retention, and conversion metrics.
 
 **Response:**
-
 ```json
 {
   "totalRevenue": "125000.0000",
@@ -1650,7 +1536,6 @@ Returns KPIs, status breakdown, top products, geographic sales, retention, and c
 ```
 
 > **Notes:**
->
 > - `geographic` grouped by `Order.shippingAddress.country`. Missing addresses appear as `UNKNOWN`.
 > - `retentionSeries` counts a customer as "returning" in a month if they ordered in any earlier month.
 > - `conversionRate` / `conversionTrend` are a **proxy** based on logged-in users who viewed vendor products vs. those who placed orders.
@@ -1667,7 +1552,6 @@ Daily order count and revenue.
 | `days` | integer | 30 | Min 1 |
 
 **Response:**
-
 ```json
 {
   "items": [
@@ -1684,7 +1568,6 @@ Daily order count and revenue.
 Product performance summary (up to 100 products).
 
 **Response:**
-
 ```json
 {
   "items": [
@@ -1716,7 +1599,6 @@ Daily units sold vs. restocked.
 | `days` | integer | 30 | Min 1 |
 
 **Response:**
-
 ```json
 {
   "items": [
@@ -1731,7 +1613,6 @@ Daily units sold vs. restocked.
 ```
 
 > **Notes:**
->
 > - `unitsSold` derived from `OrderItem` quantities for orders placed in the window.
 > - `restocked` derived from `InventoryAdjustment` records with positive quantity and reason `restock` or `return`.
 > - Historical restocked data only available from when the model was introduced.
@@ -1750,221 +1631,228 @@ Daily units sold vs. restocked.
 
 ### Auth
 
-| Method | Path                        | Body                                                  | Rate Limit |
-| ------ | --------------------------- | ----------------------------------------------------- | ---------- |
-| `POST` | `/auth/register`            | `{ email, password, name?, surname?, phone?, role? }` | 5/60s      |
-| `POST` | `/auth/login`               | `{ email, password, deviceId }`                       | 10/60s     |
-| `POST` | `/auth/register/phone`      | `{ phone, password, name?, surname?, role? }`         | 5/60s      |
-| `POST` | `/auth/login/phone`         | `{ phone, password, deviceId }`                       | 10/60s     |
-| `POST` | `/auth/forgot-password`     | `{ email }`                                           | 3/60s      |
-| `POST` | `/auth/reset-password`      | `{ token, newPassword }`                              | 5/60s      |
-| `POST` | `/auth/resend-verification` | `{ email }`                                           | 3/60s      |
-| `POST` | `/auth/reactivate`          | `{ email, password, deviceId? }`                      | 5/60s      |
-| `POST` | `/auth/change-email`        | `{ newEmail, password }`                              | 3/60s      |
-| `GET`  | `/auth/me`                  | —                                                     | —          |
-| `POST` | `/auth/sessions`            | `{ refreshToken, deviceId, userAgent? }`              | —          |
-| `POST` | `/auth/refresh`             | `{ sessionId, refreshToken }`                         | 20/60s     |
-| `POST` | `/auth/logout`              | — (needs `X-Session-Id` header)                       | —          |
-| `POST` | `/auth/logout/all`          | —                                                     | —          |
+| Method | Path | Body | Rate Limit |
+|--------|------|------|------------|
+| `POST` | `/auth/register` | `{ email, password, name?, surname?, phone?, role? }` | 5/60s |
+| `POST` | `/auth/login` | `{ email, password, deviceId }` | 10/60s |
+| `POST` | `/auth/register/phone/initiate` | `{ phone }` | 3/60s |
+| `POST` | `/auth/register/phone` | `{ phone, password, name?, surname?, role? }` | 5/60s |
+| `POST` | `/auth/register/phone/verify` | `{ phone, code?, password?, name?, surname?, role? }` | 5/60s |
+| `POST` | `/auth/login/phone/initiate` | `{ phone }` | 3/60s |
+| `POST` | `/auth/login/phone` | `{ phone, password, deviceId }` | 10/60s |
+| `POST` | `/auth/login/phone/verify` | `{ phone, code, deviceId }` | 5/60s |
+| `POST` | `/auth/forgot-password` | `{ email }` | 3/60s |
+| `POST` | `/auth/reset-password` | `{ token, newPassword }` | 5/60s |
+| `POST` | `/auth/resend-verification` | `{ email }` | 3/60s |
+| `POST` | `/auth/reactivate` | `{ email, password, deviceId? }` | 5/60s |
+| `POST` | `/auth/change-email` | `{ newEmail, password }` | 3/60s |
+| `GET` | `/auth/me` | — | — |
+| `POST` | `/auth/sessions` | `{ refreshToken, deviceId, userAgent? }` | — |
+| `POST` | `/auth/refresh` | `{ sessionId, refreshToken }` | 20/60s |
+| `POST` | `/auth/logout` | — (needs `X-Session-Id` header) | — |
+| `POST` | `/auth/logout/all` | — | — |
 
 ### Profile / Settings
 
-| Method  | Path                         | Body                                                                                              |
-| ------- | ---------------------------- | ------------------------------------------------------------------------------------------------- |
-| `GET`   | `/users/me`                  | —                                                                                                 |
-| `PATCH` | `/users/me`                  | `{ name?, surname?, phone?, dateOfBirth?, nationality?, idCardType?, idCardNumber?, avatarUrl? }` |
-| `GET`   | `/users/me/settings`         | —                                                                                                 |
-| `PATCH` | `/users/me/settings`         | `{ orderUpdates?, promoMessages?, emailNewsletter?, pushEnabled?, preferredLanguage? }`           |
-| `POST`  | `/users/me/suspend`          | —                                                                                                 |
-| `POST`  | `/users/me/request-deletion` | `{ password }`                                                                                    |
+| Method | Path | Body |
+|--------|------|------|
+| `GET` | `/users/me` | — |
+| `PATCH` | `/users/me` | `{ name?, surname?, phone?, dateOfBirth?, nationality?, idCardType?, idCardNumber?, avatarUrl? }` |
+| `GET` | `/users/me/settings` | — |
+| `PATCH` | `/users/me/settings` | `{ orderUpdates?, promoMessages?, emailNewsletter?, pushEnabled?, preferredLanguage? }` |
+| `POST` | `/users/me/suspend` | — |
+| `POST` | `/users/me/request-deletion` | `{ password }` |
 
 ### Catalog (Public)
 
-| Method | Path                           | Query / Body                                                                             |
-| ------ | ------------------------------ | ---------------------------------------------------------------------------------------- |
-| `GET`  | `/catalog/products`            | `categoryId?`, `shopSlug?`, `search?`, `currency?` (XOF\|CNY), `skip?`, `take?` (max 48) |
-| `GET`  | `/catalog/products/:productId` | —                                                                                        |
-| `POST` | `/catalog/products/compare`    | `{ productIds: string[] }` (2–4 items)                                                   |
+| Method | Path | Query / Body |
+|--------|------|--------------|
+| `GET` | `/catalog/products` | `categoryId?`, `shopSlug?`, `search?`, `currency?` (XOF\|CNY), `skip?`, `take?` (max 48) |
+| `GET` | `/catalog/products/:productId` | — |
+| `POST` | `/catalog/products/compare` | `{ productIds: string[] }` (2–4 items) |
 
 ### Categories (Public)
 
-| Method | Path          | Response           |
-| ------ | ------------- | ------------------ |
-| `GET`  | `/categories` | Full category tree |
+| Method | Path | Response |
+|--------|------|----------|
+| `GET` | `/categories` | Full category tree |
 
 ### Public Vendors
 
-| Method | Path                        | Response              |
-| ------ | --------------------------- | --------------------- |
-| `GET`  | `/vendors/public`           | Vendor discovery list |
-| `GET`  | `/vendors/public/:vendorId` | Public vendor profile |
+| Method | Path | Response |
+|--------|------|----------|
+| `GET` | `/vendors/public` | Vendor discovery list |
+| `GET` | `/vendors/public/:vendorId` | Public vendor profile |
 
 ### Shipping
 
 > ⚠️ **Not vendor-usable by default.** Requires `SHIPPING_READ`, which is not in the vendor permission registry.
 
-| Method | Path                | Body                                               |
-| ------ | ------------------- | -------------------------------------------------- |
-| `GET`  | `/shipping/methods` | —                                                  |
-| `POST` | `/shipping/rates`   | `{ addressId?, items: [{ variantId, quantity }] }` |
+| Method | Path | Body |
+|--------|------|------|
+| `GET` | `/shipping/methods` | — |
+| `POST` | `/shipping/rates` | `{ addressId?, items: [{ variantId, quantity }] }` |
 
 ### Notifications
 
-| Method  | Path                             | Query / Body                              |
-| ------- | -------------------------------- | ----------------------------------------- |
-| `GET`   | `/notifications`                 | `skip?`, `take?` (max 200), `unreadOnly?` |
-| `GET`   | `/notifications/unread-count`    | —                                         |
-| `PATCH` | `/notifications/:notificationId` | `{ read: boolean }`                       |
-| `POST`  | `/notifications/read-all`        | —                                         |
+| Method | Path | Query / Body |
+|--------|------|--------------|
+| `GET` | `/notifications` | `skip?`, `take?` (max 200), `unreadOnly?` |
+| `GET` | `/notifications/unread-count` | — |
+| `PATCH` | `/notifications/:notificationId` | `{ read: boolean }` |
+| `POST` | `/notifications/read-all` | — |
 
 ### Device Tokens
 
-| Method   | Path                                      | Body                                                                   |
-| -------- | ----------------------------------------- | ---------------------------------------------------------------------- |
-| `POST`   | `/notifications/devices/register`         | `{ token, platform: "android"\|"ios"\|"web", deviceId?, appVersion? }` |
-| `POST`   | `/notifications/devices/:token/heartbeat` | —                                                                      |
-| `DELETE` | `/notifications/devices/:token`           | —                                                                      |
+| Method | Path | Body |
+|--------|------|------|
+| `POST` | `/notifications/devices/register` | `{ token, platform: "android"\|"ios"\|"web", deviceId?, appVersion? }` |
+| `POST` | `/notifications/devices/:token/heartbeat` | — |
+| `DELETE` | `/notifications/devices/:token` | — |
 
 ### Chat
 
-| Method   | Path                                                      | Body                                             |
-| -------- | --------------------------------------------------------- | ------------------------------------------------ |
-| `POST`   | `/chat/conversations`                                     | `{ withUserId? \| withVendorId? }`               |
-| `GET`    | `/chat/conversations`                                     | —                                                |
-| `GET`    | `/chat/conversations/:conversationId`                     | —                                                |
-| `GET`    | `/chat/conversations/:conversationId/messages`            | `skip?`, `take?` (50, max 100)                   |
-| `POST`   | `/chat/conversations/:conversationId/messages`            | `{ body }` (1–4000 chars)                        |
-| `POST`   | `/chat/conversations/:conversationId/attachments`         | Multipart: `file` (image max 1 MB, PDF max 5 MB) |
-| `DELETE` | `/chat/conversations/:conversationId/messages/:messageId` | —                                                |
+| Method | Path | Body |
+|--------|------|------|
+| `GET` | `/chat/support-contact` | — |
+| `POST` | `/chat/conversations` | `{ withUserId? \| withVendorId? }` |
+
+> **Support chat:** `GET /chat/support-contact` is public and returns the active platform support user (oldest `super_admin`, falling back to oldest `admin`). Vendors can use the returned `id` as `withUserId` in `POST /chat/conversations` to reach platform administrators.
+| `GET` | `/chat/conversations` | — |
+| `GET` | `/chat/conversations/:conversationId` | — |
+| `GET` | `/chat/conversations/:conversationId/messages` | `skip?`, `take?` (50, max 100) |
+| `POST` | `/chat/conversations/:conversationId/messages` | `{ body }` (1–4000 chars) |
+| `POST` | `/chat/conversations/:conversationId/attachments` | Multipart: `file` (image max 1 MB, PDF max 5 MB) |
+| `DELETE` | `/chat/conversations/:conversationId/messages/:messageId` | — |
 
 ### Addresses
 
 > ⚠️ **Not vendor-usable by default.** Requires `ADDRESSES_MANAGE`, which is not in the vendor permission registry.
 
-| Method   | Path                    | Body                                                                                                      |
-| -------- | ----------------------- | --------------------------------------------------------------------------------------------------------- |
-| `GET`    | `/addresses`            | —                                                                                                         |
-| `POST`   | `/addresses`            | `{ label, fullName, streetLine1, streetLine2?, city, region?, postalCode?, country, phone?, isDefault? }` |
-| `PATCH`  | `/addresses/:addressId` | Same as create, all optional                                                                              |
-| `DELETE` | `/addresses/:addressId` | —                                                                                                         |
+| Method | Path | Body |
+|--------|------|------|
+| `GET` | `/addresses` | — |
+| `POST` | `/addresses` | `{ label, fullName, streetLine1, streetLine2?, city, region?, postalCode?, country, phone?, isDefault? }` |
+| `PATCH` | `/addresses/:addressId` | Same as create, all optional |
+| `DELETE` | `/addresses/:addressId` | — |
 
 ### Favorites
 
-| Method   | Path                             | Body            |
-| -------- | -------------------------------- | --------------- |
-| `GET`    | `/favorites/products`            | —               |
-| `POST`   | `/favorites/products`            | `{ productId }` |
-| `DELETE` | `/favorites/products/:productId` | —               |
+| Method | Path | Body |
+|--------|------|------|
+| `GET` | `/favorites/products` | — |
+| `POST` | `/favorites/products` | `{ productId }` |
+| `DELETE` | `/favorites/products/:productId` | — |
 
 ### Product Q&A
 
-| Method | Path                      | Body                      |
-| ------ | ------------------------- | ------------------------- |
-| `GET`  | `/products/:productId/qa` | —                         |
+| Method | Path | Body |
+|--------|------|------|
+| `GET` | `/products/:productId/qa` | — |
 | `POST` | `/products/:productId/qa` | `{ question }` (max 1000) |
-| `POST` | `/qa/:threadId/answers`   | `{ answer }` (max 2000)   |
+| `POST` | `/qa/:threadId/answers` | `{ answer }` (max 2000) |
 
 ### Reports
 
-| Method | Path          | Body                                                        |
-| ------ | ------------- | ----------------------------------------------------------- |
-| `POST` | `/reports`    | `{ reportedUserId?\|reportedVendorId?, category, details }` |
-| `GET`  | `/reports/me` | —                                                           |
+| Method | Path | Body |
+|--------|------|------|
+| `POST` | `/reports` | `{ reportedUserId?\|reportedVendorId?, category, details }` |
+| `GET` | `/reports/me` | — |
 
 ### Search
 
-| Method   | Path                  | Query       |
-| -------- | --------------------- | ----------- |
-| `GET`    | `/search/suggestions` | `q`         |
-| `GET`    | `/search/trending`    | —           |
-| `GET`    | `/search/history`     | —           |
-| `POST`   | `/search/history`     | `{ query }` |
-| `DELETE` | `/search/history`     | —           |
+| Method | Path | Query |
+|--------|------|-------|
+| `GET` | `/search/suggestions` | `q` |
+| `GET` | `/search/trending` | — |
+| `GET` | `/search/history` | — |
+| `POST` | `/search/history` | `{ query }` |
+| `DELETE` | `/search/history` | — |
 
 ### Promotions
 
-| Method | Path                 | Body |
-| ------ | -------------------- | ---- |
-| `GET`  | `/promotions/active` | —    |
+| Method | Path | Body |
+|--------|------|------|
+| `GET` | `/promotions/active` | — |
 
 > `/coupons/validate` requires `COUPONS_VALIDATE` and is **not** vendor-usable by default.
 
 ### Exchange Rates
 
-| Method | Path                      | Query / Body                           |
-| ------ | ------------------------- | -------------------------------------- |
-| `GET`  | `/exchange-rates/current` | `from`, `to`                           |
+| Method | Path | Query / Body |
+|--------|------|--------------|
+| `GET` | `/exchange-rates/current` | `from`, `to` |
 | `POST` | `/exchange-rates/convert` | `{ amount, fromCurrency, toCurrency }` |
 
 ### Storage
 
-| Method   | Path                    | Body / Form                                                                |
-| -------- | ----------------------- | -------------------------------------------------------------------------- |
-| `POST`   | `/storage/upload`       | Multipart: `file`, `bucket`, `entityId`, `type`, `subEntityId?`            |
-| `POST`   | `/storage/upload/batch` | Multipart: `files[]`, `bucket`, `entityId`, `types` (JSON), `subEntityId?` |
-| `POST`   | `/storage/read-urls`    | `{ items: [{ bucket, path }] }` (max 50)                                   |
-| `GET`    | `/storage/signed-url`   | `bucket`, `path`                                                           |
-| `DELETE` | `/storage`              | `{ bucket, path }`                                                         |
+| Method | Path | Body / Form |
+|--------|------|-------------|
+| `POST` | `/storage/upload` | Multipart: `file`, `bucket`, `entityId`, `type`, `subEntityId?` |
+| `POST` | `/storage/upload/batch` | Multipart: `files[]`, `bucket`, `entityId`, `types` (JSON), `subEntityId?` |
+| `POST` | `/storage/read-urls` | `{ items: [{ bucket, path }] }` (max 50) |
+| `GET` | `/storage/signed-url` | `bucket`, `path` |
+| `DELETE` | `/storage` | `{ bucket, path }` |
 
 ### Health & Setup
 
-| Method | Path                     | Response                    | Rate Limit |
-| ------ | ------------------------ | --------------------------- | ---------- |
-| `GET`  | `/health/live`           | `{ status: "ok" }`          | Skipped    |
-| `GET`  | `/health/ready`          | Health check                | 60/60s     |
-| `GET`  | `/health`                | Full health check           | 60/60s     |
-| `GET`  | `/health/customers`      | Platform health             | 30/60s     |
-| `GET`  | `/health/vendors`        | Platform health             | 30/60s     |
-| `POST` | `/health/beacon`         | `{ received: true }`        | 60/60s     |
-| `GET`  | `/setup/status`          | `{ status, message }`       | Default    |
-| `POST` | `/setup/bootstrap-admin` | `{ supabaseUserId, email }` | —          |
+| Method | Path | Response | Rate Limit |
+|--------|------|----------|------------|
+| `GET` | `/health/live` | `{ status: "ok" }` | Skipped |
+| `GET` | `/health/ready` | Health check | 60/60s |
+| `GET` | `/health` | Full health check | 60/60s |
+| `GET` | `/health/customers` | Platform health | 30/60s |
+| `GET` | `/health/vendors` | Platform health | 30/60s |
+| `POST` | `/health/beacon` | `{ received: true }` | 60/60s |
+| `GET` | `/setup/status` | `{ status, message }` | Default |
+| `POST` | `/setup/bootstrap-admin` | `{ supabaseUserId, email }` | — |
 
 ---
 
 ## Vendor Permission Registry
 
-| Permission                | Key                       | Description                                                  |
-| ------------------------- | ------------------------- | ------------------------------------------------------------ |
-| `VENDOR_PROFILE_WRITE`    | `vendor.profile.write`    | Create/update vendor profile, documents, submit verification |
-| `VENDOR_SHOPS_WRITE`      | `vendor.shops.write`      | Create/update shops                                          |
-| `VENDOR_PRODUCTS_WRITE`   | `vendor.products.write`   | CRUD products, attributes, variants, media                   |
-| `CATALOG_MANAGE`          | `catalog.manage`          | Catalog operations                                           |
-| `ORDERS_VENDOR_READ`      | `orders.vendor.read`      | View vendor orders                                           |
-| `ORDERS_VENDOR_FULFILL`   | `orders.vendor.fulfill`   | Update order status (fulfillment)                            |
-| `VENDOR_ANALYTICS_READ`   | `vendor.analytics.read`   | View analytics dashboard                                     |
-| `VENDOR_CUSTOMERS_READ`   | `vendor.customers.read`   | View customer list and spend                                 |
-| `VENDOR_REVIEWS_READ`     | `vendor.reviews.read`     | View product reviews                                         |
-| `VENDOR_REVIEWS_RESPOND`  | `vendor.reviews.respond`  | Respond to reviews                                           |
-| `VENDOR_DISPUTES_READ`    | `vendor.disputes.read`    | View disputes                                                |
-| `VENDOR_DISPUTES_RESPOND` | `vendor.disputes.respond` | Respond to disputes                                          |
-| `PROFILE_READ`            | `profile.read`            | View own profile                                             |
-| `PROFILE_WRITE`           | `profile.write`           | Edit own profile                                             |
-| `SETTINGS_MANAGE`         | `settings.manage`         | Notification/settings preferences                            |
-| `CHAT_PARTICIPATE`        | `chat.participate`        | Messaging                                                    |
-| `NOTIFICATIONS_READ`      | `notifications.read`      | In-app notifications                                         |
-| `STORAGE_MANAGE`          | `storage.manage`          | Upload/download/delete files                                 |
-| `REPORTS_SUBMIT`          | `reports.submit`          | Submit reports                                               |
-| `FAVORITES_MANAGE`        | `favorites.manage`        | Save/unsave products                                         |
+| Permission | Key | Description |
+|------------|-----|-------------|
+| `VENDOR_PROFILE_WRITE` | `vendor.profile.write` | Create/update vendor profile, documents, submit verification |
+| `VENDOR_SHOPS_WRITE` | `vendor.shops.write` | Create/update shops |
+| `VENDOR_PRODUCTS_WRITE` | `vendor.products.write` | CRUD products, attributes, variants, media |
+| `CATALOG_MANAGE` | `catalog.manage` | Catalog operations |
+| `ORDERS_VENDOR_READ` | `orders.vendor.read` | View vendor orders |
+| `ORDERS_VENDOR_FULFILL` | `orders.vendor.fulfill` | Update order status (fulfillment) |
+| `VENDOR_ANALYTICS_READ` | `vendor.analytics.read` | View analytics dashboard |
+| `VENDOR_CUSTOMERS_READ` | `vendor.customers.read` | View customer list and spend |
+| `VENDOR_REVIEWS_READ` | `vendor.reviews.read` | View product reviews |
+| `VENDOR_REVIEWS_RESPOND` | `vendor.reviews.respond` | Respond to reviews |
+| `VENDOR_DISPUTES_READ` | `vendor.disputes.read` | View disputes |
+| `VENDOR_DISPUTES_RESPOND` | `vendor.disputes.respond` | Respond to disputes |
+| `PROFILE_READ` | `profile.read` | View own profile |
+| `PROFILE_WRITE` | `profile.write` | Edit own profile |
+| `SETTINGS_MANAGE` | `settings.manage` | Notification/settings preferences |
+| `CHAT_PARTICIPATE` | `chat.participate` | Messaging |
+| `NOTIFICATIONS_READ` | `notifications.read` | In-app notifications |
+| `STORAGE_MANAGE` | `storage.manage` | Upload/download/delete files |
+| `REPORTS_SUBMIT` | `reports.submit` | Submit reports |
+| `FAVORITES_MANAGE` | `favorites.manage` | Save/unsave products |
 
 ---
 
 ## Rate Limiting Summary
 
-| Endpoint Group             | Limit | TTL | Scope |
-| -------------------------- | ----- | --- | ----- |
-| Auth register              | 5     | 60s | IP    |
-| Auth login                 | 10    | 60s | IP    |
-| Auth phone register        | 5     | 60s | IP    |
-| Auth phone login           | 10    | 60s | IP    |
-| Auth forgot-password       | 3     | 60s | IP    |
-| Auth reset-password        | 5     | 60s | IP    |
-| Auth resend-verification   | 3     | 60s | IP    |
-| Auth reactivate            | 5     | 60s | IP    |
-| Auth change-email          | 3     | 60s | IP    |
-| Auth refresh               | 20    | 60s | IP    |
-| Health ready / check       | 60    | 60s | IP    |
-| Health customers / vendors | 30    | 60s | IP    |
-| Health beacon              | 60    | 60s | IP    |
+| Endpoint Group | Limit | TTL | Scope |
+|----------------|-------|-----|-------|
+| Auth register | 5 | 60s | IP |
+| Auth login | 10 | 60s | IP |
+| Auth phone initiate | 3 | 60s | IP |
+| Auth phone verify | 5 | 60s | IP |
+| Auth forgot-password | 3 | 60s | IP |
+| Auth reset-password | 5 | 60s | IP |
+| Auth resend-verification | 3 | 60s | IP |
+| Auth reactivate | 5 | 60s | IP |
+| Auth change-email | 3 | 60s | IP |
+| Auth refresh | 20 | 60s | IP |
+| Health ready / check | 60 | 60s | IP |
+| Health customers / vendors | 30 | 60s | IP |
+| Health beacon | 60 | 60s | IP |
 
 > **Note:** Most vendor-specific endpoints (products, variants, inventory, shops, analytics, reviews, disputes) use the global ThrottlerGuard default (typically 100 req / 60s). No custom `@Throttle` decorators are applied to these controllers.
 
@@ -1975,13 +1863,12 @@ Daily units sold vs. restocked.
 Connect to `wss://api.barkosem.com/realtime` (Socket.IO).
 
 **Auth:** Pass the JWT access token **and** the active session id in the `auth` handshake:
-
 ```javascript
-const socket = io("wss://api.barkosem.com/realtime", {
+const socket = io('wss://api.barkosem.com/realtime', {
   auth: {
-    token: "<access_token>",
-    sessionId: "<session_id>", // from POST /auth/sessions
-  },
+    token: '<access_token>',
+    sessionId: '<session_id>', // from POST /auth/sessions
+  }
 });
 ```
 
@@ -1989,15 +1876,14 @@ Connections are rate-limited per IP (20 attempts / 60 s) and per user (5 attempt
 
 **Events:**
 
-| Event                          | Direction       | Payload                                                                         |
-| ------------------------------ | --------------- | ------------------------------------------------------------------------------- |
-| `neoshop.order.updated`        | Server → Client | `{ orderId, vendorId, customerUserId, from, to, note }`                         |
-| `neoshop.vendors.updated`      | Server → Client | `{ vendorId, status, ... }` — emitted when your vendor lifecycle status changes |
-| `neoshop.chat.message`         | Server → Client | `{ conversationId, messageId, senderUserId, body, createdAt }`                  |
-| `neoshop.notification.created` | Server → Client | `{ id, type, title, body, data }`                                               |
+| Event | Direction | Payload |
+|-------|-----------|---------|
+| `neoshop.order.updated` | Server → Client | `{ orderId, vendorId, customerUserId, from, to, note }` |
+| `neoshop.vendors.updated` | Server → Client | `{ vendorId, status, ... }` — emitted when your vendor lifecycle status changes |
+| `neoshop.chat.message` | Server → Client | `{ conversationId, messageId, senderUserId, body, createdAt }` |
+| `neoshop.notification.created` | Server → Client | `{ id, type, title, body, data }` |
 
 **Connection lifecycle:**
-
 1. Client connects with JWT token
 2. Server verifies token and checks user suspension status
 3. Client joins rooms: `user:<userId>`, `order:<orderId>` (for active orders)
@@ -2007,13 +1893,13 @@ Connections are rate-limited per IP (20 attempts / 60 s) and per user (5 attempt
 
 ## Error Codes Reference
 
-| Status | Code                    | Meaning                                                  |
-| ------ | ----------------------- | -------------------------------------------------------- |
-| `400`  | `Bad Request`           | Validation error, invalid input, business rule violation |
-| `401`  | `Unauthorized`          | Missing/invalid JWT, incorrect PIN, invalid credentials  |
-| `403`  | `Forbidden`             | Insufficient permissions, not resource owner             |
-| `404`  | `Not Found`             | Resource doesn't exist                                   |
-| `409`  | `Conflict`              | Resource already exists, state conflict                  |
-| `429`  | `Too Many Requests`     | Rate limit exceeded                                      |
-| `500`  | `Internal Server Error` | Unexpected server error                                  |
-| `503`  | `Service Unavailable`   | External service down (Supabase, Redis, etc.)            |
+| Status | Code | Meaning |
+|--------|------|---------|
+| `400` | `Bad Request` | Validation error, invalid input, business rule violation |
+| `401` | `Unauthorized` | Missing/invalid JWT, incorrect PIN, invalid credentials |
+| `403` | `Forbidden` | Insufficient permissions, not resource owner |
+| `404` | `Not Found` | Resource doesn't exist |
+| `409` | `Conflict` | Resource already exists, state conflict |
+| `429` | `Too Many Requests` | Rate limit exceeded |
+| `500` | `Internal Server Error` | Unexpected server error |
+| `503` | `Service Unavailable` | External service down (Supabase, Redis, etc.) |

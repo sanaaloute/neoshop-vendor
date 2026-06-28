@@ -11,6 +11,12 @@ export type ChatMessageAttachmentInput = {
   storageBucket?: string;
 };
 
+/** GET /chat/support-contact — returns the active platform support user */
+export async function getSupportContact() {
+  const { data } = await vendorApiClient.get("/api/v1/chat/support-contact");
+  return data;
+}
+
 /** POST /chat/conversations — open or resume a conversation with a user or vendor */
 export async function createConversation(body: { withUserId?: string; withVendorId?: string }) {
   const { data } = await vendorApiClient.post("/api/v1/chat/conversations", body);

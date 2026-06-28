@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   ExternalLink,
   FileIcon,
+  Headset,
   Image as ImageIcon,
   Languages,
   MessageSquare,
@@ -31,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LoadingButton } from "@/components/feedback/loading-button";
 import { GatewaySyncBanner } from "@/components/feedback/gateway-sync-banner";
 import { getApiBaseUrl } from "@/config/auth";
+import { useRouter } from "@/i18n/routing";
 import {
   useGatewayChatBootstrap,
   useGatewayChatMessages,
@@ -46,7 +48,11 @@ import { useAuthStore } from "@/store/auth-store";
 import { validateChatAttachment } from "@/lib/upload-config";
 import { useVendorProfileStore } from "@/store/vendor-profile-store";
 import { readStorageUrls } from "@/services/vendor/storage-api";
-import { mapChatMessage } from "@/services/vendor/mappers/chat-from-api";
+import {
+  createConversation,
+  getSupportContact,
+} from "@/services/vendor/chat-api";
+import { mapChatMessage, mapConversationToThread } from "@/services/vendor/mappers/chat-from-api";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store/chat-store";
 
@@ -133,6 +139,7 @@ function getAttachmentStorageKey(
 
 export function MessagingHome() {
   const t = useTranslations("chat");
+  const router = useRouter();
   const { loading: chatSyncLoading, error: chatSyncError } =
     useGatewayChatBootstrap();
   const threads = useChatStore((s) => s.threads);
@@ -142,9 +149,12 @@ export function MessagingHome() {
   const replaceMessage = useChatStore((s) => s.replaceMessage);
   const markThreadRead = useChatStore((s) => s.markThreadRead);
   const deleteMessage = useChatStore((s) => s.deleteMessage);
+  const mergeThreads = useChatStore((s) => s.mergeThreads);
   const vendorUserId = useAuthStore((s) => s.user?.id ?? null);
   const vendorProfileId = useVendorProfileStore((s) => s.profile?.id ?? null);
   const [draft, setDraft] = useState("");
+  const [startingSupport, setStartingSupport] = useState(false);
+  const [supportError, setSupportError] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [peerTyping, setPeerTyping] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -347,10 +357,47 @@ export function MessagingHome() {
     }
   };
 
+  const isSupportThread = (thread: ChatThread): boolean => {
+    return Object.values(thread.participantMap).some(
+      (p) => p.role === "admin" || p.role === "super_admin"
+    );
+  };
+
   /** Check if the vendor is trying to send the first message in a customer thread.
-   *  Returns true if the customer has sent at least one message. */
+   *  Returns true if the customer has sent at least one message. Support threads
+   *  are exempt because the vendor initiates contact with platform admins. */
   const canVendorSend = (thread: ChatThread): boolean => {
+    if (isSupportThread(thread)) return true;
     return thread.messages.some((m) => m.authorRole !== "vendor");
+  };
+
+  const startSupportConversation = async () => {
+    if (startingSupport || !getApiBaseUrl()) return;
+    setSupportError(null);
+    setStartingSupport(true);
+    try {
+      const contact = (await getSupportContact()) as Record<string, unknown>;
+      const supportUserId = String(contact.id ?? "");
+      if (!supportUserId) {
+        setSupportError(t("supportContactUnavailable"));
+        return;
+      }
+      const raw = await createConversation({ withUserId: supportUserId });
+      const currentUserIds = [vendorUserId, vendorProfileId].filter(
+        (id): id is string => Boolean(id)
+      );
+      const thread = mapConversationToThread(
+        raw as Record<string, unknown>,
+        currentUserIds
+      );
+      mergeThreads([thread]);
+      setSelectedThreadId(thread.id);
+      router.push("/chat");
+    } catch {
+      setSupportError(t("supportChatError"));
+    } finally {
+      setStartingSupport(false);
+    }
   };
 
   const sendDraft = async () => {
@@ -521,6 +568,21 @@ export function MessagingHome() {
               placeholder={t("searchConversations")}
               aria-label={t("searchChatsAria")}
             />
+            <LoadingButton
+              type="button"
+              variant="outline"
+              size="sm"
+              loading={startingSupport}
+              spinnerPosition="left"
+              className="mt-2 w-full gap-1.5 text-xs"
+              onClick={startSupportConversation}
+            >
+              <Headset className="size-3.5" aria-hidden />
+              {t("supportService")}
+            </LoadingButton>
+            {supportError ? (
+              <p className="text-destructive mt-1.5 text-[11px]">{supportError}</p>
+            ) : null}
           </div>
           <ScrollArea className="flex-1">
             <ul className="divide-border/60 divide-y p-2">

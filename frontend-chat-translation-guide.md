@@ -49,22 +49,9 @@ Successful responses return the resource payload directly.
 }
 ```
 
-- Validation errors return a professional top-level `message`, but the user-friendly per-field explanations are in `details.fields[].messages`.
-- **Frontend display rule:** For `4xx` validation errors, render the messages from `details.fields` (joined by property or as a list). The top-level `message` is generic and should not be shown to users. Only fall back to `message` when `details` is absent (e.g. `5xx` server errors).
-- Server errors (`statusCode >= 500`) return a generic safe `message` and omit `details` in production so internal details (database errors, connection strings, etc.) are never exposed.
+- Validation errors return a professional `message`; per-field problems are in `details.fields`.
+- Server errors (`statusCode >= 500`) return a generic safe message and omit `details` in production so internal details (database errors, connection strings, etc.) are never exposed.
 - Error responses may also include a stable `code` field for machine-readable error handling on endpoints that have been migrated to coded errors.
-
-```typescript
-// utils/errorMessage.ts
-export function getUserFacingErrorMessage(error: any): string {
-  const fields = error?.response?.data?.details?.fields ?? [];
-  if (fields.length > 0) {
-    const messages = fields.flatMap((f: any) => f.messages ?? []);
-    return messages.join('\n');
-  }
-  return error?.response?.data?.message ?? 'Something went wrong. Please try again.';
-}
-```
 
 ---
 
@@ -215,6 +202,29 @@ Content-Type: application/json
 ---
 
 ## Chat REST API
+
+### `GET /chat/support-contact`
+
+Retrieve the platform support user. This endpoint is **public**.
+
+**Response:**
+```json
+{
+  "id": "support-user-uuid",
+  "name": "NeoShop",
+  "surname": "Support",
+  "avatarUrl": null,
+  "role": "super_admin"
+}
+```
+
+**Behavior:**
+- Returns the oldest active `super_admin`; falls back to the oldest active `admin`.
+- Returns `503 Service Unavailable` if no platform admin is available.
+
+Use the returned `id` as `withUserId` when calling `POST /chat/conversations` to open a support conversation.
+
+---
 
 ### Translation fields
 
@@ -600,7 +610,7 @@ Content-Type: multipart/form-data
 **Form fields:**
 | Field | Type | Description |
 |-------|------|-------------|
-| `file` | `binary` | Required. Image (jpg, png, webp; max 5 MB) or PDF (max 10 MB) |
+| `file` | `binary` | Required. Image (jpg, png, webp; max 1 MB) or PDF (max 5 MB) |
 
 **Response:**
 ```json
@@ -618,7 +628,7 @@ Content-Type: multipart/form-data
 ```
 
 **Error responses:**
-- `400 Bad Request` — missing file, unsupported MIME type, or file exceeds size limit (images 5 MB, PDFs 10 MB)
+- `400 Bad Request` — missing file, unsupported MIME type, or file exceeds size limit (images 1 MB, PDFs 5 MB)
 - `403 Forbidden` — not a participant in this conversation
 - `401 Unauthorized` — invalid JWT
 
@@ -654,6 +664,7 @@ const socket = io('https://api.barkosem.com/realtime', {
   transports: ['websocket', 'polling'],
   auth: {
     token: supabaseAccessToken,
+    sessionId: activeSessionId, // from POST /auth/sessions
   },
 });
 ```
@@ -1014,13 +1025,14 @@ import type { ChatMessage } from '../types/chat';
 
 export function useChatSocket(
   token: string,
+  sessionId: string,
   currentUserId: string,
   onMessage: (msg: ChatMessage) => void
 ) {
   useEffect(() => {
     const socket: Socket = io('https://api.barkosem.com/realtime', {
       transports: ['websocket', 'polling'],
-      auth: { token },
+      auth: { token, sessionId },
     });
 
     socket.on('connect', () => {
@@ -1162,7 +1174,7 @@ export function getPreviewText(
 | Receiver has no `preferredLanguage` set | Defaults to `"en"`. If sender is `"en"`, no translation. If sender is `"fr"`, translation happens. |
 | Message sent before language change | Historical messages keep their original `translatedBody` (if any). No retroactive re-translation. |
 | Very long message | Max 4000 chars. Translation is truncated to the same limit. |
-| Image / attachment messages | Up to 10 attachments per message (images jpg/png/webp max 5 MB; PDFs max 10 MB). `messageType` is `image`, `mixed`, or `document`. |
+| Image / attachment messages | Up to 10 attachments per message (images jpg/png/webp max 1 MB; PDFs max 5 MB). `messageType` is `image`, `mixed`, or `document`. |
 | Sending attachments | Upload via `POST /chat/conversations/:id/attachments`, then include `fileUrl` in `POST /chat/conversations/:id/messages`. |
 | Special characters / numbers | The LLM is instructed to preserve numbers, currencies, units, and dates exactly. |
 | Self-conversation | Blocked with `400 Bad Request`. |

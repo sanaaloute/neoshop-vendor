@@ -325,7 +325,10 @@
     "attachment": "附件",
     "previewImage": "📷 图片",
     "previewDocument": "📄 文档",
-    "previewMixed": "🖼️ 图片+文字"
+    "previewMixed": "🖼️ 图片+文字",
+    "supportService": "客服支持",
+    "supportContactUnavailable": "客服暂不可用。",
+    "supportChatError": "无法开启客服聊天，请重试。"
   },
   "notifications": {
     "notifications": "通知",
