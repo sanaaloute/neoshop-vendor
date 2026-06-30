@@ -18,30 +18,31 @@ function iso(v: unknown): string {
 }
 
 const API_ORDER_STATUSES: OrderStatus[] = [
-  "pending",
+  "pending_payment",
   "paid",
   "processing",
   "shipped",
   "delivered",
   "disputed",
   "refunded",
+  "cancelled",
 ];
 
 function normalizeOrderStatus(raw: string): OrderStatus {
   return API_ORDER_STATUSES.includes(raw as OrderStatus)
     ? (raw as OrderStatus)
-    : "pending";
+    : "pending_payment";
 }
 
-function mapShipTo(): OrderShipTo {
-  // Vendor order payloads do NOT include customer shipping addresses per API guide.
-  // Keep the helper returning masked placeholders so print documents never leak
-  // address data that the vendor is not authorized to view.
+function mapShipTo(raw: Record<string, unknown> | undefined): OrderShipTo {
+  if (!raw) {
+    return { line1: "—", city: "—", postal: "—", country: "—" };
+  }
   return {
-    line1: "—",
-    city: "—",
-    postal: "—",
-    country: "—",
+    line1: String(raw.streetLine1 ?? "—"),
+    city: String(raw.city ?? "—"),
+    postal: String(raw.postalCode ?? "—"),
+    country: String(raw.country ?? "—"),
   };
 }
 
@@ -59,13 +60,17 @@ export function mapGatewayOrderToVendorOrder(
             it.sku ?? (it.variant as Record<string, unknown>)?.sku ?? "—"
           ),
           name: String(
-            it.productName ?? it.name ?? (it.product as Record<string, unknown>)?.title ?? "Item"
+            it.productName ??
+              it.name ??
+              (it.product as Record<string, unknown>)?.title ??
+              "Item"
           ),
           qty: Number(it.quantity ?? it.qty ?? 1),
           unitPrice: money(it.unitPrice ?? it.price),
-          variantId: String(
-            it.variantId ?? (it.variant as Record<string, unknown>)?.id ?? ""
-          ) || undefined,
+          variantId:
+            String(
+              it.variantId ?? (it.variant as Record<string, unknown>)?.id ?? ""
+            ) || undefined,
         }))
       : [
           {
@@ -80,17 +85,25 @@ export function mapGatewayOrderToVendorOrder(
   // Vendor order endpoints only expose the customer email, not name/address.
   const customerEmail = String(cust?.email ?? raw.customerEmail ?? "");
 
+  const shippingAddress = raw.shippingAddress as
+    | Record<string, unknown>
+    | undefined;
+  const shippingMethod = raw.shippingMethod as
+    | Record<string, unknown>
+    | undefined;
+
   return {
     id: String(raw.id),
+    orderNumber: String(raw.orderNumber ?? raw.humanId ?? raw.id).slice(0, 48),
     reference: String(
-      raw.reference ?? raw.orderNumber ?? raw.humanId ?? raw.id
+      raw.orderNumber ?? raw.reference ?? raw.humanId ?? raw.id
     ).slice(0, 48),
     customerEmail,
     customerName: customerEmail || "Customer",
-    status: normalizeOrderStatus(String(raw.status ?? "pending")),
+    status: normalizeOrderStatus(String(raw.status ?? "pending_payment")),
     createdAt: iso(raw.placedAt ?? raw.createdAt),
     updatedAt: iso(raw.updatedAt ?? raw.placedAt ?? raw.createdAt),
-    shipTo: mapShipTo(),
+    shipTo: mapShipTo(shippingAddress),
     // Vendor payloads expose statusHistory but no detailed invoices/payments/refunds.
     // The mapper keeps those fields off the VendorOrder view model.
     lines,
@@ -99,12 +112,39 @@ export function mapGatewayOrderToVendorOrder(
     tax: money(raw.taxTotal ?? raw.tax),
     total: money(raw.total ?? raw.grandTotal ?? raw.amount),
     currency: raw.currency ? String(raw.currency) : undefined,
+    shippingAddress: shippingAddress
+      ? {
+          fullName: String(shippingAddress.fullName ?? ""),
+          phone: String(shippingAddress.phone ?? ""),
+          country: String(shippingAddress.country ?? ""),
+          city: String(shippingAddress.city ?? ""),
+          region: String(shippingAddress.region ?? ""),
+          postalCode: String(shippingAddress.postalCode ?? ""),
+          streetLine1: String(shippingAddress.streetLine1 ?? ""),
+          streetLine2:
+            shippingAddress.streetLine2 != null
+              ? String(shippingAddress.streetLine2)
+              : null,
+        }
+      : null,
+    shippingMethod: shippingMethod
+      ? {
+          name: String(shippingMethod.name ?? ""),
+          type: shippingMethod.type === "SEA" ? "SEA" : "AIR",
+          estimatedDaysMin: Number(shippingMethod.estimatedDaysMin ?? 0),
+          estimatedDaysMax: Number(shippingMethod.estimatedDaysMax ?? 0),
+        }
+      : null,
+    trackingNumber:
+      raw.trackingNumber != null ? String(raw.trackingNumber) : undefined,
     timeline: [],
     shippingHistory: [],
   };
 }
 
-function timelineFromStatusHistory(raw: Record<string, unknown>): TimelineEvent[] {
+function timelineFromStatusHistory(
+  raw: Record<string, unknown>
+): TimelineEvent[] {
   const hist = raw.statusHistory ?? raw.orderStatusHistory;
   if (!Array.isArray(hist) || hist.length === 0) return [];
   const rows = hist as Record<string, unknown>[];

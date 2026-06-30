@@ -2,7 +2,6 @@ export { useAuth, useRequireVendor } from "@/hooks/use-auth";
 export { useVendorKeyboardShortcuts } from "@/hooks/use-vendor-keyboard";
 
 export { useOrderStats } from "@/hooks/use-order-stats";
-export { useOrderTracking } from "@/hooks/use-order-tracking";
 export { useProductStats } from "@/hooks/use-product-stats";
 export { useShipping } from "@/hooks/use-shipping";
 export { useExchangeRates } from "@/hooks/use-exchange-rates";

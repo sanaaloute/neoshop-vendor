@@ -6,7 +6,7 @@ import { useOrdersStore } from "@/store/orders-store";
 import { useProductCatalogStore } from "@/store/product-catalog-store";
 
 const ACTIVE_ORDER = new Set([
-  "pending",
+  "pending_payment",
   "paid",
   "processing",
   "shipped",
@@ -71,7 +71,9 @@ export function useDashboardMetrics(): DashboardMetrics {
       (s, o) => s + (Number.parseFloat(o.total) || 0),
       0
     );
-    const pendingOrders = orders.filter((o) => ACTIVE_ORDER.has(o.status)).length;
+    const pendingOrders = orders.filter((o) =>
+      ACTIVE_ORDER.has(o.status)
+    ).length;
 
     const bestProducts = [...products]
       .filter((p) => p.status === "published")

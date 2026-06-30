@@ -23,14 +23,24 @@ function money(value: string | number) {
 
 function printStatusLabel(s: string) {
   switch (s) {
-    case "pending": return "Pending";
-    case "paid": return "Paid";
-    case "processing": return "Processing";
-    case "shipped": return "Shipped";
-    case "delivered": return "Delivered";
-    case "disputed": return "Disputed";
-    case "refunded": return "Refunded";
-    default: return s;
+    case "pending_payment":
+      return "Pending Payment";
+    case "paid":
+      return "Paid";
+    case "processing":
+      return "Processing";
+    case "shipped":
+      return "Shipped";
+    case "delivered":
+      return "Delivered";
+    case "disputed":
+      return "Disputed";
+    case "refunded":
+      return "Refunded";
+    case "cancelled":
+      return "Cancelled";
+    default:
+      return s;
   }
 }
 
@@ -68,7 +78,7 @@ export function buildPackingSlipHtml(order: VendorOrder) {
   return `
     <h1>Packing slip</h1>
     <p><strong>${esc(order.reference)}</strong></p>
-    <p>Ship to: <em>Address not available to vendor</em></p>
+    <p>Ship to: ${order.shippingAddress ? esc(`${order.shippingAddress.fullName}<br>${order.shippingAddress.streetLine1}${order.shippingAddress.streetLine2 ? `, ${order.shippingAddress.streetLine2}` : ""}<br>${order.shippingAddress.city}${order.shippingAddress.region ? `, ${order.shippingAddress.region}` : ""} ${order.shippingAddress.postalCode}<br>${order.shippingAddress.country}`) : "<em>Address not available</em>"}</p>
     <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;margin-top:16px">
       <thead><tr><th>SKU</th><th>Item</th><th align="right">Qty</th></tr></thead>
       <tbody>${rows}</tbody>

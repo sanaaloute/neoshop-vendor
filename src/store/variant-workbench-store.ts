@@ -108,6 +108,7 @@ export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
     removeAttribute: (id) =>
       set((s) => ({
         attributes: s.attributes.filter((a) => a.id !== id),
+        variants: s.variants.filter((r) => !(id in r.combo)),
       })),
 
     renameAttribute: (id, name) =>
@@ -133,18 +134,20 @@ export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
       })),
 
     setAttributeValues: (id, values) =>
-      set((s) => ({
-        attributes: s.attributes.map((a) =>
-          a.id === id
-            ? {
-                ...a,
-                values: [
-                  ...new Set(values.map((v) => v.trim()).filter(Boolean)),
-                ],
-              }
-            : a
-        ),
-      })),
+      set((s) => {
+        const allowed = [
+          ...new Set(values.map((v) => v.trim()).filter(Boolean)),
+        ];
+        return {
+          attributes: s.attributes.map((a) =>
+            a.id === id ? { ...a, values: allowed } : a
+          ),
+          variants: s.variants.filter((r) => {
+            const comboValue = r.combo[id];
+            return comboValue === undefined || allowed.includes(comboValue);
+          }),
+        };
+      }),
 
     addValueToAttribute: (attrId, value) => {
       const v = value.trim();
@@ -165,6 +168,7 @@ export const useVariantWorkbenchStore = create<VariantWorkbenchState>()(
             ? { ...a, values: a.values.filter((x) => x !== value) }
             : a
         ),
+        variants: s.variants.filter((r) => r.combo[attrId] !== value),
       })),
 
     generateMatrix: (defaults) => {

@@ -1,6 +1,6 @@
 /** Aligned with gateway `OrderStatus` (vendor-panel-api-endpoints.txt §11). */
 export type OrderStatus =
-  | "pending"
+  | "pending_payment"
   | "paid"
   | "processing"
   | "shipped"
@@ -43,6 +43,7 @@ export type OrderShipTo = {
 
 export type VendorOrder = {
   id: string;
+  orderNumber: string;
   reference: string;
   customerEmail: string;
   customerName: string;
@@ -50,33 +51,51 @@ export type VendorOrder = {
   createdAt: string;
   updatedAt: string;
   shipTo: OrderShipTo;
+  shippingAddress?: {
+    fullName: string;
+    phone: string;
+    country: string;
+    city: string;
+    region: string;
+    postalCode: string;
+    streetLine1: string;
+    streetLine2?: string | null;
+  } | null;
+  shippingMethod?: {
+    name: string;
+    type: "SEA" | "AIR";
+    estimatedDaysMin: number;
+    estimatedDaysMax: number;
+  } | null;
   lines: OrderLine[];
   subtotal: string;
   shipping: string;
   tax: string;
   total: string;
   currency?: string;
+  trackingNumber?: string | null;
   timeline: TimelineEvent[];
   shippingHistory: ShippingUpdate[];
 };
 
 /** Typical vendor fulfillment progression for bulk advance / workflow helpers. */
 export const ORDER_STATUS_FLOW: OrderStatus[] = [
-  "pending",
+  "pending_payment",
   "paid",
   "processing",
   "shipped",
   "delivered",
 ];
 
-/** Allowed vendor-initiated status transitions. The backend remains authoritative. */
+/** Allowed vendor-initiated status transitions per the vendor API guide.
+ *  The backend remains authoritative. */
 export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  pending: ["paid", "cancelled"],
-  paid: ["processing", "cancelled", "refunded"],
-  processing: ["shipped", "cancelled", "refunded"],
-  shipped: ["delivered", "cancelled", "refunded"],
-  delivered: ["refunded"],
-  disputed: ["refunded"],
+  pending_payment: [],
+  paid: ["processing"],
+  processing: ["shipped"],
+  shipped: ["delivered"],
+  delivered: [],
+  disputed: [],
   refunded: [],
   cancelled: [],
 };

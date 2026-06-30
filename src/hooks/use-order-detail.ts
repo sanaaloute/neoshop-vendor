@@ -43,7 +43,9 @@ export function useOrderDetail() {
           ...(ORDER_STATUS_TRANSITIONS[currentStatus as OrderStatus] ?? []),
         ]);
         if (!allowed.has(status)) {
-          throw new Error(`Invalid status transition from ${currentStatus} to ${status}`);
+          throw new Error(
+            `Invalid status transition from ${currentStatus} to ${status}`
+          );
         }
       }
       setLoading(true);

@@ -3,6 +3,7 @@ import { ORDER_STATUS_FLOW } from "./types";
 
 export function nextWorkflowStatus(current: OrderStatus): OrderStatus | null {
   if (
+    current === "pending_payment" ||
     current === "delivered" ||
     current === "disputed" ||
     current === "refunded" ||
@@ -18,7 +19,11 @@ export function nextWorkflowStatus(current: OrderStatus): OrderStatus | null {
 export function previousWorkflowStatus(
   current: OrderStatus
 ): OrderStatus | null {
-  if (current === "pending" || current === "refunded" || current === "cancelled")
+  if (
+    current === "pending_payment" ||
+    current === "refunded" ||
+    current === "cancelled"
+  )
     return null;
   const i = ORDER_STATUS_FLOW.indexOf(current);
   if (i <= 0) return null;
@@ -26,13 +31,18 @@ export function previousWorkflowStatus(
 }
 
 export function isTerminalStatus(s: OrderStatus) {
-  return s === "delivered" || s === "disputed" || s === "refunded" || s === "cancelled";
+  return (
+    s === "delivered" ||
+    s === "disputed" ||
+    s === "refunded" ||
+    s === "cancelled"
+  );
 }
 
 export function statusLabel(s: OrderStatus): string {
   switch (s) {
-    case "pending":
-      return "status.pending";
+    case "pending_payment":
+      return "status.pendingPayment";
     case "paid":
       return "status.paid";
     case "processing":

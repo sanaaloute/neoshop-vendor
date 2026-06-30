@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getApiBaseUrl } from "@/config/auth";
-import { formatCurrency } from "@/lib/format";
+
 import { httpErrorMessageForUser } from "@/lib/http-error-message";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/i18n/routing";
@@ -251,8 +251,8 @@ export function ProductsTable({
                         <SelectItem value="draft">
                           {t("status.draft")}
                         </SelectItem>
-                        <SelectItem value="published">
-                          {t("status.published")}
+                        <SelectItem value="pending_review">
+                          {t("status.pending_review")}
                         </SelectItem>
                         <SelectItem value="hidden">
                           {t("status.hidden")}
@@ -331,7 +331,7 @@ export function ProductsTable({
                   {t("list.categories")}
                 </TableHead>
                 <TableHead className="text-xs font-medium tracking-wider uppercase">
-                  {t("list.price")}
+                  {t("list.moq")}
                 </TableHead>
                 <TableHead className="text-xs font-medium tracking-wider uppercase">
                   {t("list.status")}
@@ -366,12 +366,16 @@ export function ProductsTable({
                       }}
                       data-state={selected.has(p.id) ? "selected" : undefined}
                       className={cn(
-                        "hover:bg-muted/40 border-b transition-colors",
+                        "hover:bg-muted/40 group cursor-pointer border-b transition-colors",
                         p.status === "archived" && "opacity-60",
                         selected.has(p.id) && "bg-primary/5"
                       )}
+                      onClick={() => router.push(`/products/${p.id}/edit`)}
                     >
-                      <td className="p-2 px-4">
+                      <td
+                        className="p-2 px-4"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Checkbox
                           disabled={!canWriteCatalog}
                           checked={selected.has(p.id)}
@@ -380,12 +384,9 @@ export function ProductsTable({
                         />
                       </td>
                       <td className="max-w-[200px] truncate p-2 px-4 font-medium">
-                        <Link
-                          href={`/products/${p.id}/edit`}
-                          className="text-foreground underline-offset-4 hover:underline"
-                        >
+                        <span className="text-foreground underline-offset-4 group-hover:underline">
                           {p.name}
-                        </Link>
+                        </span>
                       </td>
                       <td className="text-muted-foreground p-2 px-4 tabular-nums">
                         {p.sku || "—"}
@@ -394,14 +395,17 @@ export function ProductsTable({
                         {categorySummary(p.categoryIds, categories)}
                       </td>
                       <td className="p-2 px-4 tabular-nums">
-                        {formatCurrency(p.price)}
+                        {p.moq ?? 1}
                       </td>
                       <td className="p-2 px-4">
                         <StatusBadge status={statusToBadge(p.status)}>
                           {t(`status.${p.status}`)}
                         </StatusBadge>
                       </td>
-                      <td className="p-2 px-4 text-right">
+                      <td
+                        className="p-2 px-4 text-right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <div className="flex flex-wrap justify-end gap-1">
                           <Link
                             href={`/products/${p.id}/edit`}

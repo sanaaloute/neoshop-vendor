@@ -33,7 +33,24 @@ export const useOrdersStore = create<OrdersState>()(
     }),
     {
       name: "neoshop-vendor-orders",
-      version: 2,
+      version: 3,
+      migrate: (persistedState, version) => {
+        if (version < 3) {
+          const orders = (persistedState as OrdersState | undefined)?.orders;
+          if (Array.isArray(orders)) {
+            return {
+              orders: orders.map((o) => ({
+                ...o,
+                status:
+                  (o.status as string) === "pending"
+                    ? "pending_payment"
+                    : o.status,
+              })),
+            };
+          }
+        }
+        return persistedState;
+      },
       partialize: (st) => ({ orders: st.orders }),
     }
   )

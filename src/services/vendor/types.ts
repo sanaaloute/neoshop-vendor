@@ -12,7 +12,7 @@ export type ApiProductStatus =
   | "rejected";
 
 export type ApiOrderStatus =
-  | "pending"
+  | "pending_payment"
   | "paid"
   | "processing"
   | "shipped"
@@ -231,17 +231,21 @@ export type UpdateProductDto = {
   description?: string;
   moq?: number;
   currency?: Currency;
-  status?: Extract<ApiProductStatus, "draft" | "published" | "hidden">;
+  // Vendors may only set draft, pending_review, or hidden. published, archived,
+  // and rejected are admin-only (see vendor API guide §Products).
+  status?: Extract<ApiProductStatus, "draft" | "pending_review" | "hidden">;
   bulkPricing?: BulkPricingTierInput[];
 };
 
 export type ProductStatsResponse = {
-  draft: number;
-  pending_review: number;
-  published: number;
-  hidden: number;
-  archived: number;
-  rejected: number;
+  total: number;
+  byStatus: {
+    draft: number;
+    pending_review: number;
+    published: number;
+    hidden: number;
+    archived: number;
+  };
 };
 
 export type CreateProductAttributeDto = {
@@ -331,18 +335,26 @@ export type PaginatedProductVariants = {
 // --- Orders ---
 
 export type OrderStatsResponse = {
-  pending: number;
-  paid: number;
-  processing: number;
-  shipped: number;
-  delivered: number;
-  disputed: number;
-  refunded: number;
-  cancelled: number;
+  total: number;
+  byStatus: {
+    pending_payment: number;
+    paid: number;
+    processing: number;
+    shipped: number;
+    delivered: number;
+    disputed: number;
+    refunded: number;
+    cancelled: number;
+  };
 };
 
 export type UpdateOrderStatusDto = {
   status: ApiOrderStatus;
+  note?: string;
+};
+
+export type UpdateOrderTrackingDto = {
+  trackingNumber: string;
   note?: string;
 };
 
@@ -359,6 +371,7 @@ export type OrderLineItem = {
 
 export type VendorOrder = {
   id: string;
+  orderNumber: string;
   checkoutGroupId: string;
   customerUserId: string;
   customer: { id: string; email: string };
@@ -412,6 +425,26 @@ export type OrderDetailResponse = {
   couponCode: string | null;
   placedAt: string;
   updatedAt: string;
+  orderNumber: string;
+  trackingNumber?: string | null;
+  shippingAddress: {
+    id: string;
+    fullName: string;
+    phone: string;
+    country: string;
+    city: string;
+    region: string;
+    postalCode: string;
+    streetLine1: string;
+    streetLine2?: string | null;
+  } | null;
+  shippingMethod: {
+    id: string;
+    name: string;
+    type: "SEA" | "AIR";
+    estimatedDaysMin: number;
+    estimatedDaysMax: number;
+  } | null;
   items: OrderDetailItem[];
   statusHistory: OrderStatusHistoryItem[];
   // Structured shapes are not documented in the vendor API guide; keep opaque

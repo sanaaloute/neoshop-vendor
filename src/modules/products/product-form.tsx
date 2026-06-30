@@ -358,7 +358,8 @@ export function ProductForm({
   });
 
   const publishNow = form.handleSubmit(async (v) => {
-    const next = { ...v, status: "published" as const, publishAt: null };
+    // Vendors cannot set published directly; submit for admin review instead.
+    const next = { ...v, status: "pending_review" as const, publishAt: null };
     form.reset(next);
     setSaveError(null);
     if (!canWriteCatalog) {

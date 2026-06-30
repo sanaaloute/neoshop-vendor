@@ -18,6 +18,7 @@ Vendors **also** have access to many customer endpoints (`/auth/me`, `/chat`, `/
 | `X-Request-Id` | Optional | Unique request ID (echoed in response, used for tracing) |
 | `X-Correlation-Id` | Optional | Correlation ID for distributed tracing |
 | `Idempotency-Key` | Optional | 128-char max; ensures safe retries for state-changing ops |
+| `Accept-Language` | Optional | Preferred language for user-facing messages: `en`, `fr` (default), or `zh`. Example: `fr`, `zh-CN`. |
 | `Content-Type` | POST/PATCH/PUT | `application/json` (or `multipart/form-data` for uploads) |
 | `User-Agent` | Auto-captured | Used for session tracking |
 
@@ -594,7 +595,7 @@ Update product descriptors, lifecycle status, or MOQ.
   "slug": "updated-t-shirt",               // optional, string, 2-120
   "description": "Updated description...",   // optional, string, max 20000
   "currency": "CNY",                       // optional, enum: CNY, XOF
-  "status": "published",                   // optional, enum — vendor may only set: draft, published, hidden
+  "status": "pending_review",               // optional, enum — vendor may only set: draft, pending_review, hidden
   "moq": 50,                               // optional, integer, min 1
   "bulkPricing": [                         // optional, replaces entire set
     { "minQuantity": 50, "unitPrice": 22.00 }
@@ -605,9 +606,9 @@ Update product descriptors, lifecycle status, or MOQ.
 **Response:** Updated `Product` with full includes
 
 **Status Rules:**
-- Vendors may set: `draft`, `published`, `hidden`
+- Vendors may set: `draft`, `pending_review`, `hidden`
 - Published products can only be moved to `hidden`
-- `rejected` and `archived` can only be set by admin
+- `published`, `rejected`, `archived` can only be set by admin
 - Sending current status is allowed as no-op
 
 ---
@@ -1098,6 +1099,7 @@ List orders for the authenticated vendor.
   "items": [
     {
       "id": "order-uuid",
+      "orderNumber": "NS-240612-ABCD",
       "checkoutGroupId": "group-uuid",
       "customerUserId": "user-uuid",
       "customer": {
@@ -1105,7 +1107,8 @@ List orders for the authenticated vendor.
         "email": "user@example.com"
       },
       "status": "paid",
-      "currency": "XOF",
+      "currency": "CNY",
+      "vendorCurrency": "CNY",
       "subtotal": "250.00",
       "taxTotal": "0.00",
       "shippingTotal": "0.00",
@@ -1128,6 +1131,11 @@ List orders for the authenticated vendor.
 }
 ```
 
+> **Notes:**
+> - `orderNumber` is the human-readable order reference displayed to customers and vendors.
+> - If the order's `currency` differs from the vendor's `vendorCurrency`, monetary amounts are converted to `vendorCurrency` for this response (`currency` will read as the vendor currency).
+> - The list view does **not** include `shippingAddress`, `shippingMethod`, or `trackingNumber`. Fetch `GET /orders/:orderId` for those details.
+
 ---
 
 ### `GET /orders/vendor/stats`
@@ -1142,7 +1150,7 @@ Order count breakdown by status.
 {
   "total": 450,
   "byStatus": {
-    "pending": 5,
+    "pending_payment": 5,
     "paid": 8,
     "processing": 12,
     "shipped": 15,
@@ -1198,7 +1206,7 @@ List unique customers who ordered from this vendor.
 
 ### `GET /orders/:orderId`
 
-Get order detail with items, timeline, invoices, payments, refunds.
+Get full order detail including items, shipping address, shipping method, tracking number, timeline, invoices, payments, and refunds.
 
 **Roles:** `customer` (owner), `vendor` (seller), `admin`
 
@@ -1206,21 +1214,63 @@ Get order detail with items, timeline, invoices, payments, refunds.
 ```json
 {
   "id": "order-uuid",
+  "orderNumber": "NS-240612-ABCD",
   "checkoutGroupId": "group-uuid",
   "customerUserId": "user-uuid",
   "customer": { "id": "user-uuid", "email": "user@example.com" },
   "vendorId": "vendor-uuid",
   "vendor": { "id": "vendor-uuid", "tradeName": "Acme Corp", "legalBusinessName": "Acme Corp LLC" },
-  "status": "paid",
+  "status": "shipped",
   "currency": "XOF",
   "vendorCurrency": "CNY",
+  "baseCurrency": "CNY",
+  "exchangeRateAtCheckout": "0.01150000",
   "subtotal": "250.00",
+  "subtotalCny": "2.8750",
   "taxTotal": "0.00",
   "shippingTotal": "0.00",
   "grandTotal": "250.00",
+  "grandTotalCny": "2.8750",
   "couponCode": null,
+  "notes": null,
+  "trackingNumber": "TRK123456789",
+  "shippingAddress": {
+    "id": "addr-uuid",
+    "userId": "user-uuid",
+    "addressType": "shipping",
+    "label": "Home",
+    "fullName": "John Doe",
+    "phone": "+22670123456",
+    "country": "BF",
+    "city": "Ouagadougou",
+    "region": "Centre",
+    "postalCode": "01",
+    "streetLine1": "123 Main Street",
+    "streetLine2": "Apartment 4B",
+    "latitude": "12.3714",
+    "longitude": "-1.5197",
+    "isDefault": true,
+    "createdAt": "2024-06-01T10:00:00Z",
+    "updatedAt": "2024-06-01T10:00:00Z"
+  },
+  "shippingMethod": {
+    "id": "sm-uuid",
+    "name": "DHL Express",
+    "description": "Air freight door-to-door",
+    "type": "AIR",
+    "estimatedDaysMin": 3,
+    "estimatedDaysMax": 7,
+    "baseCost": "50.0000",
+    "pricePerKg": "5.0000",
+    "pricePerCbm": null,
+    "currency": "CNY",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-06-01T00:00:00Z"
+  },
   "placedAt": "2024-06-12T10:00:00Z",
   "updatedAt": "2024-06-12T10:00:00Z",
+  "deletedAt": null,
   "items": [
     {
       "id": "item-uuid",
@@ -1228,8 +1278,11 @@ Get order detail with items, timeline, invoices, payments, refunds.
       "quantity": 10,
       "unitPrice": "25.00",
       "lineTotal": "250.00",
+      "unitPriceCny": "0.2875",
+      "lineTotalCny": "2.8750",
       "skuSnapshot": "SKU-A1B2C3",
       "titleSnapshot": "T-Shirt",
+      "attributeSnapshot": null,
       "variantImageUrl": "https://.../red-variant.webp",
       "variant": {
         "id": "variant-uuid",
@@ -1242,14 +1295,22 @@ Get order detail with items, timeline, invoices, payments, refunds.
     }
   ],
   "statusHistory": [
-    { "id": "hist-uuid", "status": "pending", "note": null, "actorUserId": null, "createdAt": "2024-06-12T09:00:00Z" },
-    { "id": "hist-uuid-2", "status": "paid", "note": "Payment captured", "actorUserId": "user-uuid", "createdAt": "2024-06-12T10:00:00Z" }
+    { "id": "hist-uuid", "status": "pending_payment", "note": null, "actorUserId": null, "createdAt": "2024-06-12T09:00:00Z" },
+    { "id": "hist-uuid-2", "status": "paid", "note": "Payment captured", "actorUserId": "user-uuid", "createdAt": "2024-06-12T10:00:00Z" },
+    { "id": "hist-uuid-3", "status": "processing", "note": "Picking started", "actorUserId": "vendor-user-uuid", "createdAt": "2024-06-12T11:00:00Z" },
+    { "id": "hist-uuid-4", "status": "shipped", "note": "tracking_number_updated: TRK123456789", "actorUserId": "vendor-user-uuid", "createdAt": "2024-06-12T12:00:00Z" }
   ],
   "invoices": [],
   "payments": [],
   "refunds": []
 }
 ```
+
+> **Notes:**
+> - `shippingAddress` is the customer's selected delivery address at checkout (a `UserAddress` snapshot). It may be `null` for very old orders.
+> - `shippingMethod` is the method selected during checkout. `type` is `SEA` or `AIR`. `pricePerKg` is used for `AIR`; `pricePerCbm` is used for `SEA`.
+> - `trackingNumber` is set by the vendor/admin via `PATCH /orders/:orderId/tracking`.
+> - Vendor detail view does **not** include variant `selections` or `media`; those are only in the customer detail view.
 
 ---
 
@@ -1263,7 +1324,7 @@ Fulfillment status change (business rules enforced).
 **Request Body:**
 ```json
 {
-  "status": "processing",                 // required, enum: pending, paid, processing, shipped, delivered, disputed, refunded, cancelled
+  "status": "processing",                 // required, enum: pending_payment, paid, processing, shipped, delivered, disputed, refunded, cancelled
   "note": "Order confirmed, preparing shipment" // optional, string, max 2000
 }
 ```
@@ -1275,11 +1336,40 @@ Fulfillment status change (business rules enforced).
 | `processing` | `shipped` |
 | `shipped` | `delivered` |
 
+Vendors **cannot** transition `pending_payment` orders. Once payment is captured the order moves to `paid` and the vendor fulfillment workflow begins.
+
 **Response:** Updated `Order` with full detail include (same shape as `GET /orders/:orderId`)
 
 **Error Codes:**
 - `400` — Invalid status transition
 - `403` — Not order vendor
+
+---
+
+### `PATCH /orders/:orderId/tracking`
+
+Set or update the carrier tracking number for an order.
+
+**Roles:** `vendor`, `admin`  
+**Permission:** `ORDERS_VENDOR_FULFILL`
+
+**Allowed Order Statuses:** `paid`, `processing`, `shipped`  
+Tracking numbers cannot be added while the order is still awaiting payment (`pending_payment`), or after it has been delivered, cancelled, refunded, or disputed.
+
+**Request Body:**
+```json
+{
+  "trackingNumber": "TRK123456789",      // required, string, max 255
+  "note": "DHL express airway bill"      // optional, string, max 2000
+}
+```
+
+**Response:** Updated `Order` object with full detail include. The order now contains `trackingNumber` and a `statusHistory` entry is recorded with note `tracking_number_updated: <trackingNumber>` (unless a custom `note` is provided).
+
+**Error Codes:**
+- `400` — Order is not in an editable status (`paid`, `processing`, `shipped`) or validation error
+- `403` — Not order vendor / missing permission
+- `404` — Order not found
 
 ---
 
@@ -1294,7 +1384,7 @@ Get tracking events for an order.
 ```json
 {
   "carrier": "DHL",
-  "trackingNumber": "1234567890",
+  "trackingNumber": "TRK123456789",      // stored tracking number; falls back to a generated ID if not set
   "events": [
     {
       "id": "event-uuid",
@@ -1307,7 +1397,11 @@ Get tracking events for an order.
 }
 ```
 
-> ⚠️ **Vendor caveat:** Although the route allows the `vendor` role, it requires the `ORDERS_CUSTOMER_READ` permission, which is **not** granted to vendors in the current permission registry. Vendors should rely on `GET /orders/:orderId` for tracking/timeline information instead.
+> **Field details:**
+> - `carrier` is read from `Order.shippingMethod.name`, defaulting to `"Standard Shipping"` when no method is set.
+> - `trackingNumber` returns the vendor-supplied tracking number, or the first 12 characters of the order ID (uppercase) as a fallback.
+
+> ⚠️ **Vendor caveat:** Although the route allows the `vendor` role, it requires the `ORDERS_CUSTOMER_READ` permission, which is **not** granted to vendors in the current permission registry. Vendors should rely on `GET /orders/:orderId` for tracking/timeline information instead; the order object includes `trackingNumber` when set.
 
 ---
 

@@ -4,7 +4,7 @@
  */
 
 export { OrdersHome } from "./orders-home";
-export { OrderDetailDrawer } from "./order-detail-drawer";
+export { OrderDetailModal } from "./order-detail-modal";
 export { useOrdersLive } from "./use-orders-live";
 export * from "./types";
 export * from "./workflow";

@@ -372,11 +372,14 @@ export function VariantsHome() {
         return { ...row, selectionIds };
       });
 
-      // 2b. Filter out rows that still have no selection ids — they cannot be
-      // created on the backend. Warn the user so they know something is off.
-      const validRows = rowsToSave.filter(
-        (r) => Array.isArray(r.selectionIds) && r.selectionIds.length > 0
-      );
+      // 2b. Filter out rows whose selection ids do not cover every current
+      // attribute. Incomplete ids cause the backend to reject the bulk create
+      // with "Invalid attribute value for this product".
+      const attrCount = finalAttributes.length;
+      const validRows = rowsToSave.filter((r) => {
+        const ids = Array.isArray(r.selectionIds) ? r.selectionIds : [];
+        return attrCount > 0 && ids.length === attrCount;
+      });
       const skippedCount = rowsToSave.length - validRows.length;
       if (validRows.length === 0 && rowsToSave.length > 0) {
         throw new Error(t("attributeValuesNotResolved"));

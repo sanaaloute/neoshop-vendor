@@ -54,9 +54,12 @@ export async function createProductFromForm(
   const pid = String((row as Record<string, unknown>).id);
 
   const apiStatus = uiStatusToApi(values.status);
-  // Vendor may set draft, published, or hidden via PATCH.
-  if (apiStatus === "published" || apiStatus === "hidden") {
-    await updateProduct(pid, { status: apiStatus });
+  // Vendors may only set draft, pending_review, or hidden. published is
+  // admin-only, so treat a "published" selection as a submission for review.
+  const vendorSettableStatus: typeof apiStatus | "pending_review" =
+    apiStatus === "published" ? "pending_review" : apiStatus;
+  if (vendorSettableStatus === "hidden" || vendorSettableStatus === "pending_review") {
+    await updateProduct(pid, { status: vendorSettableStatus });
   }
 
   await setProductCategories(pid, { categoryIds: values.categoryIds });
@@ -77,13 +80,16 @@ export async function updateProductFromForm(
     currency: values.currency,
     bulkPricing: values.bulkPricing.length > 0 ? uiBulkPricingToApi(values.bulkPricing) : undefined,
   };
-  // Vendor may set draft, published, or hidden via PATCH.
+  // Vendors may only set draft, pending_review, or hidden via PATCH.
+  // published, archived, and rejected are admin-only.
+  const vendorSettableStatus: typeof apiStatus | "pending_review" =
+    apiStatus === "published" ? "pending_review" : apiStatus;
   if (
-    apiStatus === "draft" ||
-    apiStatus === "published" ||
-    apiStatus === "hidden"
+    vendorSettableStatus === "draft" ||
+    vendorSettableStatus === "pending_review" ||
+    vendorSettableStatus === "hidden"
   ) {
-    body.status = apiStatus;
+    body.status = vendorSettableStatus;
   }
   await updateProduct(productId, body);
   await setProductCategories(productId, { categoryIds: values.categoryIds });
@@ -142,11 +148,11 @@ export async function bulkPatchProductsOnGateway(
   productIds: string[],
   patch: { status?: ProductStatus; categoryIds?: string[] }
 ) {
-  // Vendors may set draft, published, or hidden per the API guide.
-  // archived and rejected are admin-only.
+  // Vendors may only set draft, pending_review, or hidden per the API guide.
+  // published, archived, and rejected are admin-only.
   const vendorControlledStatuses: ApiProductStatus[] = [
     "draft",
-    "published",
+    "pending_review",
     "hidden",
   ];
   for (const id of productIds) {

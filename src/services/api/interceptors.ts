@@ -31,6 +31,16 @@ function sessionRequestInterceptor(config: InternalAxiosRequestConfig) {
   return config;
 }
 
+function localeRequestInterceptor(config: InternalAxiosRequestConfig) {
+  // Send the active UI locale so the gateway can localize user-facing
+  // messages (validation errors, notifications, etc.).
+  if (typeof document !== "undefined") {
+    const locale = document.documentElement.lang || "en";
+    config.headers["Accept-Language"] = locale;
+  }
+  return config;
+}
+
 function shouldSkipRefresh(config: InternalAxiosRequestConfig | undefined): boolean {
   if (!config) return true;
   const url = config.url ?? "";
@@ -83,6 +93,7 @@ function apiBaseRequestInterceptor(config: InternalAxiosRequestConfig) {
 
 export function attachVendorInterceptors(instance: AxiosInstance) {
   instance.interceptors.request.use(apiBaseRequestInterceptor);
+  instance.interceptors.request.use(localeRequestInterceptor);
   instance.interceptors.request.use(authRequestInterceptor);
   instance.interceptors.request.use(sessionRequestInterceptor);
   instance.interceptors.response.use(

@@ -12,17 +12,25 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   XOF: "CFA",
 };
 
+/** Locales where the currency symbol is rendered after the amount. */
+const SYMBOL_AFTER_LOCALES = new Set(["fr", "fr-FR", "fr-CA", "de", "de-DE", "es", "es-ES"]);
+
 export function formatCurrency(
   value: string | number,
   currency = "CNY",
-  maximumFractionDigits = 0
+  maximumFractionDigits = 0,
+  locale = NUMBER_LOCALE
 ) {
-  const formatted = new Intl.NumberFormat(NUMBER_LOCALE, {
+  const formatted = new Intl.NumberFormat(locale, {
     style: "decimal",
     maximumFractionDigits,
     minimumFractionDigits: 0,
   }).format(toNumber(value));
   const symbol = CURRENCY_SYMBOLS[currency] ?? CURRENCY_SYMBOLS.CNY;
+  const normalizedLocale = locale.toLowerCase();
+  if (SYMBOL_AFTER_LOCALES.has(normalizedLocale)) {
+    return `${formatted} ${symbol}`;
+  }
   return `${symbol}${formatted}`;
 }
 

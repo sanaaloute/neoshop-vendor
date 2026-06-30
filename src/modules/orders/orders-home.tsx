@@ -46,7 +46,7 @@ import type { ApiOrderStatus } from "@/services/vendor/types";
 import { useVendorWritesAllowed } from "@/hooks/use-vendor-writes";
 import { useOrdersStore } from "@/store/orders-store";
 
-import { OrderDetailDrawer } from "./order-detail-drawer";
+import { OrderDetailModal } from "./order-detail-modal";
 import type { OrderStatus } from "./types";
 import { ORDER_STATUS_FLOW } from "./types";
 import { nextWorkflowStatus, statusLabel } from "./workflow";
@@ -60,8 +60,8 @@ const ORDER_STATUSES: {
   clickable: boolean;
 }[] = [
   {
-    key: "pending",
-    labelKey: "status.pending",
+    key: "pending_payment",
+    labelKey: "status.pendingPayment",
     status: "pending",
     clickable: true,
   },
@@ -112,7 +112,7 @@ function rowBadge(s: OrderStatus): Parameters<typeof StatusBadge>[0]["status"] {
   if (s === "delivered") return "success";
   if (s === "refunded" || s === "disputed") return "danger";
   if (s === "shipped" || s === "processing" || s === "paid") return "info";
-  if (s === "pending") return "pending";
+  if (s === "pending_payment") return "pending";
   return "neutral";
 }
 
@@ -133,7 +133,7 @@ export function OrdersHome() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
 
   const activeFiltersCount =
@@ -150,7 +150,7 @@ export function OrdersHome() {
 
   const openOrder = (id: string) => {
     setActiveOrderId(id);
-    setDrawerOpen(true);
+    setModalOpen(true);
   };
 
   const toggle = (id: string) => {
@@ -223,42 +223,6 @@ export function OrdersHome() {
     }
   };
 
-  const runBulkRefund = async () => {
-    if (!canWriteOrders) return;
-    if (!getApiBaseUrl()) {
-      setBulkError(t("marketplaceUnavailable"));
-      return;
-    }
-    setBulkBusy(true);
-    setBulkError(null);
-    try {
-      for (const id of selectedIds) {
-        const o = orders.find((x) => x.id === id);
-        if (!o) continue;
-        // Only refund orders that have been paid or are in a refundable state.
-        if (
-          !["paid", "processing", "shipped", "delivered"].includes(o.status)
-        ) {
-          continue;
-        }
-        await updateOrderStatus(
-          id,
-          "refunded",
-          t("bulkRefundFromList"),
-          toApi(o.status)
-        );
-      }
-      setRefreshing(true);
-      await refetch();
-      setSelected(new Set());
-    } catch (e) {
-      setBulkError(httpErrorMessageForUser(e, t("couldNotRefund")));
-    } finally {
-      setBulkBusy(false);
-      setRefreshing(false);
-    }
-  };
-
   const handleRefresh = async () => {
     setRefreshing(true);
     setBulkError(null);
@@ -285,22 +249,23 @@ export function OrdersHome() {
           className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8"
         >
           {ORDER_STATUSES.map(({ key, labelKey, status, clickable }) => {
+            const byStatus = orderStats.byStatus;
             const count =
-              key === "pending"
-                ? orderStats.pending
+              key === "pending_payment"
+                ? byStatus.pending_payment
                 : key === "paid"
-                  ? orderStats.paid
+                  ? byStatus.paid
                   : key === "processing"
-                    ? orderStats.processing
+                    ? byStatus.processing
                     : key === "shipped"
-                      ? orderStats.shipped
+                      ? byStatus.shipped
                       : key === "delivered"
-                        ? orderStats.delivered
+                        ? byStatus.delivered
                         : key === "disputed"
-                          ? orderStats.disputed
+                          ? byStatus.disputed
                           : key === "refunded"
-                            ? orderStats.refunded
-                            : orderStats.cancelled;
+                            ? byStatus.refunded
+                            : byStatus.cancelled;
             const active = statusFilter === key;
             const Wrapper = clickable ? motion.button : motion.div;
             return (
@@ -442,17 +407,6 @@ export function OrdersHome() {
                     onClick={() => void runBulkAdvance()}
                   >
                     {t("advanceWorkflow")}
-                  </LoadingButton>
-                  <LoadingButton
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    loading={bulkBusy}
-                    loadingText={t("processing")}
-                    disabled={!getApiBaseUrl() || !canWriteOrders}
-                    onClick={() => void runBulkRefund()}
-                  >
-                    {t("refundSelected")}
                   </LoadingButton>
                   <Button
                     type="button"
@@ -682,11 +636,11 @@ export function OrdersHome() {
         </div>
       </Card>
 
-      <OrderDetailDrawer
+      <OrderDetailModal
         orderId={activeOrderId}
-        open={drawerOpen}
+        open={modalOpen}
         onOpenChange={(o) => {
-          setDrawerOpen(o);
+          setModalOpen(o);
           if (!o) setActiveOrderId(null);
         }}
       />

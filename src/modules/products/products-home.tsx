@@ -37,7 +37,7 @@ import type { ProductStatus } from "./types";
 const easeOutExpo = [0.22, 1, 0.36, 1] as const;
 
 const PRODUCT_STATUSES: {
-  key: ProductStatus;
+  key: Exclude<ProductStatus, "rejected">;
   labelKey: string;
   status: Parameters<typeof StatusBadge>[0]["status"];
 }[] = [
@@ -46,7 +46,6 @@ const PRODUCT_STATUSES: {
   { key: "published", labelKey: "stats.published", status: "success" },
   { key: "hidden", labelKey: "stats.hidden", status: "warning" },
   { key: "archived", labelKey: "stats.archived", status: "neutral" },
-  { key: "rejected", labelKey: "stats.rejected", status: "danger" },
 ];
 
 export function ProductsHome() {
@@ -90,18 +89,17 @@ export function ProductsHome() {
           className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
         >
           {PRODUCT_STATUSES.map(({ key, labelKey, status }) => {
+            const byStatus = stats.byStatus;
             const count =
               key === "draft"
-                ? stats.draft
+                ? byStatus.draft
                 : key === "pending_review"
-                  ? stats.pending_review
+                  ? byStatus.pending_review
                   : key === "published"
-                    ? stats.published
+                    ? byStatus.published
                     : key === "hidden"
-                      ? stats.hidden
-                      : key === "archived"
-                        ? stats.archived
-                        : stats.rejected;
+                      ? byStatus.hidden
+                      : byStatus.archived;
             const active = filterStatus === key;
             return (
               <motion.button
