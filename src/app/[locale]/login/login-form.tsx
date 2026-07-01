@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
-import { useRouter } from "@/i18n/routing";
+import { useParams, useSearchParams } from "next/navigation";
+import { useRouter, usePathname } from "@/i18n/routing";
 import { z } from "zod";
 import { useTranslations } from "next-intl";
 
 import { VendorForm } from "@/components/forms/vendor-form";
 import { VendorTextField } from "@/components/forms/vendor-text-field";
 import { VendorPasswordField } from "@/components/forms/vendor-password-field";
-import { LanguageSwitcher } from "@/components/navigation/language-switcher";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/feedback/loading-button";
 import { useAuth } from "@/hooks/use-auth";
@@ -61,10 +60,15 @@ const phoneRegex = /^\+[1-9]\d{7,14}$/;
 
 export function LoginForm() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const params = useParams();
   const { login } = useAuth();
   const t = useTranslations("auth");
+  const tl = useTranslations("language");
   const te = useTranslations("errors");
+  const locale = (params.locale as string) || "en";
+  const localeCodes = ["en", "fr", "zh"] as const;
 
   const [mode, setMode] = useState<"login" | "signup">(() =>
     searchParams.get("signup") === "1" ? "signup" : "login"
@@ -348,21 +352,31 @@ export function LoginForm() {
 
   return (
     <div className="relative w-full max-w-[520px] rounded-2xl border border-white/[0.06] bg-[#0f0f16]/90 p-8 shadow-2xl backdrop-blur-xl sm:p-10">
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
-        <LanguageSwitcher
-          syncToBackend={false}
-          className="text-slate-400 hover:bg-white/[0.06] hover:text-slate-200"
-        />
+      <div className="absolute top-4 right-4 flex items-center gap-3 sm:top-6 sm:right-6">
+        {localeCodes.map((loc) => (
+          <button
+            key={loc}
+            type="button"
+            onClick={() => router.replace(pathname, { locale: loc })}
+            className={cn(
+              "text-xs font-medium transition-colors",
+              locale === loc
+                ? "text-teal-400"
+                : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            {tl(loc)}
+          </button>
+        ))}
       </div>
       <div className="space-y-1 pr-10">
         <h1 className="text-3xl font-bold tracking-tight text-white">
           {isSignup ? t("createAccount") : t("signIn")}
         </h1>
-        <p className="text-sm leading-relaxed text-slate-400">
-          {isSignup ? t("registerDescription") : t("signInDescription")}
-        </p>
-        {!isSignup && (
-          <p className="pt-2 text-sm text-slate-500">{t("signInToContinue")}</p>
+        {isSignup && (
+          <p className="text-sm leading-relaxed text-slate-400">
+            {t("registerDescription")}
+          </p>
         )}
       </div>
 
@@ -749,9 +763,6 @@ export function LoginForm() {
           </div>
         )}
 
-        <p className="mt-6 text-center text-xs text-slate-600">
-          {t("onboardingHint")}
-        </p>
       </div>
     </div>
   );
