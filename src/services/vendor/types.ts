@@ -231,9 +231,12 @@ export type UpdateProductDto = {
   description?: string;
   moq?: number;
   currency?: Currency;
-  // Vendors may only set draft, pending_review, or hidden. published, archived,
-  // and rejected are admin-only (see vendor API guide §Products).
-  status?: Extract<ApiProductStatus, "draft" | "pending_review" | "hidden">;
+  // Vendors may set draft, pending_review, hidden, or published directly.
+  // archived and rejected are admin-only.
+  status?: Extract<
+    ApiProductStatus,
+    "draft" | "pending_review" | "hidden" | "published"
+  >;
   bulkPricing?: BulkPricingTierInput[];
 };
 

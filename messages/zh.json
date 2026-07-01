@@ -831,6 +831,7 @@
     "catalogLocked": "商品目录更改将在 Barkosem 审核通过您的商家账户后解锁。",
     "couldNotSave": "无法保存。请重试。",
     "couldNotSubmitReview": "无法提交审核。请重试。",
+    "couldNotPublish": "无法发布。请重试。",
     "stats": {
       "draft": "草稿",
       "pending": "待审核",

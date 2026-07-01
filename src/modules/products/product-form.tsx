@@ -358,8 +358,8 @@ export function ProductForm({
   });
 
   const publishNow = form.handleSubmit(async (v) => {
-    // Vendors cannot set published directly; submit for admin review instead.
-    const next = { ...v, status: "pending_review" as const, publishAt: null };
+    // Publish the product directly.
+    const next = { ...v, status: "published" as const, publishAt: null };
     form.reset(next);
     setSaveError(null);
     if (!canWriteCatalog) {
@@ -383,7 +383,7 @@ export function ProductForm({
           onSuccess?.(p.id, true);
         }
       } catch (e) {
-        setSaveError(httpErrorMessageForUser(e, t("couldNotSubmitReview")));
+        setSaveError(httpErrorMessageForUser(e, t("couldNotPublish")));
       } finally {
         setSaving(false);
       }

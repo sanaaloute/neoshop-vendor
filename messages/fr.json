@@ -831,6 +831,7 @@
     "catalogLocked": "Les modifications du catalogue seront débloquées après l'approbation de votre compte vendeur par Barkosem.",
     "couldNotSave": "Impossible d'enregistrer. Réessayez.",
     "couldNotSubmitReview": "Impossible de soumettre pour révision. Réessayez.",
+    "couldNotPublish": "Impossible de publier. Réessayez.",
     "stats": {
       "draft": "Brouillon",
       "pending": "En attente",

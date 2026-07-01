@@ -274,19 +274,20 @@ export function VariantsHome() {
                 values: missingValues.map((value) => ({ value })),
               }
             );
-            const createdItems = Array.isArray(created) ? created : [created];
-            for (const item of createdItems as Array<Record<string, unknown>>) {
+            // The backend returns the full ProductAttribute object, not an array
+            // of created values. The created/updated values live under .values.
+            const createdAttribute = (
+              Array.isArray(created) ? created[0] : created
+            ) as Record<string, unknown> | undefined;
+            const returnedValues = Array.isArray(createdAttribute?.values)
+              ? (createdAttribute.values as Array<Record<string, unknown>>)
+              : [];
+            for (const item of returnedValues) {
               const id = item?.id;
               const value =
                 typeof item?.value === "string" ? item.value : undefined;
-              if (id) {
-                if (value && missingValues.includes(value)) {
-                  valueIdMap[value] = String(id);
-                } else {
-                  // Fallback: assign to the first missing value still without an id.
-                  const next = missingValues.find((v) => !valueIdMap[v]);
-                  if (next) valueIdMap[next] = String(id);
-                }
+              if (id && value && missingValues.includes(value)) {
+                valueIdMap[value] = String(id);
               }
             }
           } catch (e) {

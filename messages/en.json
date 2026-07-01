@@ -831,6 +831,7 @@
     "catalogLocked": "Catalog changes unlock after Barkosem approves your vendor account.",
     "couldNotSave": "Could not save. Try again.",
     "couldNotSubmitReview": "Could not submit for review. Try again.",
+    "couldNotPublish": "Could not publish. Try again.",
     "stats": {
       "draft": "Draft",
       "pending": "Pending",
